@@ -2952,6 +2952,15 @@
     "place_type": "city"
   },
   {
+    "name": "Tselakai Dezza",
+    "county": "San Juan County",
+    "county_fips": "49037",
+    "lat": 37.2100083,
+    "lon": -109.6090957,
+    "place_fips": "4977697",
+    "place_type": "cdp"
+  },
+  {
     "name": "Uintah",
     "county": "Weber County",
     "county_fips": "49057",
