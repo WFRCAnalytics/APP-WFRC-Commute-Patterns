@@ -558,29 +558,35 @@ async function refreshVisualization() {
     const enrichedNbOut = enrichNeighbor(neighborOut, 'outflow');
     const enrichedNbIn  = enrichNeighbor(neighborIn,  'inflow');
 
+    // Add neighbor totals to the headline counts so the dataline, flow wheel,
+    // and flow summary all reflect cross-state commuters.
+    const nbTotalOut = neighborOut.reduce((s, f) => s + Number(f.S000), 0);
+    const nbTotalIn  = neighborIn.reduce((s, f) => s + Number(f.S000), 0);
+
     _lastOutflows  = [...enrichedOut,  ...enrichedNbOut];
     _lastInflows   = [...enrichedIn,   ...enrichedNbIn];
-    _lastTotalOut  = totalOut;
-    _lastTotalIn   = totalIn;
+    _lastTotalOut  = totalOut + nbTotalOut;
+    _lastTotalIn   = totalIn  + nbTotalIn;
     _lastSelfCount = selfCount;
 
     // Reach chart: use city-level pairs for non-city subjects so distances are
     // measured between city centroids rather than a single area centroid.
-    // Fallback to county or subject-area centroid for unincorporated areas.
+    // Neighbor flows carry pre-computed distance bands from the pipeline and are
+    // appended so cross-state commutes appear in the reach distribution.
     if (isNonCitySubject && reachRawOut) {
       const enrichReach = flows => flows.map(f => {
         const hm = cityMeta[f.home_name] ?? countyMeta[f.home_county] ?? _getMetaFor(state.selectedAreaType)[f.home_name];
         const wm = cityMeta[f.work_name] ?? countyMeta[f.work_county] ?? _getMetaFor(state.aggregation)[f.work_name];
         return { ...f, home_lat: hm?.lat, home_lon: hm?.lon, work_lat: wm?.lat, work_lon: wm?.lon };
       }).filter(f => f.home_lat != null && f.work_lat != null);
-      _lastReachOut = enrichReach(reachRawOut);
-      _lastReachIn  = enrichReach(reachRawIn);
+      _lastReachOut = [...enrichReach(reachRawOut), ...enrichedNbOut];
+      _lastReachIn  = [...enrichReach(reachRawIn),  ...enrichedNbIn];
     } else {
-      _lastReachOut = enrichedOut;
-      _lastReachIn  = enrichedIn;
+      _lastReachOut = [...enrichedOut, ...enrichedNbOut];
+      _lastReachIn  = [...enrichedIn,  ...enrichedNbIn];
     }
 
-    setSelfFlow(selfCount, totalOut, totalIn);
+    setSelfFlow(selfCount, _lastTotalOut, _lastTotalIn);
 
     // Fly only when the selected area or aggregation level changes
     const areaChanged = state.selectedArea !== _lastFlewArea
