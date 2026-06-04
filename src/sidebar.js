@@ -110,7 +110,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
         <div class="flow-summary" id="flow-summary"></div>
       </div>
       <div class="cp-info-note" style="margin-top:10px;margin-bottom:0;">
-        <strong>Note:</strong> Inflow totals reflect all workers employed in Utah regardless of home state. Outflow totals reflect Utah residents commuting to the six surrounding states. Cross-state flows are shown as arcs only for border counties and cities within those states.
+        <strong>Note:</strong> Headline totals use LEHD aux file data — inflow covers all home states; outflow covers the six surrounding states. Border-area flows to neighboring cities and counties are also shown in the charts and flow arcs.
       </div>
     </div>
 
