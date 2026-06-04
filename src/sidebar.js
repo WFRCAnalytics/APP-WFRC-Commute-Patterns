@@ -21,8 +21,8 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
   panel.innerHTML = `
     <!-- AREA TYPE -->
     <div class="rail-section tight">
-      <div class="eyebrow">Subject Area Type</div>
-      <div class="type-strip" id="areatype-toggle" role="group" aria-label="Subject area type">
+      <div class="eyebrow">Area of Interest Type</div>
+      <div class="type-strip" id="areatype-toggle" role="group" aria-label="Area of interest type">
         <button data-value="city"   class="${state.selectedAreaType === 'city'   ? 'active' : ''}">City</button>
         <button data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
         <button data-value="house"  class="${state.selectedAreaType === 'house'  ? 'active' : ''}">Utah House</button>
@@ -32,7 +32,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
 
     <!-- SUBJECT -->
     <div class="rail-section tight">
-      <div class="eyebrow">Subject Area</div>
+      <div class="eyebrow">Area of Interest</div>
       <div class="search-wrap">
         <input
           id="area-search"
@@ -78,7 +78,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
 
     <!-- AGGREGATION -->
     <div class="rail-section tight">
-      <div class="eyebrow">Map Zones</div>
+      <div class="eyebrow">Map Display Geography</div>
       <div class="type-strip" id="aggregation-toggle" role="group" aria-label="Aggregation level">
         <button data-value="city"   class="${state.aggregation === 'city'   ? 'active' : ''}">City</button>
         <button data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
