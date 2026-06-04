@@ -412,6 +412,9 @@
 }
 
 .balance-row:hover { background: var(--highlight); }
+.balance-row.neighbor-zone { cursor: default; }
+.balance-row.neighbor-zone:hover { background: transparent; }
+.balance-row.neighbor-zone .b-name { opacity: 0.7; font-style: italic; }
 
 .balance-row .b-name {
   text-align: center;

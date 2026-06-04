@@ -2,8 +2,8 @@ import './styles/main.css';
 import './styles/sidebar.css';
 import './styles/charts.css';
 import './styles/toolbar.css';
-import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, queryReachFlows } from './db.js';
-import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces } from './map.js';
+import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, queryReachFlows, queryNeighborFlows } from './db.js';
+import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
 import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle } from './sidebar.js';
 import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts } from './charts.js';
 
@@ -19,10 +19,12 @@ const state = {
   loading:          false,
 };
 
-let cityMeta   = {};
-let countyMeta = {};
-let houseMeta  = {};
-let senateMeta = {};
+let cityMeta     = {};
+let countyMeta   = {};
+let houseMeta    = {};
+let senateMeta   = {};
+// Neighbor zone metadata: {display_name -> {lat, lon, state, state_abbr, ...}}
+let neighborMeta = {};
 
 // ACS commute data: keyed by FIPS (7-digit for places, 5-digit for counties/districts)
 let _acsCity   = {};
@@ -109,17 +111,21 @@ async function main() {
   state.year = urlYear;
 
   // 3. Load year-specific metadata + ACS data
-  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr] = await Promise.all([
+  const _safeJson = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+
+  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
     fetch(`${base}data/lehd/${state.year}/city_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/county_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/house_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/senate_meta.json`).then(r => r.json()),
+    _safeJson(`${base}data/lehd/${state.year}/neighbor_meta.json`),
     _loadAcs(base, state.year),
   ]);
-  cityMeta   = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
-  countyMeta = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
-  houseMeta  = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
-  senateMeta = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+  cityMeta     = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
+  countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
+  houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
+  senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+  neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
 
   setProgress(15);
 
@@ -142,6 +148,8 @@ async function main() {
 
   // 6. Load boundary files in background (optional — graceful if missing)
   loadBoundaries(base, state.theme);
+  // 6c. Load neighbor zone dots (points only, no polygons)
+  loadNeighborZones(neighborMetaArr);
 
   // 6b. Load custom place info for info-only display (graceful if missing)
   fetch(`${base}data/custom_places.geojson`)
@@ -439,17 +447,20 @@ async function _changeYear(newYear, base) {
   try {
     setProgress(5);
 
-    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr] = await Promise.all([
+    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
       fetch(`${base}data/lehd/${newYear}/city_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/county_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/house_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/senate_meta.json`).then(r => r.json()),
+      fetch(`${base}data/lehd/${newYear}/neighbor_meta.json`).then(r => r.ok ? r.json() : []).catch(() => []),
       _loadAcs(base, newYear),
     ]);
-    cityMeta   = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
-    countyMeta = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
-    houseMeta  = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
-    senateMeta = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+    cityMeta     = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
+    countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
+    houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
+    senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+    neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
+    loadNeighborZones(neighborMetaArr);
 
     setProgress(20);
     await reloadYear(newYear, pct => setProgress(20 + pct * 0.6));
@@ -495,7 +506,8 @@ async function refreshVisualization() {
   try {
     const isNonCitySubject = state.selectedAreaType !== 'city';
 
-    const [outflows, inflows, totalOut, totalIn, selfCount, reachRawOut, reachRawIn] = await Promise.all([
+    const [outflows, inflows, totalOut, totalIn, selfCount, reachRawOut, reachRawIn,
+           neighborOut, neighborIn] = await Promise.all([
       queryFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
       queryFlows(state.selectedArea, state.selectedAreaType, 'inflow',  state.aggregation),
       queryTotal(state.selectedArea, state.selectedAreaType, 'outflow'),
@@ -503,6 +515,8 @@ async function refreshVisualization() {
       querySelfFlow(state.selectedArea, state.selectedAreaType),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'outflow') : Promise.resolve(null),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'inflow')  : Promise.resolve(null),
+      queryNeighborFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
+      queryNeighborFlows(state.selectedArea, state.selectedAreaType, 'inflow',  state.aggregation),
     ]);
 
     const srcMeta = _getMetaFor(state.selectedAreaType);
@@ -525,8 +539,27 @@ async function refreshVisualization() {
       })
       .filter(f => f.home_lat != null && f.work_lat != null);
 
-    _lastOutflows  = enrichedOut;
-    _lastInflows   = enrichedIn;
+    // Enrich neighbor flows with lat/lon (Utah centroid from src; neighbor from neighborMeta)
+    const enrichNeighbor = (nbFlows, dir) => nbFlows
+      .map(f => {
+        const nb = neighborMeta[f.dest_name];
+        if (!nb) return null;
+        const [hLat, hLon, wLat, wLon] = dir === 'outflow'
+          ? [src?.lat, src?.lon, nb.lat, nb.lon]
+          : [nb.lat, nb.lon, src?.lat, src?.lon];
+        return { ...f,
+          home_name: dir === 'outflow' ? state.selectedArea : f.dest_name,
+          work_name: dir === 'outflow' ? f.dest_name        : state.selectedArea,
+          home_lat: hLat, home_lon: hLon, work_lat: wLat, work_lon: wLon,
+        };
+      })
+      .filter(f => f && f.home_lat != null && f.work_lat != null);
+
+    const enrichedNbOut = enrichNeighbor(neighborOut, 'outflow');
+    const enrichedNbIn  = enrichNeighbor(neighborIn,  'inflow');
+
+    _lastOutflows  = [...enrichedOut,  ...enrichedNbOut];
+    _lastInflows   = [...enrichedIn,   ...enrichedNbIn];
     _lastTotalOut  = totalOut;
     _lastTotalIn   = totalIn;
     _lastSelfCount = selfCount;
@@ -604,6 +637,19 @@ function _applyFilter() {
     if (fips) acsEntry = _acsSenate[fips] ?? null;
   }
 
+  // Build neighbor flow index for dot tooltips {display_name -> {in, out}}
+  const nbIndex = {};
+  _lastOutflows.filter(f => f.isNeighbor).forEach(f => {
+    nbIndex[f.dest_name] = nbIndex[f.dest_name] ?? { in: 0, out: 0 };
+    nbIndex[f.dest_name].out += Number(f.S000);
+  });
+  _lastInflows.filter(f => f.isNeighbor).forEach(f => {
+    nbIndex[f.dest_name] = nbIndex[f.dest_name] ?? { in: 0, out: 0 };
+    nbIndex[f.dest_name].in += Number(f.S000);
+  });
+  updateNeighborFlowIndex(nbIndex);
+  setNeighborAggregation(state.aggregation);
+
   updateLayers(filtered, state, arcClickHandler, total);
   // Charts always show both directions unfiltered — top N by volume handles their own slicing
   updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn);
@@ -672,6 +718,9 @@ function _updateLegend(flows, direction, theme) {
 function arcClickHandler(flow) {
   const newArea = flow.dest_name ?? (state.direction === 'outflow' ? flow.work_name : flow.home_name);
   if (!newArea || newArea === state.selectedArea) return;
+
+  // Neighbor zones are display-only — don't allow selecting them as a subject area
+  if (!_getMetaFor(state.aggregation)[newArea]) return;
 
   state.selectedArea     = newArea;
   state.selectedAreaType = state.aggregation;

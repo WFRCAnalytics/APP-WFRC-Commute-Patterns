@@ -653,12 +653,14 @@ export function resizeCharts() {
 function _mergeFlows(outflows, inflows, topN) {
   const byCity = {};
   outflows.forEach(f => {
-    byCity[f.dest_name] = byCity[f.dest_name] || { name: f.dest_name, out: 0, in: 0 };
+    byCity[f.dest_name] = byCity[f.dest_name] || { name: f.dest_name, out: 0, in: 0, isNeighbor: !!f.isNeighbor };
     byCity[f.dest_name].out = Number(f.S000);
+    if (f.isNeighbor) byCity[f.dest_name].isNeighbor = true;
   });
   inflows.forEach(f => {
-    byCity[f.dest_name] = byCity[f.dest_name] || { name: f.dest_name, out: 0, in: 0 };
+    byCity[f.dest_name] = byCity[f.dest_name] || { name: f.dest_name, out: 0, in: 0, isNeighbor: !!f.isNeighbor };
     byCity[f.dest_name].in = Number(f.S000);
+    if (f.isNeighbor) byCity[f.dest_name].isNeighbor = true;
   });
   const sorted = Object.values(byCity).sort((a, b) => (b.out + b.in) - (a.out + a.in));
   const rows   = sorted.slice(0, topN);
@@ -786,7 +788,7 @@ function _renderBar(outflows, inflows, totalOut, totalIn, state) {
 
   const VISIBLE = 8;
   const rowHTML = r => `
-    <div class="balance-row" data-peer="${r.name}">
+    <div class="balance-row${r.isNeighbor ? ' neighbor-zone' : ''}" data-peer="${r.name}" data-neighbor="${r.isNeighbor ? 'true' : ''}">
       <div class="b-num left">${r.in.toLocaleString()}</div>
       <div class="b-side left"><div class="b-bar in" style="width:${bw(r.in)}%"></div></div>
       <div class="b-name">${r.name}</div>
@@ -811,6 +813,7 @@ function _renderBar(outflows, inflows, totalOut, totalIn, state) {
       </div>` : '');
 
   rowsEl.querySelectorAll('.balance-row').forEach(el => {
+    if (el.dataset.neighbor === 'true') return; // neighbor zones are display-only
     el.addEventListener('click', () => {
       _onAreaSelect?.(el.dataset.peer, state.aggregation);
     });
@@ -828,6 +831,7 @@ function _renderBar(outflows, inflows, totalOut, totalIn, state) {
       icon.style.transform = expanded ? '' : 'rotate(180deg)';
       if (!expanded) {
         overflow.querySelectorAll('.balance-row').forEach(el => {
+          if (el.dataset.neighbor === 'true') return;
           el.addEventListener('click', () => {
             _onAreaSelect?.(el.dataset.peer, state.aggregation);
           });
