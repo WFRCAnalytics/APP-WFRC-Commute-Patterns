@@ -77,6 +77,10 @@ let _selfInTotal      = 0;   // total workers employed in selected area
 let _onPolygonClick      = null;
 let _deckClickedThisTick = false;
 let _infoFeatures        = [];
+// Neighbor zones: {display_name -> {lat, lon, state, state_abbr}}
+let _neighborMeta       = {};
+// Flow index updated after each zone selection: {display_name -> {in: N, out: N}}
+let _neighborFlowIndex  = {};
 
 // ── Donut SVG helper ─────────────────────────────────────────────────────────
 
@@ -151,6 +155,7 @@ export function initMap(containerId, theme = 'light') {
     _filterLabels();
     _addBoundaryLayers();
     _addInfoLayers();
+    _addNeighborLayer();
     map.addControl(deckOverlay);
 
     // Zoom + compass (clicking compass resets bearing; visualizePitch tilts needle)
@@ -226,8 +231,9 @@ export function switchTheme(theme, onReady) {
           if (l.id === 'city-selected')    paint['line-color'] = selColor;
           if (l.id === 'house-selected')   paint['line-color'] = selColor;
           if (l.id === 'senate-selected')  paint['line-color'] = selColor;
-          if (l.id === 'custom-info-fill') paint['fill-color'] = infoFill;
-          if (l.id === 'custom-info-line') paint['line-color'] = infoLine;
+          if (l.id === 'custom-info-fill')   paint['fill-color']   = infoFill;
+          if (l.id === 'custom-info-line')   paint['line-color']   = infoLine;
+          if (l.id === 'neighbor-zone-dots') paint['circle-color'] = theme === 'dark' ? '#9ca3af' : '#6b7280';
           if (pc) {
             const activeFill = `${pc.aggregation}-fill`;
             if (l.id === activeFill) {
@@ -265,6 +271,7 @@ export function switchTheme(theme, onReady) {
     _filterLabels();
     if (_boundaries.county || _boundaries.city || _boundaries.house || _boundaries.senate) _addBoundaryLayers();
     _addInfoLayers();
+    _addNeighborLayer();
     _enforceLayerOrder();
     onReady?.();
   });
@@ -596,6 +603,105 @@ export function fitToFlows(flows) {
   );
 }
 
+// ── Neighbor zone dots ────────────────────────────────────────────────────────
+
+/**
+ * Load neighbor zone metadata and render point dots on the map.
+ * metaArr: array from neighbor_meta.json — each entry has display_name, lat, lon, state, state_abbr.
+ */
+export function loadNeighborZones(metaArr) {
+  _neighborMeta = Object.fromEntries((metaArr ?? []).map(z => [z.display_name, z]));
+  if (map?.isStyleLoaded()) _addNeighborLayer();
+}
+
+/**
+ * Update the flow counts shown in neighbor zone tooltips.
+ * index: {display_name -> {in: N, out: N}}  (built from queryNeighborFlows results)
+ */
+export function updateNeighborFlowIndex(index) {
+  _neighborFlowIndex = index ?? {};
+}
+
+/**
+ * Filter the neighbor zone dot layer to match the current map zone aggregation.
+ * aggregation: 'city' | 'county'
+ * Shows city dots when map zone is Cities, county dots when map zone is Counties.
+ */
+export function setNeighborAggregation(aggregation) {
+  if (!map || !map.getLayer('neighbor-zone-dots')) return;
+  const type = aggregation === 'county' ? 'county' : 'city';
+  map.setFilter('neighbor-zone-dots', ['==', ['get', 'zone_type'], type]);
+}
+
+function _neighborDotColor() {
+  return _theme === 'dark' ? '#9ca3af' : '#6b7280';
+}
+
+function _addNeighborLayer() {
+  if (!map || !Object.keys(_neighborMeta).length) return;
+
+  const geojson = {
+    type: 'FeatureCollection',
+    features: Object.values(_neighborMeta).map(z => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [z.lon, z.lat] },
+      properties: {
+        display_name: z.display_name,
+        state:        z.state,
+        state_abbr:   z.state_abbr,
+        zone_type:    z.type,   // 'city' | 'county' — used by setNeighborAggregation filter
+      },
+    })),
+  };
+
+  const dotColor = _neighborDotColor();
+
+  if (map.getSource('neighbor-zones')) {
+    map.getSource('neighbor-zones').setData(geojson);
+    map.setPaintProperty('neighbor-zone-dots', 'circle-color', dotColor);
+    return;
+  }
+
+  map.addSource('neighbor-zones', { type: 'geojson', data: geojson });
+
+  // Insert above selected borders but below custom-info-fill (HAFB overlay)
+  const before = map.getLayer('custom-info-fill') ? 'custom-info-fill' : _fillInsertionLayer();
+  map.addLayer({
+    id: 'neighbor-zone-dots',
+    type: 'circle',
+    source: 'neighbor-zones',
+    paint: {
+      'circle-radius': ['interpolate', ['linear'], ['zoom'], 5, 2.5, 10, 5],
+      'circle-color': dotColor,
+      'circle-stroke-width': 1.5,
+      'circle-stroke-color': '#ffffff',
+      'circle-opacity': 0.85,
+    },
+  }, before);
+
+  map.on('mousemove', 'neighbor-zone-dots', (e) => {
+    if (!e.features?.length) return;
+    const p   = e.features[0].properties;
+    const rec = map.getContainer().getBoundingClientRect();
+    const el  = _ensureTooltip();
+    el.innerHTML = _neighborTooltipHtml(p);
+    el.style.display = 'block';
+    el.style.left = `${rec.left + e.point.x + 16}px`;
+    el.style.top  = `${rec.top  + e.point.y - 12}px`;
+  });
+  map.on('mouseleave', 'neighbor-zone-dots', () => _hideTooltip());
+}
+
+function _neighborTooltipHtml(props) {
+  const name  = props.display_name;
+  const flows = _neighborFlowIndex[name];
+  const fmt   = n => Number(n ?? 0).toLocaleString();
+  if (!flows) return `<div class="ft-route">${name}</div>`;
+  const outLine = flows.out > 0 ? `<div class="ft-unit" style="margin-top:4px">Out: ${fmt(flows.out)} UT residents</div>` : '';
+  const inLine  = flows.in  > 0 ? `<div class="ft-unit" style="margin-top:2px">In: ${fmt(flows.in)} workers to UT</div>`  : '';
+  return `<div class="ft-route">${name}</div>${outLine}${inLine}`;
+}
+
 // ── Info-only custom places (non-selectable polygons with click popup) ────────
 
 export function loadInfoOnlyPlaces(features) {
@@ -677,10 +783,12 @@ function _fillInsertionLayer() {
 // Called after any layer-adding operation to guard against fetch-order races.
 function _enforceLayerOrder() {
   if (!map || !map.getLayer('custom-info-fill')) return;
+  // selected borders → below neighbor dots → below custom-info (HAFB)
   for (const t of ['county', 'city', 'house', 'senate']) {
     const id = `${t}-selected`;
     if (map.getLayer(id)) map.moveLayer(id, 'custom-info-fill');
   }
+  if (map.getLayer('neighbor-zone-dots')) map.moveLayer('neighbor-zone-dots', 'custom-info-fill');
 }
 
 // Moves all kept place-label layers to the very top of the layer stack so they

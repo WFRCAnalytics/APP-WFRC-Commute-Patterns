@@ -37,6 +37,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import custom_places
 import fetch_acs
+import neighbor_zones
 
 # ── Output directories ────────────────────────────────────────────────────────
 DATA_DIR  = Path(__file__).parent.parent / "data"
@@ -787,6 +788,15 @@ def main():
     od_years = [str(args.year)] if args.year else LODES_YEARS_DEFAULT
     od, year = load_od(od_years)
 
+    # 1b. Load outflow OD from neighboring states (their aux files, filtered for
+    #     Utah home blocks).  Concatenated before crosswalk join so h_city gets
+    #     resolved by the normal Utah lookup pipeline.
+    print("\n1b. Loading outflow OD data from neighboring states...")
+    nb_outflow = neighbor_zones.load_outflow_od(year, CACHE_DIR, download_cached)
+    if not nb_outflow.empty:
+        od = pd.concat([od, nb_outflow], ignore_index=True)
+        print(f"  Combined OD records (main + aux + outflow): {len(od):,}")
+
     # 2. Set up year-specific output directory
     year_dir = DATA_DIR / "lehd" / str(year)
     year_dir.mkdir(parents=True, exist_ok=True)
@@ -795,6 +805,13 @@ def main():
     # 3. Load crosswalk
     print("\n2. Loading LEHD crosswalk...")
     xw = load_xwalk()
+
+    # 3b. Build neighbor zone database (one-time download + cache)
+    print("\n2b. Building neighboring-state zone database...")
+    nb_all_zones = neighbor_zones.build_neighbor_zones(CACHE_DIR, download_cached)
+    nb_border_fips, nb_border_zone_names = neighbor_zones.get_border_zone_set(
+        CACHE_DIR, download_cached, nb_all_zones
+    )
 
     # 4. Build block-level lookup (compute name collision map once; reused by boundaries)
     print("\n3. Building block -> city/county lookup...")
@@ -816,6 +833,16 @@ def main():
     # 7. Fill unincorporated areas
     print("\n6. Filling unincorporated area names...")
     od_wfrc = fill_unincorporated(od_wfrc)
+
+    # 6b. Process cross-state commute flows (before distance bands; Utah city names
+    #     are now fully resolved via fill_unincorporated above)
+    print("\n6b. Processing cross-state commute flows...")
+    nb_block_lookup = neighbor_zones.resolve_neighbor_blocks(
+        od_wfrc, CACHE_DIR, download_cached
+    )
+    nb_flows = neighbor_zones.process_neighbor_flows(
+        od_wfrc, nb_block_lookup, nb_border_fips, _haversine_miles_vec
+    )
 
     # 8. Compute block-level distance bands, then aggregate
     print("\n7. Computing distance bands...")
@@ -857,6 +884,8 @@ def main():
     export_parquet(city_flows,     year_dir / "city_flows.parquet",     AGG_COLS + BAND_COLS)
     export_parquet(county_flows,   year_dir / "county_flows.parquet",   AGG_COLS + BAND_COLS)
     export_parquet(district_flows, year_dir / "district_flows.parquet", AGG_COLS + BAND_COLS)
+    neighbor_zones.export_neighbor_flows(year_dir, nb_flows)
+    neighbor_zones.build_and_export_meta(year_dir, nb_all_zones, nb_border_zone_names)
 
     # 13. Export JSON metadata
     with open(year_dir / "city_meta.json", "w") as f:

@@ -4,6 +4,7 @@ let _db               = null;
 let _conn             = null;
 let _hasDistanceBands = false;
 let _hasDistWsum      = false;
+let _hasNeighborFlows = false;
 
 /**
  * Initialize DuckDB-WASM and load Parquet files for the given year.
@@ -83,6 +84,31 @@ async function _loadYearFiles(year, onProgress) {
   const colNames = new Set(colResult.toArray().map(r => r.toJSON().column_name));
   _hasDistanceBands = ['d0_5', 'd5_10', 'd10_25', 'd25_50', 'd50_100', 'd100p'].every(c => colNames.has(c));
   _hasDistWsum      = colNames.has('dist_wsum');
+
+  // neighbor_flows.parquet — optional, gracefully absent for older years
+  const neighborFile = `neighbor_flows_${year}.parquet`;
+  try { await _db.dropFile(neighborFile); } catch {}
+  try {
+    const nbBuf = await fetch(`${base}data/lehd/${year}/neighbor_flows.parquet`).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.arrayBuffer();
+    });
+    await _db.registerFileBuffer(neighborFile, new Uint8Array(nbBuf));
+    await _conn.query(
+      `CREATE OR REPLACE VIEW neighbor_flows AS SELECT * FROM read_parquet('${neighborFile}');`
+    );
+    _hasNeighborFlows = true;
+  } catch {
+    _hasNeighborFlows = false;
+    await _conn.query(`CREATE OR REPLACE VIEW neighbor_flows AS
+      SELECT '' AS utah_zone, '' AS neighbor_zone, '' AS state_abbr, '' AS direction,
+             0 AS S000, 0 AS SA01, 0 AS SA02, 0 AS SA03,
+             0 AS SE01, 0 AS SE02, 0 AS SE03,
+             0 AS SI01, 0 AS SI02, 0 AS SI03,
+             0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p,
+             0.0 AS dist_wsum, 0 AS dist_n
+      WHERE false`);
+  }
 
   onProgress?.(100);
 }
@@ -219,6 +245,48 @@ export async function queryReachFlows(area, areaType, direction) {
     WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
   `);
   return result.toArray().map(r => r.toJSON());
+}
+
+/**
+ * Cross-state neighbor flows for the selected Utah area.
+ *
+ * areaType    — 'city' | 'county'  (subject area type, controls filter column)
+ * direction   — 'outflow' | 'inflow'
+ * aggregation — 'city' | 'county'  (destination granularity, controls group column)
+ *
+ * Mirrors the queryFlows() areaType/aggregation split so the neighbor layer
+ * follows the same map zone setting as the main Utah choropleth.
+ */
+export async function queryNeighborFlows(area, areaType, direction, aggregation) {
+  if (!_conn || !_hasNeighborFlows) return [];
+  const safe = area.replace(/'/g, "''");
+
+  // Filter column: city → utah_zone, county → utah_county
+  const filterCol = (areaType === 'county') ? 'utah_county' : 'utah_zone';
+  // Destination column: city → neighbor_zone, county → neighbor_county
+  const destCol   = (aggregation === 'county') ? 'neighbor_county' : 'neighbor_zone';
+  const dirFilter = direction === 'outflow' ? "AND direction = 'out'" : "AND direction = 'in'";
+
+  const sql = `
+    SELECT
+      ${destCol} AS dest_name,
+      state_abbr,
+      SUM(S000)      AS S000,
+      SUM(SA01) AS SA01, SUM(SA02) AS SA02, SUM(SA03) AS SA03,
+      SUM(SE01) AS SE01, SUM(SE02) AS SE02, SUM(SE03) AS SE03,
+      SUM(SI01) AS SI01, SUM(SI02) AS SI02, SUM(SI03) AS SI03,
+      SUM(d0_5) AS d0_5, SUM(d5_10) AS d5_10, SUM(d10_25) AS d10_25,
+      SUM(d25_50) AS d25_50, SUM(d50_100) AS d50_100, SUM(d100p) AS d100p,
+      SUM(dist_wsum) AS dist_wsum, SUM(dist_n) AS dist_n,
+      0 AS dest_total
+    FROM neighbor_flows
+    WHERE ${filterCol} = '${safe}' ${dirFilter}
+      AND ${destCol} IS NOT NULL
+    GROUP BY ${destCol}, state_abbr
+    ORDER BY S000 DESC
+  `;
+  const result = await _conn.query(sql);
+  return result.toArray().map(r => ({ ...r.toJSON(), isNeighbor: true }));
 }
 
 /**
