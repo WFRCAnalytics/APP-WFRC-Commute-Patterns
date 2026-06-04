@@ -558,15 +558,15 @@ async function refreshVisualization() {
     const enrichedNbOut = enrichNeighbor(neighborOut, 'outflow');
     const enrichedNbIn  = enrichNeighbor(neighborIn,  'inflow');
 
-    // Add neighbor totals to the headline counts so the dataline, flow wheel,
-    // and flow summary all reflect cross-state commuters.
-    const nbTotalOut = neighborOut.reduce((s, f) => s + Number(f.S000), 0);
-    const nbTotalIn  = neighborIn.reduce((s, f) => s + Number(f.S000), 0);
-
+    // queryTotal() queries city_flows which already includes "Out of State"
+    // rows (the same underlying LEHD records as neighbor_flows). Adding
+    // neighbor totals on top would double-count cross-state commuters.
+    // "Out of State" rows are filtered from enrichedOut/enrichedIn by the
+    // lat/lon null check so the bar chart and arcs are already correct.
     _lastOutflows  = [...enrichedOut,  ...enrichedNbOut];
     _lastInflows   = [...enrichedIn,   ...enrichedNbIn];
-    _lastTotalOut  = totalOut + nbTotalOut;
-    _lastTotalIn   = totalIn  + nbTotalIn;
+    _lastTotalOut  = totalOut;
+    _lastTotalIn   = totalIn;
     _lastSelfCount = selfCount;
 
     // Reach chart: use city-level pairs for non-city subjects so distances are

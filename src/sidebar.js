@@ -110,7 +110,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
         <div class="flow-summary" id="flow-summary"></div>
       </div>
       <div class="cp-info-note" style="margin-top:10px;margin-bottom:0;">
-        <strong>Note:</strong> Outflow totals reflect jobs within Utah only &mdash; out-of-state commuters are not captured in LEHD data.
+        <strong>Note:</strong> Totals include cross-state commuters from neighboring states. Flows to/from distant states may appear under <em>Out of State</em> in the data but are not shown as individual arcs.
       </div>
     </div>
 
