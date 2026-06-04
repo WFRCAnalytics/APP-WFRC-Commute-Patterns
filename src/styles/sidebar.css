@@ -519,6 +519,43 @@
   border-color: var(--rule-strong);
 }
 
+.attribution-links {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* About modal body text */
+.about-body {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 0 0 10px;
+}
+.about-body:last-child { margin-bottom: 0; }
+
+/* Inline link that looks like the open buttons but flows in text */
+.credits-inline-link {
+  display: inline;
+  background: none;
+  border: none;
+  padding: 0;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.credits-inline-link:hover { opacity: 0.8; }
+
+#about-backdrop .credits-modal { max-width: 680px; }
+
+#about-backdrop .credits-modal::-webkit-scrollbar         { width: 8px; }
+#about-backdrop .credits-modal::-webkit-scrollbar-track   { background: transparent; }
+#about-backdrop .credits-modal::-webkit-scrollbar-thumb   { background: var(--rule-strong); border-radius: 0; }
+#about-backdrop .credits-modal::-webkit-scrollbar-thumb:hover { background: var(--ink-4); }
+
 /* ============================================================
    CREDITS MODAL
    ============================================================ */

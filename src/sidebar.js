@@ -118,8 +118,10 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
 
     <!-- ATTRIBUTION -->
     <div class="sidebar-attribution">
-      <a href="https://wfrc.utah.gov/" target="_blank" rel="noopener">Wasatch Front Regional Council</a>
-      <button id="credits-open-btn" class="credits-link-btn">Data &amp; Credits</button>
+      <div class="attribution-links">
+        <button id="about-open-btn" class="credits-link-btn">About the Map</button>
+        <button id="credits-open-btn" class="credits-link-btn">Data &amp; Credits</button>
+      </div>
     </div>
   `;
 
@@ -174,7 +176,8 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
   // Wire search dropdown
   _initDropdown({ cityNames, countyNames, houseNames, senateNames }, cityMeta);
 
-  // Credits modal
+  // Modals
+  _initAboutModal();
   _initCreditsModal();
 }
 
@@ -496,6 +499,89 @@ function _highlightItem(items, idx) {
 }
 
 
+function _initAboutModal() {
+  const existing = document.getElementById('about-backdrop');
+  if (existing) {
+    document.getElementById('about-open-btn')
+      ?.addEventListener('click', () => {
+        existing.classList.add('is-open');
+        document.getElementById('about-close-btn')?.focus();
+      });
+    return;
+  }
+
+  const backdrop = document.createElement('div');
+  backdrop.id = 'about-backdrop';
+  backdrop.className = 'credits-backdrop';
+  backdrop.setAttribute('role', 'dialog');
+  backdrop.setAttribute('aria-modal', 'true');
+  backdrop.setAttribute('aria-labelledby', 'about-modal-title');
+
+  backdrop.innerHTML = `
+    <div class="credits-modal about-modal">
+      <button class="credits-close" id="about-close-btn" aria-label="Close">&times;</button>
+      <h2 class="credits-title" id="about-modal-title">About the Map</h2>
+
+      <div class="credits-section">
+        <p class="about-body">Utah's continued investment in roads, transit, and other transportation improvements has helped create one of the strongest transportation networks in the nation. This map explores how those investments connect workers to jobs across the state and beyond.</p>
+        <p class="about-body">As the cost of building new roads and expanding transit rises, communities are looking for solutions that reduce the need for long commutes — such as creating a better balance between housing and jobs. When people live closer to where they work, they gain time back and our transportation system operates more efficiently for everyone.</p>
+      </div>
+
+      <div class="credits-section">
+        <div class="credits-section-label">What this map shows</div>
+        <p class="about-body">Commute flows between Utah cities, counties, and neighboring-state areas using anonymized employment data from the US Census Bureau. Flows represent workers' <strong>reported home and work locations</strong> — not daily travel routes. A flow from Provo to Salt Lake City means a worker reports living in Provo and working in Salt Lake City, not that they make that specific trip every workday.</p>
+      </div>
+
+      <div class="credits-section">
+        <div class="credits-section-label">Neighboring states</div>
+        <p class="about-body">Cities and counties in the six surrounding states (ID, WY, CO, NM, AZ, NV) are included by buffering Utah's boundary by approximately 80 km (50 mi) and intersecting with all counties in those states. Areas within this zone — including the Las Vegas (Clark County) metro area — appear as point markers on the map. They show cross-border inflow and outflow flows but are not selectable as a subject area.</p>
+      </div>
+
+      <div class="credits-section">
+        <div class="credits-section-label">Data limitations</div>
+        <ul class="credits-list">
+          <li><strong>Unincorporated areas</strong> within each county are grouped under a single label (e.g. "Salt Lake County Unincorporated") and are not available as individual selectable zones.</li>
+          <li><strong>Hill Air Force Base</strong> and similar federal sites are underrepresented. Federal and military positions are not covered by Unemployment Insurance wage records, so commute flows to and from these sites are not fully reflected in this data.</li>
+        </ul>
+      </div>
+
+      <div class="credits-rule"></div>
+      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section.</p>
+    </div>
+  `;
+
+  document.body.appendChild(backdrop);
+
+  function open() {
+    backdrop.classList.add('is-open');
+    document.getElementById('about-close-btn').focus();
+  }
+
+  function close() {
+    backdrop.classList.remove('is-open');
+    document.getElementById('about-open-btn')?.focus();
+  }
+
+  document.getElementById('about-open-btn').addEventListener('click', open);
+  document.getElementById('about-close-btn').addEventListener('click', close);
+
+  backdrop.addEventListener('click', e => {
+    if (e.target === backdrop) close();
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && backdrop.classList.contains('is-open')) close();
+  });
+
+  // "Data & Credits" inline link inside the About modal
+  backdrop.addEventListener('click', e => {
+    if (e.target.id === 'about-to-credits-btn') {
+      close();
+      setTimeout(() => document.getElementById('credits-open-btn')?.click(), 150);
+    }
+  });
+}
+
 function _initCreditsModal() {
   const existing = document.getElementById('credits-backdrop');
   if (existing) {
@@ -537,11 +623,6 @@ function _initCreditsModal() {
             &mdash; Place, county, and legislative district boundary shapefiles
           </li>
         </ul>
-      </div>
-
-      <div class="credits-section">
-        <div class="credits-section-label">Data Notes</div>
-        <div class="cp-info-note">Unincorporated areas are not included as selectable zones. Commute flows to/from certain employment sites (e.g. Hill Air Force Base) are underrepresented in LEHD LODES because federal and military positions are not covered by Unemployment Insurance wage records, hence not included in this app.</div>
       </div>
 
       <div class="credits-section">
