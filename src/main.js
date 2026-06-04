@@ -623,9 +623,7 @@ function _applyFilter() {
   const netIn    = Math.max(_lastTotalIn  - _lastSelfCount, 0);
   const total    = state.direction === 'outflow' ? netOut : netIn;
 
-  const filtered = state.aggregation === 'county'
-    ? dirFlows
-    : dirFlows.filter(f => Number(f.S000) >= state.minFlow);
+  const filtered = dirFlows.filter(f => Number(f.S000) >= state.minFlow);
 
   // Resolve ACS entry for the currently selected area
   let acsEntry = null;
