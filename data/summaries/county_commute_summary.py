@@ -22,9 +22,10 @@ pct_under_25mi   % of resident workers commuting < 25 miles (LEHD bands, exact)
 Usage
 -----
   python county_commute_summary.py [--year YEAR]
+  python county_commute_summary.py --all-years
 
   Defaults to the most recent year found under data/lehd/.
-  Output CSV is written to the same folder as this script.
+  Output CSVs are written to data/summaries/county_commute_summary/YEAR.csv.
 """
 
 import argparse
@@ -34,10 +35,11 @@ from pathlib import Path
 import pandas as pd
 import pyarrow.parquet as pq
 
-HERE     = Path(__file__).resolve().parent
-ROOT     = HERE.parent.parent
-LEHD_DIR = ROOT / "data" / "lehd"
-ACS_DIR  = ROOT / "data" / "acs"
+HERE       = Path(__file__).resolve().parent
+ROOT       = HERE.parent.parent
+LEHD_DIR   = ROOT / "data" / "lehd"
+ACS_DIR    = ROOT / "data" / "acs"
+OUTPUT_DIR = HERE / "county_commute_summary"
 
 
 def _available_years(base: Path) -> list:
@@ -130,6 +132,13 @@ def build_summary(year: int) -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _save(df: pd.DataFrame, year: int) -> Path:
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    out = OUTPUT_DIR / f"{year}.csv"
+    df.to_csv(out, index=False)
+    return out
+
+
 def main():
     lehd_years = _available_years(LEHD_DIR)
     default    = max(lehd_years) if lehd_years else 2022
@@ -137,15 +146,17 @@ def main():
     ap = argparse.ArgumentParser(description="Generate Utah county commute summary CSV.")
     ap.add_argument("--year", type=int, default=default,
                     help=f"Data year (default: {default}; available: {lehd_years})")
+    ap.add_argument("--all-years", action="store_true",
+                    help="Run for all available LEHD years and write one CSV per year.")
     args = ap.parse_args()
 
-    print(f"Building county commute summary for {args.year}...")
-    df = build_summary(args.year)
+    years = lehd_years if args.all_years else [args.year]
 
-    out = HERE / f"county_commute_summary_{args.year}.csv"
-    df.to_csv(out, index=False)
-    print(f"Saved {len(df)} rows -> {out}\n")
-    print(df.to_string(index=False))
+    for year in years:
+        print(f"Building county commute summary for {year}...")
+        df  = build_summary(year)
+        out = _save(df, year)
+        print(f"  Saved {len(df)} rows -> {out}")
 
 
 if __name__ == "__main__":
