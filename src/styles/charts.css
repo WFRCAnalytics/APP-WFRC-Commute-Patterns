@@ -308,8 +308,9 @@
   vertical-align: middle;
 }
 
-.pip.in  { background: var(--inflow); }
-.pip.out { background: var(--outflow); }
+.pip.in   { background: var(--inflow); }
+.pip.out  { background: var(--outflow); }
+.pip.self { background: var(--internal); }
 
 .balance-sort-btn {
   background: none;

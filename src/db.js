@@ -210,6 +210,32 @@ export async function querySelfFlow(area, areaType) {
 }
 
 /**
+ * Distance-band breakdown for workers who both live and work in the same area.
+ * Returns [d0_5, d5_10, d10_25, d25_50, d50_100, d100p] counts.
+ */
+export async function querySelfFlowBands(area, areaType) {
+  if (!_conn) return [0, 0, 0, 0, 0, 0];
+  const safe   = area.replace(/'/g, "''");
+  const table  = _table(areaType, areaType);
+  const col    = _cols(areaType);
+  const bands  = _hasDistanceBands
+    ? 'COALESCE(SUM(d0_5),0) AS d0_5, COALESCE(SUM(d5_10),0) AS d5_10, COALESCE(SUM(d10_25),0) AS d10_25, COALESCE(SUM(d25_50),0) AS d25_50, COALESCE(SUM(d50_100),0) AS d50_100, COALESCE(SUM(d100p),0) AS d100p'
+    : '0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p';
+  const result = await _conn.query(
+    `SELECT ${bands} FROM ${table} WHERE ${col.home} = '${safe}' AND ${col.work} = '${safe}'`
+  );
+  const row = result.toArray()[0]?.toJSON() ?? {};
+  return [
+    Number(row.d0_5 || 0),
+    Number(row.d5_10 || 0),
+    Number(row.d10_25 || 0),
+    Number(row.d25_50 || 0),
+    Number(row.d50_100 || 0),
+    Number(row.d100p || 0),
+  ];
+}
+
+/**
  * City-level pair flows for the commute reach chart when a county is selected.
  * For district selections, uses district_flows to get city-level detail.
  */

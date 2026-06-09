@@ -18,8 +18,10 @@ let _lastReachIn   = [];
 let _demoDimension  = 'age';      // 'age' | 'earnings' | 'industry'
 let _industryDir    = 'outflow';  // 'outflow' | 'inflow'
 let _balanceSort    = 'inflow';   // 'inflow'  | 'outflow'
-let _reachOutVisible = true;
-let _reachInVisible  = true;
+let _reachOutVisible  = true;
+let _reachInVisible   = true;
+let _reachSelfVisible = true;
+let _lastSelfBands    = null;
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -102,9 +104,10 @@ export function initCharts(onAreaSelect) {
     const reachBtn = e.target.closest('.reach-dir-btn');
     if (reachBtn) {
       const dir = reachBtn.dataset.dir;
-      if (dir === 'outflow') _reachOutVisible = !_reachOutVisible;
-      if (dir === 'inflow')  _reachInVisible  = !_reachInVisible;
-      if (_lastState) _renderReach(_lastReachOut, _lastReachIn, _lastState);
+      if (dir === 'outflow')  _reachOutVisible  = !_reachOutVisible;
+      if (dir === 'inflow')   _reachInVisible   = !_reachInVisible;
+      if (dir === 'internal') _reachSelfVisible = !_reachSelfVisible;
+      if (_lastState) _renderReach(_lastReachOut, _lastReachIn, _lastSelfBands, _lastState);
       return;
     }
 
@@ -132,23 +135,24 @@ export function initCharts(onAreaSelect) {
   });
 }
 
-export function updateCharts(outflows, inflows, totalOut, totalIn, selfFlow, appState, acsEntry, reachOut, reachIn) {
-  _lastOutflows = outflows;
-  _lastInflows  = inflows;
-  _lastTotalOut = totalOut;
-  _lastTotalIn  = totalIn;
-  _lastSelfFlow = selfFlow ?? 0;
-  _lastState    = appState;
-  _lastAcsEntry = acsEntry ?? null;
-  _lastReachOut = reachOut ?? outflows;
-  _lastReachIn  = reachIn  ?? inflows;
+export function updateCharts(outflows, inflows, totalOut, totalIn, selfFlow, appState, acsEntry, reachOut, reachIn, selfBands) {
+  _lastOutflows  = outflows;
+  _lastInflows   = inflows;
+  _lastTotalOut  = totalOut;
+  _lastTotalIn   = totalIn;
+  _lastSelfFlow  = selfFlow ?? 0;
+  _lastState     = appState;
+  _lastAcsEntry  = acsEntry ?? null;
+  _lastReachOut  = reachOut ?? outflows;
+  _lastReachIn   = reachIn  ?? inflows;
+  _lastSelfBands = selfBands ?? null;
 
   _renderBar(outflows, inflows, totalOut, totalIn, appState);
   _renderSankey(outflows, inflows, appState);
   _renderFlowWheel(totalIn, totalOut, selfFlow ?? 0, appState);
   _renderFlowSummary(totalIn, totalOut, selfFlow ?? 0, appState);
   _renderDemographics(outflows, inflows, appState);
-  _renderReach(_lastReachOut, _lastReachIn, appState);
+  _renderReach(_lastReachOut, _lastReachIn, _lastSelfBands, appState);
   _renderIndustry(outflows, inflows, appState);
   _renderTransport(acsEntry, appState);
   _renderTravelTime(acsEntry, appState);
@@ -166,10 +170,12 @@ function _svgToPng(svgEl, filename, inlineStyle) {
     '--ink-3':     dk ? '#92929a' : '#5b6071',
     '--ink-4':     dk ? '#696a73' : '#898d9c',
     '--rule':      dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)',
-    '--inflow':    dk ? '#5aa6a7' : '#1e6f6f',
-    '--inflow-2':  dk ? '#408687' : '#155656',
-    '--outflow':   dk ? '#e4895a' : '#cc683a',
-    '--outflow-2': dk ? '#c5703f' : '#b35828',
+    '--inflow':       dk ? '#5aa6a7' : '#1e6f6f',
+    '--inflow-2':     dk ? '#408687' : '#155656',
+    '--outflow':      dk ? '#e4895a' : '#cc683a',
+    '--outflow-2':    dk ? '#c5703f' : '#b35828',
+    '--internal':     dk ? '#b78564' : '#ac7453',
+    '--internal-2':   dk ? '#9a6e50' : '#8c5c3c',
   };
   const vb    = svgEl.getAttribute('viewBox')?.split(' ');
   const vbW   = vb ? parseFloat(vb[2]) : 460;
@@ -514,13 +520,14 @@ export function exportDemoCsv() {
 
 export function exportReachCsv() {
   if (!_lastState) return;
-  const labels = ['< 10 mi', '10–25 mi', '25–50 mi', '50+ mi'];
-  const outB = _bucketFlows(_lastReachOut);
-  const inB  = _bucketFlows(_lastReachIn);
-  const header = ['Direction', ...labels, 'Total'];
+  const outB  = _bucketFlows(_lastReachOut);
+  const inB   = _bucketFlows(_lastReachIn);
+  const selfB = _lastSelfBands ?? [0, 0, 0, 0, 0, 0];
+  const header = ['Direction', ...REACH_LABELS, 'Total'];
   const rows = [
-    ['Outflow', ...outB, outB.reduce((s, v) => s + v, 0)],
-    ['Inflow',  ...inB,  inB.reduce((s, v) => s + v, 0)],
+    ['Inflow',   ...inB,   inB.reduce((s, v) => s + v, 0)],
+    ['Internal', ...selfB, selfB.reduce((s, v) => s + v, 0)],
+    ['Outflow',  ...outB,  outB.reduce((s, v) => s + v, 0)],
   ];
   _csvDownload([header, ...rows], `commute-reach-${_lastState.selectedArea}-${_lastState.year}`);
 }
@@ -1337,20 +1344,22 @@ function _renderDemographics(outflows, inflows, state) {
 
 // ── 4. Commute Length — frequency-distribution column chart ──────────────────
 
-function _renderReach(outflows, inflows, state) {
+function _renderReach(outflows, inflows, selfBands, state) {
   const bandsEl  = document.getElementById('reach-bands');
   const legendEl = document.getElementById('reach-legend');
   if (!bandsEl) return;
 
-  const outB = _bucketFlows(outflows);
-  const inB  = _bucketFlows(inflows);
-  const outT = outB.reduce((s, v) => s + v, 0) || 1;
-  const inT  = inB.reduce((s, v) => s + v, 0) || 1;
+  const outB  = _bucketFlows(outflows);
+  const inB   = _bucketFlows(inflows);
+  const selfB = selfBands ?? [0, 0, 0, 0, 0, 0];
+  const outT  = outB.reduce((s, v) => s + v, 0) || 1;
+  const inT   = inB.reduce((s, v) => s + v, 0) || 1;
+  const selfT = selfB.reduce((s, v) => s + v, 0) || 1;
 
-  // Scale to visible directions only
   const visibleCounts = [
-    ...(_reachOutVisible ? outB : []),
-    ...(_reachInVisible  ? inB  : []),
+    ...(_reachSelfVisible ? selfB : []),
+    ...(_reachInVisible   ? inB   : []),
+    ...(_reachOutVisible  ? outB  : []),
   ];
   const maxCount = Math.max(...visibleCounts, 1);
   const step = _niceStep(maxCount);
@@ -1359,20 +1368,18 @@ function _renderReach(outflows, inflows, state) {
   const yFmt = v => v >= 1_000_000 ? (v / 1_000_000).toFixed(1) + 'M'
     : v >= 1000 ? Math.round(v / 1000) + 'k' : v.toString();
 
-  // SVG with CSS-variable colours + font-family:inherit so it renders
-  // identically to the rest of the panel.
   const W = 460, H = 190;
   const ml = 38, mr = 4, mt = 20, mb = 34;
   const cw = W - ml - mr;
   const ch = H - mt - mb;
 
-  const groupW = cw / REACH_LABELS.length;
-  const barSep = 1;
-  const barW   = (groupW - barSep) / 2;
+  const groupW  = cw / REACH_LABELS.length;
+  const barSep  = 1;
+  const nVis    = (_reachInVisible ? 1 : 0) + (_reachSelfVisible ? 1 : 0) + (_reachOutVisible ? 1 : 0);
+  const barW    = nVis > 0 ? (groupW - (nVis - 1) * barSep) / nVis : groupW;
 
   let svg = '';
 
-  // Gridlines + Y labels — all colours via CSS vars
   for (let i = 0; i <= 4; i++) {
     const val = (yMax / 4) * i;
     const y   = (mt + yPx(val)).toFixed(1);
@@ -1380,44 +1387,38 @@ function _renderReach(outflows, inflows, state) {
     svg += `<text x="${ml - 5}" y="${(parseFloat(y) + 4).toFixed(1)}" text-anchor="end" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${yFmt(val)}</text>`;
   }
 
-  // Baseline
   svg += `<line x1="${ml}" x2="${W - mr}" y1="${(mt + ch).toFixed(1)}" y2="${(mt + ch).toFixed(1)}" style="stroke:var(--rule-strong);stroke-width:1.5"/>`;
 
-  // Bars — inflow first (left), outflow second (right)
+  // Bars — inflow / internal / outflow; only visible groups rendered, filling available width
   REACH_LABELS.forEach((lbl, i) => {
-    const ov   = outB[i], iv = inB[i];
-    const opct = Math.round((ov / outT) * 100);
-    const ipct = Math.round((iv / inT) * 100);
-    const gx   = ml + i * groupW;
-    const inX  = gx;
-    const outX = gx + barW + barSep;
+    const gx = ml + i * groupW;
+    let slot = 0;
 
-    if (_reachInVisible) {
-      const ih = ((iv / yMax) * ch).toFixed(1);
-      const iy = (mt + ch - parseFloat(ih)).toFixed(1);
-      svg += `<rect x="${inX.toFixed(1)}" y="${iy}" width="${barW.toFixed(1)}" height="${ih}" style="fill:var(--inflow)"/>`;
-      if (ipct > 0)
-        svg += `<text x="${(inX + barW / 2).toFixed(1)}" y="${(parseFloat(iy) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${ipct}%</text>`;
-    }
+    const drawBar = (val, total, cssVar) => {
+      const pct = Math.round((val / total) * 100);
+      const bx  = gx + slot * (barW + barSep);
+      const bh  = ((val / yMax) * ch).toFixed(1);
+      const by  = (mt + ch - parseFloat(bh)).toFixed(1);
+      svg += `<rect x="${bx.toFixed(1)}" y="${by}" width="${barW.toFixed(1)}" height="${bh}" style="fill:var(${cssVar})"/>`;
+      if (pct > 0)
+        svg += `<text x="${(bx + barW / 2).toFixed(1)}" y="${(parseFloat(by) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${pct}%</text>`;
+      slot++;
+    };
 
-    if (_reachOutVisible) {
-      const oh = ((ov / yMax) * ch).toFixed(1);
-      const oy = (mt + ch - parseFloat(oh)).toFixed(1);
-      svg += `<rect x="${outX.toFixed(1)}" y="${oy}" width="${barW.toFixed(1)}" height="${oh}" style="fill:var(--outflow)"/>`;
-      if (opct > 0)
-        svg += `<text x="${(outX + barW / 2).toFixed(1)}" y="${(parseFloat(oy) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${opct}%</text>`;
-    }
+    if (_reachInVisible)   drawBar(inB[i],   inT,   '--inflow');
+    if (_reachSelfVisible) drawBar(selfB[i],  selfT, '--internal');
+    if (_reachOutVisible)  drawBar(outB[i],   outT,  '--outflow');
 
     svg += `<text x="${(gx + groupW / 2).toFixed(1)}" y="${H - mb + 14}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${lbl}</text>`;
   });
 
   bandsEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible;font-family:inherit;">${svg}</svg>`;
 
-  // Legend — inflow first to match bar order
   if (legendEl) {
     legendEl.innerHTML =
-      `<button class="balance-sort-btn reach-dir-btn${_reachInVisible  ? ' active' : ''}" data-dir="inflow"><span class="pip in"></span>Inflow</button>` +
-      `<button class="balance-sort-btn reach-dir-btn${_reachOutVisible ? ' active' : ''}" data-dir="outflow"><span class="pip out"></span>Outflow</button>`;
+      `<button class="balance-sort-btn reach-dir-btn${_reachInVisible   ? ' active' : ''}" data-dir="inflow"><span class="pip in"></span>Inflow</button>` +
+      `<button class="balance-sort-btn reach-dir-btn${_reachSelfVisible ? ' active' : ''}" data-dir="internal"><span class="pip self"></span>Internal</button>` +
+      `<button class="balance-sort-btn reach-dir-btn${_reachOutVisible  ? ' active' : ''}" data-dir="outflow"><span class="pip out"></span>Outflow</button>`;
   }
 }
 

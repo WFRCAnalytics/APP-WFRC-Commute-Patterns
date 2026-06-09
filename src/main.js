@@ -2,7 +2,7 @@ import './styles/main.css';
 import './styles/sidebar.css';
 import './styles/charts.css';
 import './styles/toolbar.css';
-import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, queryReachFlows, queryNeighborFlows } from './db.js';
+import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, queryReachFlows, queryNeighborFlows } from './db.js';
 import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
 import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle } from './sidebar.js';
 import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts } from './charts.js';
@@ -38,6 +38,7 @@ let _lastInflows   = [];
 let _lastTotalOut  = 0;
 let _lastTotalIn   = 0;
 let _lastSelfCount = 0;
+let _lastSelfBands = null;
 // City-level flows used exclusively for the reach chart.
 // For county selections these are cross-county city→city pairs (more accurate distances).
 // For city selections these mirror _lastOutflows/_lastInflows.
@@ -506,13 +507,14 @@ async function refreshVisualization() {
   try {
     const isNonCitySubject = state.selectedAreaType !== 'city';
 
-    const [outflows, inflows, totalOut, totalIn, selfCount, reachRawOut, reachRawIn,
+    const [outflows, inflows, totalOut, totalIn, selfCount, selfBands, reachRawOut, reachRawIn,
            neighborOut, neighborIn] = await Promise.all([
       queryFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
       queryFlows(state.selectedArea, state.selectedAreaType, 'inflow',  state.aggregation),
       queryTotal(state.selectedArea, state.selectedAreaType, 'outflow'),
       queryTotal(state.selectedArea, state.selectedAreaType, 'inflow'),
       querySelfFlow(state.selectedArea, state.selectedAreaType),
+      querySelfFlowBands(state.selectedArea, state.selectedAreaType),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'outflow') : Promise.resolve(null),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'inflow')  : Promise.resolve(null),
       queryNeighborFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
@@ -568,6 +570,7 @@ async function refreshVisualization() {
     _lastTotalOut  = totalOut;
     _lastTotalIn   = totalIn;
     _lastSelfCount = selfCount;
+    _lastSelfBands = selfBands;
 
     // Reach chart: use city-level pairs for non-city subjects so distances are
     // measured between city centroids rather than a single area centroid.
@@ -656,7 +659,7 @@ function _applyFilter() {
 
   updateLayers(filtered, state, arcClickHandler, total);
   // Charts always show both directions unfiltered — top N by volume handles their own slicing
-  updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn);
+  updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn, _lastSelfBands);
   updateChoropleth(dirFlows, state.selectedArea, state.aggregation, state.theme, state.direction, state.selectedAreaType);
   updateSidebarStats(dirFlows, state);
   _updateDataline(total, state);
