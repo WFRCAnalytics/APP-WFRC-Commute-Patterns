@@ -473,9 +473,11 @@ export function exportReachPng() {
 
 export function exportBarCsv() {
   if (!_lastState) return;
-  const { rows: allRows } = _mergeFlows(_lastOutflows, _lastInflows, 15);
-  const rows = allRows
-    .filter(r => !r.isOthers)
+  // CSV lists every city (the chart itself is capped at 15 via _mergeFlows);
+  // _mergeFlows returns the full uncapped, sorted list as `all`.
+  const { all } = _mergeFlows(_lastOutflows, _lastInflows, 15);
+  const rows = all
+    .slice()
     .sort((a, b) => (_balanceSort === 'outflow' ? b.out - a.out : b.in - a.in));
   const header = ['Area', 'Inflow (Workers In)', 'Inflow %', 'Outflow (Residents Out)', 'Outflow %'];
   const data = rows.map(d => [
