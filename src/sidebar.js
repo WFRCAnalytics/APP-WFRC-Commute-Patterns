@@ -1,8 +1,8 @@
 // ── Module state ──────────────────────────────────────────────────────────────
-let _state              = null;
-let _onSelectionChange  = null;
-let _onAreaFly          = null;
-let _infoOnlyPlaces     = [];  // GeoJSON features for info-only custom places
+let _state = null;
+let _onSelectionChange = null;
+let _onAreaFly = null;
+let _infoOnlyPlaces = [];  // GeoJSON features for info-only custom places
 
 export function setInfoOnlyPlaces(features) {
   _infoOnlyPlaces = features ?? [];
@@ -11,9 +11,9 @@ export function setInfoOnlyPlaces(features) {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export function initSidebar({ cityNames, countyNames, houseNames, senateNames, cityMeta, houseMeta, senateMeta, state, onSelectionChange, onAreaFly }) {
-  _state             = state;
+  _state = state;
   _onSelectionChange = onSelectionChange;
-  _onAreaFly         = onAreaFly;
+  _onAreaFly = onAreaFly;
 
   const panel = document.getElementById('left-panel');
   if (!panel) return;
@@ -23,9 +23,9 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     <div class="rail-section tight">
       <div class="eyebrow">Area of Interest Type</div>
       <div class="type-strip" id="areatype-toggle" role="group" aria-label="Area of interest type">
-        <button data-value="city"   class="${state.selectedAreaType === 'city'   ? 'active' : ''}">City</button>
+        <button data-value="city"   class="${state.selectedAreaType === 'city' ? 'active' : ''}">City</button>
         <button data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
-        <button data-value="house"  class="${state.selectedAreaType === 'house'  ? 'active' : ''}">Utah House</button>
+        <button data-value="house"  class="${state.selectedAreaType === 'house' ? 'active' : ''}">Utah House</button>
         <button data-value="senate" class="${state.selectedAreaType === 'senate' ? 'active' : ''}">Utah Senate</button>
       </div>
     </div>
@@ -80,10 +80,10 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     <div class="rail-section tight">
       <div class="eyebrow">Map Display Geography</div>
       <div class="type-strip" id="aggregation-toggle" role="group" aria-label="Aggregation level">
-        <button data-value="city"   class="${state.aggregation === 'city'   ? 'active' : ''}">City</button>
+        <button data-value="city"   class="${state.aggregation === 'city' ? 'active' : ''}">City</button>
         <button data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
         <!-- TO RE-ENABLE district map zones: uncomment the two lines below -->
-        <!-- <button data-value="house"  class="${state.aggregation === 'house'  ? 'active' : ''}">Utah House</button> -->
+        <!-- <button data-value="house"  class="${state.aggregation === 'house' ? 'active' : ''}">Utah House</button> -->
         <!-- <button data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
       </div>
     </div>
@@ -215,10 +215,10 @@ export function updateSidebarStats(flows, appState) {
     SI03: acc.SI03 + Number(f.SI03 || 0),
   }), { SA01: 0, SA02: 0, SA03: 0, SE01: 0, SE02: 0, SE03: 0, SI01: 0, SI02: 0, SI03: 0 });
 
-  const ageSum      = bd.SA01 + bd.SA02 + bd.SA03 || 1;
+  const ageSum = bd.SA01 + bd.SA02 + bd.SA03 || 1;
   const earningsSum = bd.SE01 + bd.SE02 + bd.SE03 || 1;
   const industrySum = bd.SI01 + bd.SI02 + bd.SI03 || 1;
-  const dirClass    = state.direction === 'inflow' ? 'inflow' : '';
+  const dirClass = state.direction === 'inflow' ? 'inflow' : '';
 
   // ── Age rows ───────────────────────────────────────────────────────────────
   const ageEl = document.getElementById('demo-rows-age');
@@ -249,21 +249,21 @@ export function updateSidebarStats(flows, appState) {
   // dist_n    = Σ(S000) for block pairs with valid coordinates
   // Summing across all destination zones gives the true weighted mean for the subject area.
   const totalWsum = flows.reduce((s, f) => s + Number(f.dist_wsum || 0), 0);
-  const totalN    = flows.reduce((s, f) => s + Number(f.dist_n    || 0), 0);
-  const avgMiles  = totalN > 0 ? totalWsum / totalN : null;
+  const totalN = flows.reduce((s, f) => s + Number(f.dist_n || 0), 0);
+  const avgMiles = totalN > 0 ? totalWsum / totalN : null;
 
   // Median: interpolate within the band that straddles the 50th percentile.
-  const bn0   = flows.reduce((s, f) => s + Number(f.d0_5    || 0), 0);
-  const bn5   = flows.reduce((s, f) => s + Number(f.d5_10   || 0), 0);
-  const bn10  = flows.reduce((s, f) => s + Number(f.d10_25  || 0), 0);
-  const bn25  = flows.reduce((s, f) => s + Number(f.d25_50  || 0), 0);
-  const bn50  = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0);
-  const bn100 = flows.reduce((s, f) => s + Number(f.d100p   || 0), 0);
+  const bn0 = flows.reduce((s, f) => s + Number(f.d0_5 || 0), 0);
+  const bn5 = flows.reduce((s, f) => s + Number(f.d5_10 || 0), 0);
+  const bn10 = flows.reduce((s, f) => s + Number(f.d10_25 || 0), 0);
+  const bn25 = flows.reduce((s, f) => s + Number(f.d25_50 || 0), 0);
+  const bn50 = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0);
+  const bn100 = flows.reduce((s, f) => s + Number(f.d100p || 0), 0);
   const medianMiles = _bandMedian(bn0, bn5, bn10, bn25, bn50, bn100);
 
-  const avgEl    = document.getElementById('reach-avg');
+  const avgEl = document.getElementById('reach-avg');
   const medianEl = document.getElementById('reach-median');
-  if (avgEl)    avgEl.innerHTML    = avgMiles    != null ? `${avgMiles.toFixed(1)}<span class="unit">mi</span>`    : '&mdash;<span class="unit">mi</span>';
+  if (avgEl) avgEl.innerHTML = avgMiles != null ? `${avgMiles.toFixed(1)}<span class="unit">mi</span>` : '&mdash;<span class="unit">mi</span>';
   if (medianEl) medianEl.innerHTML = medianMiles != null ? `${medianMiles.toFixed(1)}<span class="unit">mi</span>` : '&mdash;<span class="unit">mi</span>';
 }
 
@@ -294,7 +294,7 @@ function _updateInfoNote(state) {
 
   const p = match.properties;
   const note = document.createElement('div');
-  note.id        = 'cp-info-note';
+  note.id = 'cp-info-note';
   note.className = 'cp-info-note';
   note.innerHTML =
     `<strong>${p.name}</strong>${p.employees_approx ? ` &mdash; ${p.employees_approx} employees` : ''} ` +
@@ -334,9 +334,9 @@ function _aggregationLabel(agg) {
 
 function _searchPlaceholder(type) {
   const ph = {
-    city:   'Search cities…',
+    city: 'Search cities…',
     county: 'Search counties…',
-    house:  'Search house districts…',
+    house: 'Search house districts…',
     senate: 'Search senate districts…',
   };
   return ph[type] ?? ph.city;
@@ -362,7 +362,7 @@ function _updateSearchContext() {
  */
 function _getAreaList(type, names, cityMeta) {
   if (type === 'county') return names.countyNames.map(n => ({ label: n, type: 'county' }));
-  if (type === 'house')  return names.houseNames.map(n => ({ label: n, type: 'house' }));
+  if (type === 'house') return names.houseNames.map(n => ({ label: n, type: 'house' }));
   if (type === 'senate') return names.senateNames.map(n => ({ label: n, type: 'senate' }));
   return names.cityNames.map(n => ({ label: n, type: cityMeta?.[n]?.place_type ?? 'city' }));
 }
@@ -381,7 +381,7 @@ function _setActiveToggle(groupId, value) {
 }
 
 function _initDropdown(names, cityMeta) {
-  const input    = document.getElementById('area-search');
+  const input = document.getElementById('area-search');
   const dropdown = document.getElementById('area-dropdown');
   if (!input || !dropdown) return;
 
@@ -413,7 +413,7 @@ function _initDropdown(names, cityMeta) {
 
   function selectItem(label, type) {
     const effectiveType = type === 'cdp' ? 'city' : type;
-    _state.selectedArea     = label;
+    _state.selectedArea = label;
     _state.selectedAreaType = effectiveType;
     input.value = label;
 
@@ -546,7 +546,7 @@ function _initAboutModal() {
       </div>
 
       <div class="credits-rule"></div>
-      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section.</p>
+      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section or read our <a class="credits-inline-link" href="https://wfrc.utah.gov/what-commuting-patterns-reveal-about-wasatch-front-communities/" target="_blank" rel="noopener">Blog Post</a>.</p>
     </div>
   `;
 
