@@ -534,7 +534,7 @@ function _initAboutModal() {
 
       <div class="credits-section">
         <div class="credits-section-label">Neighboring states</div>
-        <p class="about-body">Cities and counties in the six surrounding states (ID, WY, CO, NM, AZ, NV) are included by buffering Utah's boundary by approximately 80 km (50 mi) and intersecting with all counties in those states. Areas within this zone — including the Las Vegas (Clark County) metro area — appear as point markers on the map. They show cross-border inflow and outflow flows but are not selectable as a subject area.</p>
+        <p class="about-body">Cities and counties in the six surrounding states (ID, WY, CO, NM, AZ, NV) are included by buffering Utah's boundary by approximately 80 km (50 mi) and intersecting with all counties in those states. Areas within this zone — including the Las Vegas (Clark County) metro area — appear as point markers on the map. They show cross-border inflows and outflows but are not selectable as a subject area.</p>
       </div>
 
       <div class="credits-section">
@@ -546,7 +546,7 @@ function _initAboutModal() {
       </div>
 
       <div class="credits-rule"></div>
-      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section or read our <a class="credits-inline-link" href="https://wfrc.utah.gov/what-commuting-patterns-reveal-about-wasatch-front-communities/" target="_blank" rel="noopener">Blog Post</a>.</p>
+      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section or read our companion article at <a class="credits-inline-link" href="https://wfrc.utah.gov/what-commuting-patterns-reveal-about-wasatch-front-communities/" target="_blank" rel="noopener">WFRC Blog</a>.</p>
     </div>
   `;
 
