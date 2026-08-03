@@ -38,6 +38,8 @@ import pyarrow.parquet as pq
 import custom_places
 import fetch_acs
 import neighbor_zones
+import taz_districts
+from geo_utils import topo_simplify
 
 # ── Output directories ────────────────────────────────────────────────────────
 DATA_DIR  = Path(__file__).parent.parent / "data"
@@ -257,6 +259,17 @@ def build_lookup(xw, disambig=None):
     return lookup
 
 
+def merge_taz_lookup(lookup, taz_lookup):
+    """Merge TAZ planning-district fields (small/medium/large/super_name) onto
+    the block lookup dict produced by build_lookup(). Mutates and returns lookup.
+    Blocks with no TAZ match (see taz_districts.build_taz_lookup) are left with
+    the keys absent, and join_od_with_lookup's .get() calls fall back to None."""
+    for block, entry in taz_lookup.items():
+        if block in lookup:
+            lookup[block].update(entry)
+    return lookup
+
+
 def join_od_with_lookup(od, lookup):
     """Add home/work city, county, and block centroid columns to OD dataframe."""
     print("  Joining OD with crosswalk...")
@@ -278,6 +291,12 @@ def join_od_with_lookup(od, lookup):
     od["h_senate"]   = od["h_geocode"].map(lambda g: lookup.get(g, {}).get("senate_name"))
     od["w_senate"]   = od["w_geocode"].map(lambda g: lookup.get(g, {}).get("senate_name"))
 
+    # Planning Boundaries geography (TAZ-derived), merged onto lookup by merge_taz_lookup()
+    for level in taz_districts.LEVELS:
+        key = f"{level}_name"
+        od[f"h_{level}"] = od["h_geocode"].map(lambda g: lookup.get(g, {}).get(key))
+        od[f"w_{level}"] = od["w_geocode"].map(lambda g: lookup.get(g, {}).get(key))
+
     return od
 
 
@@ -297,6 +316,8 @@ def mark_out_of_state(od):
         od.loc[oos_home, "h_cty"]    = "00000"
         od.loc[oos_home, "h_house"]  = "Out of State"
         od.loc[oos_home, "h_senate"] = "Out of State"
+        for level in taz_districts.LEVELS:
+            od.loc[oos_home, f"h_{level}"] = "Out of State"
         print(f"  Out-of-state home records: {nh:,}")
 
     oos_work = ~od["w_geocode"].str.startswith("49")
@@ -307,6 +328,8 @@ def mark_out_of_state(od):
         od.loc[oos_work, "w_cty"]    = "00000"
         od.loc[oos_work, "w_house"]  = "Out of State"
         od.loc[oos_work, "w_senate"] = "Out of State"
+        for level in taz_districts.LEVELS:
+            od.loc[oos_work, f"w_{level}"] = "Out of State"
         print(f"  Out-of-state work records: {nw:,}")
 
     return od
@@ -428,6 +451,32 @@ def aggregate_district_flows(od):
     ] + cols
     grouped = grouped[grouped["S000"] > 0]
     print(f"  District flow pairs: {len(grouped):,}")
+    return grouped
+
+
+def aggregate_planning_flows(od):
+    """Aggregate OD flows by all four Planning Boundaries levels (small, medium,
+    large, super district) — the Planning Boundaries mode's equivalent of
+    aggregate_district_flows(). A single parquet supports every cross-level
+    query within the mode (small↔medium, small↔large, ..., super↔super).
+    Rows with null TAZ assignments (rare) are kept via dropna=False.
+    """
+    cols = AGG_COLS + BAND_COLS + DIST_COLS
+    grouped = (
+        od.groupby(
+            ["h_small",  "w_small",  "h_medium", "w_medium",
+             "h_large",  "w_large",  "h_super",  "w_super"],
+            dropna=False,
+        )[cols]
+        .sum()
+        .reset_index()
+    )
+    grouped.columns = [
+        "home_small",  "work_small",  "home_medium", "work_medium",
+        "home_large",  "work_large",  "home_super",  "work_super",
+    ] + cols
+    grouped = grouped[grouped["S000"] > 0]
+    print(f"  Planning district flow pairs: {len(grouped):,}")
     return grouped
 
 
@@ -640,25 +689,6 @@ def export_parquet(df, path, int_cols):
     print(f"  Wrote {path.name} ({len(df):,} rows, {size_kb:.1f} KB)")
 
 
-def _topo_simplify(gdf, tolerance):
-    """Topology-preserving simplification via the topojson library.
-
-    Unlike geopandas .simplify() (which simplifies each polygon independently),
-    this method encodes shared boundaries once and simplifies them consistently,
-    so adjacent polygons never develop gaps after simplification.
-
-    gdf must already be in a projected CRS; tolerance is in those units (metres).
-    Returns a new GeoDataFrame with the same columns and CRS.
-    """
-    import topojson
-    topo = topojson.Topology(gdf, prequantize=False)
-    simplified = topo.toposimplify(tolerance).to_gdf()
-    # toposimplify returns a GeoDataFrame; restore index and column order
-    simplified = simplified.set_index(gdf.index)
-    simplified.crs = gdf.crs
-    return simplified[gdf.columns]
-
-
 def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
                         force=False, disambig=None):
     """Generate static boundary GeoJSON files for county, city, house, and senate districts.
@@ -694,7 +724,7 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
     ut_gdf["name"] = ut_gdf["COUNTYFP_full"].map(UTAH_COUNTIES)
     county_gdf = ut_gdf[["name", "geometry"]].copy()
     county_gdf = county_gdf.to_crs(epsg=26912)
-    county_gdf = _topo_simplify(county_gdf, tolerance=150)
+    county_gdf = topo_simplify(county_gdf, tolerance=150)
     county_gdf = county_gdf.to_crs(epsg=4326)
     county_gdf.to_file(county_out, driver="GeoJSON")
     print(f"  Wrote {county_out.name} ({len(county_gdf)} county polygons)")
@@ -710,7 +740,7 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
         places_in["name"] = places_in["NAMELSAD"].apply(_clean_stplcname)
     city_gdf = places_in[["name", "geometry"]].copy()
     city_gdf = city_gdf.to_crs(epsg=26912)
-    city_gdf = _topo_simplify(city_gdf, tolerance=80)
+    city_gdf = topo_simplify(city_gdf, tolerance=80)
     city_gdf = custom_places.append_custom_boundaries(city_gdf)
     city_gdf = city_gdf.to_crs(epsg=4326)
     city_gdf.to_file(city_out, driver="GeoJSON")
@@ -722,7 +752,7 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
     house_gdf = sldl[["NAMELSAD", "geometry"]].copy()
     house_gdf["name"] = house_gdf["NAMELSAD"].apply(_clean_distname)
     house_gdf = house_gdf[["name", "geometry"]].to_crs(epsg=26912)
-    house_gdf = _topo_simplify(house_gdf, tolerance=150)
+    house_gdf = topo_simplify(house_gdf, tolerance=150)
     house_gdf = house_gdf.to_crs(epsg=4326)
     house_gdf.to_file(house_out, driver="GeoJSON")
     print(f"  Wrote {house_out.name} ({len(house_gdf)} house district polygons)")
@@ -731,7 +761,7 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
     senate_gdf = sldu[["NAMELSAD", "geometry"]].copy()
     senate_gdf["name"] = senate_gdf["NAMELSAD"].apply(_clean_distname)
     senate_gdf = senate_gdf[["name", "geometry"]].to_crs(epsg=26912)
-    senate_gdf = _topo_simplify(senate_gdf, tolerance=150)
+    senate_gdf = topo_simplify(senate_gdf, tolerance=150)
     senate_gdf = senate_gdf.to_crs(epsg=4326)
     senate_gdf.to_file(senate_out, driver="GeoJSON")
     print(f"  Wrote {senate_out.name} ({len(senate_gdf)} senate district polygons)")
@@ -777,6 +807,7 @@ def main():
         sldl = load_tiger_sldl()
         sldu = load_tiger_sldu()
         generate_boundaries(sldl=sldl, sldu=sldu, force=True, disambig=disambig)
+        taz_districts.generate_planning_boundaries(force=True)
         custom_places.export_for_app(DATA_DIR)
         print("\nDone!")
         return
@@ -821,6 +852,11 @@ def main():
     lookup = custom_places.apply_custom_places(lookup, block_map)
     print(f"  Lookup entries: {len(lookup):,}")
 
+    # 4b. Merge TAZ planning-district fields (small/medium/large/super) onto lookup
+    print("\n3b. Building block -> TAZ planning-district lookup...")
+    taz_lookup = taz_districts.build_taz_lookup(xw)
+    lookup = merge_taz_lookup(lookup, taz_lookup)
+
     # 5. Join OD with lookup
     print("\n4. Joining OD with crosswalk...")
     od = join_od_with_lookup(od, lookup)
@@ -849,9 +885,10 @@ def main():
     od_wfrc = add_distance_bands(od_wfrc)
 
     print("\n8. Aggregating flows...")
-    city_flows    = aggregate_city_flows(od_wfrc)
-    county_flows  = aggregate_county_flows(od_wfrc)
+    city_flows     = aggregate_city_flows(od_wfrc)
+    county_flows   = aggregate_county_flows(od_wfrc)
     district_flows = aggregate_district_flows(od_wfrc)
+    planning_flows = aggregate_planning_flows(od_wfrc)
 
     # 9. Load TIGER shapefiles
     print("\n9. Loading TIGER shapefiles for centroids and boundaries...")
@@ -863,6 +900,7 @@ def main():
     # 10. Generate boundary GeoJSON files if needed (uses already-loaded TIGER data)
     print("\n10. Generating boundary files (if needed)...")
     generate_boundaries(places, counties, sldl, sldu, disambig=disambig)
+    taz_districts.generate_planning_boundaries()
     print("\n10b. Exporting custom place info for app display...")
     custom_places.export_for_app(DATA_DIR)
 
@@ -873,10 +911,13 @@ def main():
     county_meta = build_county_meta(counties)
     house_meta  = build_house_meta(sldl)
     senate_meta = build_senate_meta(sldu)
+    planning_meta = {level: taz_districts.build_planning_meta(level) for level in taz_districts.LEVELS}
     print(f"  City metadata entries: {len(city_meta)}")
     print(f"  County metadata entries: {len(county_meta)}")
     print(f"  House district entries: {len(house_meta)}")
     print(f"  Senate district entries: {len(senate_meta)}")
+    for level, meta in planning_meta.items():
+        print(f"  {level.capitalize()} district entries: {len(meta)}")
 
     # 12. Export Parquet files
     print("\n12. Exporting data files...")
@@ -884,6 +925,7 @@ def main():
     export_parquet(city_flows,     year_dir / "city_flows.parquet",     AGG_COLS + BAND_COLS)
     export_parquet(county_flows,   year_dir / "county_flows.parquet",   AGG_COLS + BAND_COLS)
     export_parquet(district_flows, year_dir / "district_flows.parquet", AGG_COLS + BAND_COLS)
+    export_parquet(planning_flows, year_dir / "planning_flows.parquet", AGG_COLS + BAND_COLS)
     neighbor_zones.export_neighbor_flows(year_dir, nb_flows)
     neighbor_zones.build_and_export_meta(year_dir, nb_all_zones, nb_border_zone_names)
 
@@ -903,6 +945,11 @@ def main():
     with open(year_dir / "senate_meta.json", "w") as f:
         json.dump(senate_meta, f, indent=2)
     print(f"  Wrote senate_meta.json ({len(senate_meta)} entries)")
+
+    for level, meta in planning_meta.items():
+        with open(year_dir / f"{level}_meta.json", "w") as f:
+            json.dump(meta, f, indent=2)
+        print(f"  Wrote {level}_meta.json ({len(meta)} entries)")
 
     # 14. Update manifest
     print("\n13. Updating manifest...")
