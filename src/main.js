@@ -4,13 +4,14 @@ import './styles/charts.css';
 import './styles/toolbar.css';
 import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, queryReachFlows, queryNeighborFlows } from './db.js';
 import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
-import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle } from './sidebar.js';
+import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle, syncGeoMode, showUnlockToast } from './sidebar.js';
 import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts } from './charts.js';
 
 // ── Global app state ─────────────────────────────────────────────────────────
 const state = {
   theme:            document.documentElement.getAttribute('data-theme') || 'light',
-  geoMode:          'census',   // 'census' (Civic Boundaries) | 'planning' (Planning Boundaries)
+  geoMode:          'census',   // 'census' (Civic) | 'planning' (Planning Boundaries) | 'workshop' (hidden)
+  wsUnlocked:       false,      // hidden Workshop Areas mode — see _checkWsUnlock()
   aggregation:      'city',
   direction:        'inflow',
   selectedArea:     'Salt Lake City',
@@ -22,7 +23,66 @@ const state = {
 
 // Display Geography types exposed in the UI per mode — kept in sync with the
 // identical constant in sidebar.js (used here to validate the `agg` URL param).
-const DISPLAY_TYPES_BY_MODE = { census: ['city', 'county'], planning: ['small', 'medium'] };
+// TO RE-ENABLE house/senate for Workshop display: add 'house', 'senate' below
+// (and uncomment the matching buttons in sidebar.js).
+const DISPLAY_TYPES_BY_MODE = {
+  census:   ['city', 'county'],
+  planning: ['small', 'medium'],
+  workshop: ['city', 'county'],
+};
+
+// Hidden Workshop Areas mode. Not documented anywhere in the UI — unlocked
+// by clicking the WFRC logo/title (.mast-brand) 5 times within 2 seconds
+// (see _initSecretUnlock), or by visiting once with ?ws=1. Either path
+// stores a timestamp and reloads; from then on the real "Workshop Areas"
+// mode button exists for that browser for a sliding 24h window — every
+// load that finds a still-valid unlock pushes the expiry another 24h out,
+// but a browser left unused for a day forgets it again. This avoids the
+// alternative of a permanent flag staying live forever on a shared/borrowed
+// machine long after whoever unlocked it is done with it.
+const WS_UNLOCK_KEY     = 'wfrc_ws_unlocked';
+const WS_UNLOCK_TTL_MS  = 24 * 60 * 60 * 1000;
+
+function _refreshWsUnlock() {
+  try { localStorage.setItem(WS_UNLOCK_KEY, String(Date.now())); } catch {}
+}
+
+function _checkWsUnlock() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('ws') === '1') {
+    _refreshWsUnlock();
+    return true;
+  }
+  try {
+    const unlockedAt = Number(localStorage.getItem(WS_UNLOCK_KEY));
+    if (unlockedAt && Date.now() - unlockedAt < WS_UNLOCK_TTL_MS) {
+      _refreshWsUnlock(); // sliding — extend another 24h from now
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+// 5 clicks on the logo within 2 seconds unlocks Workshop Areas mode.
+function _initSecretUnlock() {
+  const brand = document.querySelector('.mast-brand');
+  if (!brand || state.wsUnlocked) return; // already unlocked — nothing to arm
+
+  const WINDOW_MS = 2000;
+  const NEEDED    = 5;
+  let clicks = [];
+
+  brand.addEventListener('click', () => {
+    const now = Date.now();
+    clicks = clicks.filter(t => now - t < WINDOW_MS);
+    clicks.push(now);
+    if (clicks.length < NEEDED) return;
+
+    _refreshWsUnlock();
+    showUnlockToast();
+    setTimeout(() => location.reload(), 550);
+  });
+}
 
 let cityMeta     = {};
 let countyMeta   = {};
@@ -32,6 +92,7 @@ let smallMeta    = {};
 let mediumMeta   = {};
 let largeMeta    = {};
 let superMeta    = {};
+let workshopMeta = {};
 // Neighbor zone metadata: {display_name -> {lat, lon, state, state_abbr, ...}}
 let neighborMeta = {};
 
@@ -66,6 +127,7 @@ function _getMetaFor(type) {
   return {
     city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta,
     small: smallMeta, medium: mediumMeta, large: largeMeta, super: superMeta,
+    workshop: workshopMeta,
   }[type] ?? cityMeta;
 }
 
@@ -110,6 +172,8 @@ async function _loadAcs(base, year) {
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function main() {
   _initPanelToggles(); // no data dependency — run immediately so mobile layout is correct from the start
+  state.wsUnlocked = _checkWsUnlock();
+  _initSecretUnlock();
   setProgress(5);
 
   const base = import.meta.env.BASE_URL ?? '/';
@@ -127,7 +191,7 @@ async function main() {
   const _safeJson = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
 
   const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
-         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, neighborMetaArr] = await Promise.all([
+         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, neighborMetaArr] = await Promise.all([
     fetch(`${base}data/lehd/${state.year}/city_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/county_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/house_meta.json`).then(r => r.json()),
@@ -136,6 +200,7 @@ async function main() {
     _safeJson(`${base}data/lehd/${state.year}/medium_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/large_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/super_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/workshop_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/neighbor_meta.json`),
     _loadAcs(base, state.year),
   ]);
@@ -147,6 +212,7 @@ async function main() {
   mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
   largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
   superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
+  workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
   neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
 
   setProgress(15);
@@ -163,6 +229,7 @@ async function main() {
     if (name === state.selectedArea) return;
     state.selectedArea     = name;
     state.selectedAreaType = state.aggregation;
+    if (state.geoMode === 'workshop') { state.geoMode = 'census'; syncGeoMode('census'); }
     syncAreaTypeToggle(state.aggregation);
     _updateSidebarAreaLabels(name);
     refreshVisualization();
@@ -201,10 +268,12 @@ async function main() {
   const mediumNames = mediumMetaArr.map(d => d.name).sort();
   const largeNames  = largeMetaArr.map(d => d.name).sort();
   const superNames  = superMetaArr.map(d => d.name).sort();
+  const workshopNames = workshopMetaArr.map(d => d.name).sort();
 
   initSidebar({
     cityNames, countyNames, houseNames, senateNames,
     smallNames, mediumNames, largeNames, superNames,
+    workshopNames,
     cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
     state,
     onSelectionChange: () => refreshVisualization(),
@@ -476,7 +545,7 @@ async function _changeYear(newYear, base) {
 
     const _safeJsonYr = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
     const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
-           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, neighborMetaArr] = await Promise.all([
+           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, neighborMetaArr] = await Promise.all([
       fetch(`${base}data/lehd/${newYear}/city_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/county_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/house_meta.json`).then(r => r.json()),
@@ -485,6 +554,7 @@ async function _changeYear(newYear, base) {
       _safeJsonYr(`${base}data/lehd/${newYear}/medium_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/large_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/super_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/workshop_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/neighbor_meta.json`),
       _loadAcs(base, newYear),
     ]);
@@ -496,6 +566,7 @@ async function _changeYear(newYear, base) {
     mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
     largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
     superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
+    workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
     neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
     loadNeighborZones(neighborMetaArr);
 
@@ -513,6 +584,9 @@ async function _changeYear(newYear, base) {
       if (state.geoMode === 'planning') {
         state.selectedAreaType = 'small';
         state.selectedArea     = smallMetaArr[0]?.name ?? state.selectedArea;
+      } else if (state.geoMode === 'workshop') {
+        state.selectedAreaType = 'workshop';
+        state.selectedArea     = workshopMetaArr[0]?.name ?? state.selectedArea;
       } else {
         state.selectedArea     = 'Salt Lake City';
         state.selectedAreaType = 'city';
@@ -529,6 +603,7 @@ async function _changeYear(newYear, base) {
       mediumNames: mediumMetaArr.map(d => d.name).sort(),
       largeNames:  largeMetaArr.map(d => d.name).sort(),
       superNames:  superMetaArr.map(d => d.name).sort(),
+      workshopNames: workshopMetaArr.map(d => d.name).sort(),
       cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
       state,
       onSelectionChange: () => refreshVisualization(),
@@ -780,6 +855,9 @@ function arcClickHandler(flow) {
 
   state.selectedArea     = newArea;
   state.selectedAreaType = state.aggregation;
+  // Workshop's display types (city/county/house/senate) aren't Workshop-mode
+  // subjects — drilling into one graduates back to Civic Boundaries.
+  if (state.geoMode === 'workshop') { state.geoMode = 'census'; syncGeoMode('census'); }
   syncAreaTypeToggle(state.aggregation);
 
   _updateSidebarAreaLabels(newArea);
@@ -808,7 +886,8 @@ function _applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
 
   const mode = p.get('mode');
-  if (mode === 'census' || mode === 'planning') state.geoMode = mode;
+  const validModes = state.wsUnlocked ? ['census', 'planning', 'workshop'] : ['census', 'planning'];
+  if (validModes.includes(mode)) state.geoMode = mode;
 
   const agg = p.get('agg');
   if (DISPLAY_TYPES_BY_MODE[state.geoMode].includes(agg)) state.aggregation = agg;

@@ -142,33 +142,38 @@ async function _loadYearFiles(year, onProgress) {
 
 // Map area type → column names for home/work sides.
 const _COLS = {
-  city:   { home: 'home_name',   work: 'work_name'   },
-  county: { home: 'home_county', work: 'work_county' },
-  house:  { home: 'home_house',  work: 'work_house'  },
-  senate: { home: 'home_senate', work: 'work_senate' },
-  small:  { home: 'home_small',  work: 'work_small'  },
-  medium: { home: 'home_medium', work: 'work_medium' },
-  large:  { home: 'home_large',  work: 'work_large'  },
-  super:  { home: 'home_super',  work: 'work_super'  },
+  city:     { home: 'home_name',     work: 'work_name'     },
+  county:   { home: 'home_county',   work: 'work_county'   },
+  house:    { home: 'home_house',    work: 'work_house'    },
+  senate:   { home: 'home_senate',   work: 'work_senate'   },
+  small:    { home: 'home_small',    work: 'work_small'    },
+  medium:   { home: 'home_medium',   work: 'work_medium'   },
+  large:    { home: 'home_large',    work: 'work_large'    },
+  super:    { home: 'home_super',    work: 'work_super'    },
+  // Hidden geography — see sidebar.js. Lives on district_flows alongside
+  // house/senate/city/county so it gets the full cross-type query engine
+  // (self-flow exclusion, reach drill, etc.) for free.
+  workshop: { home: 'home_workshop', work: 'work_workshop' },
 };
 
 const _PLANNING_TYPES = ['small', 'medium', 'large', 'super'];
+const _DISTRICT_TYPES = ['house', 'senate', 'workshop'];
 
 function _cols(type) {
   return _COLS[type] ?? _COLS.city;
 }
 
 // Route to the flow table that carries both sides' geography columns.
-// Civic Boundaries (house/senate involved) uses district_flows; Planning
-// Boundaries (small/medium/large/super involved) uses planning_flows; plain
-// city/county uses city_flows. The two modes never mix within one query —
-// the UI never constructs a cross-mode areaType/aggregation pair.
+// Civic Boundaries (house/senate/workshop involved) uses district_flows;
+// Planning Boundaries (small/medium/large/super involved) uses
+// planning_flows; plain city/county uses city_flows. The two modes never
+// mix within one query — the UI never constructs a cross-mode
+// areaType/aggregation pair.
 function _table(areaType, aggregation) {
   if (_PLANNING_TYPES.includes(areaType) || _PLANNING_TYPES.includes(aggregation)) {
     return 'planning_flows';
   }
-  return (areaType === 'house' || areaType === 'senate' ||
-          aggregation === 'house' || aggregation === 'senate')
+  return (_DISTRICT_TYPES.includes(areaType) || _DISTRICT_TYPES.includes(aggregation))
     ? 'district_flows'
     : 'city_flows';
 }
@@ -285,7 +290,7 @@ export async function querySelfFlowBands(area, areaType) {
 export async function queryReachFlows(area, areaType, direction) {
   if (!_conn) throw new Error('DB not initialized');
   const safe      = area.replace(/'/g, "''");
-  const isDistrict = areaType === 'house' || areaType === 'senate';
+  const isDistrict = _DISTRICT_TYPES.includes(areaType);
   const isPlanning = _PLANNING_TYPES.includes(areaType);
   const distCol   = _cols(areaType);
   const reachBands = _hasDistanceBands
