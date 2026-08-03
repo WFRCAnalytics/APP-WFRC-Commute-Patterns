@@ -39,6 +39,7 @@ import custom_places
 import fetch_acs
 import neighbor_zones
 import taz_districts
+import workshop_areas
 from geo_utils import topo_simplify
 
 # ── Output directories ────────────────────────────────────────────────────────
@@ -270,6 +271,17 @@ def merge_taz_lookup(lookup, taz_lookup):
     return lookup
 
 
+def merge_workshop_lookup(lookup, workshop_lookup):
+    """Merge the Wasatch Front Workshop Area name onto the block lookup dict.
+    Most blocks won't match (Workshop Areas only cover the Wasatch Front, not
+    statewide) — those are left with the key absent, same fallback-to-None
+    pattern as merge_taz_lookup."""
+    for block, name in workshop_lookup.items():
+        if block in lookup:
+            lookup[block]["workshop_name"] = name
+    return lookup
+
+
 def join_od_with_lookup(od, lookup):
     """Add home/work city, county, and block centroid columns to OD dataframe."""
     print("  Joining OD with crosswalk...")
@@ -297,6 +309,10 @@ def join_od_with_lookup(od, lookup):
         od[f"h_{level}"] = od["h_geocode"].map(lambda g: lookup.get(g, {}).get(key))
         od[f"w_{level}"] = od["w_geocode"].map(lambda g: lookup.get(g, {}).get(key))
 
+    # Wasatch Front Workshop Areas (hidden geography), merged onto lookup by merge_workshop_lookup()
+    od["h_workshop"] = od["h_geocode"].map(lambda g: lookup.get(g, {}).get("workshop_name"))
+    od["w_workshop"] = od["w_geocode"].map(lambda g: lookup.get(g, {}).get("workshop_name"))
+
     return od
 
 
@@ -318,6 +334,7 @@ def mark_out_of_state(od):
         od.loc[oos_home, "h_senate"] = "Out of State"
         for level in taz_districts.LEVELS:
             od.loc[oos_home, f"h_{level}"] = "Out of State"
+        od.loc[oos_home, "h_workshop"] = "Out of State"
         print(f"  Out-of-state home records: {nh:,}")
 
     oos_work = ~od["w_geocode"].str.startswith("49")
@@ -330,6 +347,7 @@ def mark_out_of_state(od):
         od.loc[oos_work, "w_senate"] = "Out of State"
         for level in taz_districts.LEVELS:
             od.loc[oos_work, f"w_{level}"] = "Out of State"
+        od.loc[oos_work, "w_workshop"] = "Out of State"
         print(f"  Out-of-state work records: {nw:,}")
 
     return od
@@ -428,18 +446,22 @@ def aggregate_county_flows(od):
 
 
 def aggregate_district_flows(od):
-    """Aggregate OD flows by all geographic levels (house, senate, city, county).
+    """Aggregate OD flows by all geographic levels (house, senate, city, county,
+    plus the hidden Wasatch Front Workshop Area geography).
 
     A single parquet supports every cross-level district query:
     house↔house, house↔senate, senate↔senate, house↔city, house↔county,
-    senate↔city, senate↔county, and the city/county↔district reverses.
-    Rows with null district assignments (rare) are kept via dropna=False.
+    senate↔city, senate↔county, workshop↔{house,senate,city,county}, and
+    the reverses. Rows with null district assignments (rare for house/senate/
+    city/county; the norm for workshop, which only covers the Wasatch Front)
+    are kept via dropna=False.
     """
     cols = AGG_COLS + BAND_COLS + DIST_COLS
     grouped = (
         od.groupby(
             ["h_house", "w_house", "h_senate", "w_senate",
-             "h_city",  "w_city",  "h_county", "w_county"],
+             "h_city",  "w_city",  "h_county", "w_county",
+             "h_workshop", "w_workshop"],
             dropna=False,
         )[cols]
         .sum()
@@ -448,6 +470,7 @@ def aggregate_district_flows(od):
     grouped.columns = [
         "home_house", "work_house", "home_senate", "work_senate",
         "home_name",  "work_name",  "home_county", "work_county",
+        "home_workshop", "work_workshop",
     ] + cols
     grouped = grouped[grouped["S000"] > 0]
     print(f"  District flow pairs: {len(grouped):,}")
@@ -808,6 +831,7 @@ def main():
         sldu = load_tiger_sldu()
         generate_boundaries(sldl=sldl, sldu=sldu, force=True, disambig=disambig)
         taz_districts.generate_planning_boundaries(force=True)
+        workshop_areas.generate_workshop_boundaries(force=True)
         custom_places.export_for_app(DATA_DIR)
         print("\nDone!")
         return
@@ -857,6 +881,11 @@ def main():
     taz_lookup = taz_districts.build_taz_lookup(xw)
     lookup = merge_taz_lookup(lookup, taz_lookup)
 
+    # 4c. Merge Wasatch Front Workshop Area field onto lookup (hidden geography)
+    print("\n3c. Building block -> workshop area lookup...")
+    workshop_lookup = workshop_areas.build_workshop_lookup(xw)
+    lookup = merge_workshop_lookup(lookup, workshop_lookup)
+
     # 5. Join OD with lookup
     print("\n4. Joining OD with crosswalk...")
     od = join_od_with_lookup(od, lookup)
@@ -901,23 +930,26 @@ def main():
     print("\n10. Generating boundary files (if needed)...")
     generate_boundaries(places, counties, sldl, sldu, disambig=disambig)
     taz_districts.generate_planning_boundaries()
+    workshop_areas.generate_workshop_boundaries()
     print("\n10b. Exporting custom place info for app display...")
     custom_places.export_for_app(DATA_DIR)
 
     # 11. Build metadata
     print("\n11. Building metadata...")
-    city_meta   = build_city_meta(city_flows, xw, places)
-    city_meta   = custom_places.inject_custom_meta(city_meta)
-    county_meta = build_county_meta(counties)
-    house_meta  = build_house_meta(sldl)
-    senate_meta = build_senate_meta(sldu)
+    city_meta     = build_city_meta(city_flows, xw, places)
+    city_meta     = custom_places.inject_custom_meta(city_meta)
+    county_meta   = build_county_meta(counties)
+    house_meta    = build_house_meta(sldl)
+    senate_meta   = build_senate_meta(sldu)
     planning_meta = {level: taz_districts.build_planning_meta(level) for level in taz_districts.LEVELS}
+    workshop_meta = workshop_areas.build_workshop_meta()
     print(f"  City metadata entries: {len(city_meta)}")
     print(f"  County metadata entries: {len(county_meta)}")
     print(f"  House district entries: {len(house_meta)}")
     print(f"  Senate district entries: {len(senate_meta)}")
     for level, meta in planning_meta.items():
         print(f"  {level.capitalize()} district entries: {len(meta)}")
+    print(f"  Workshop area entries: {len(workshop_meta)}")
 
     # 12. Export Parquet files
     print("\n12. Exporting data files...")
@@ -950,6 +982,10 @@ def main():
         with open(year_dir / f"{level}_meta.json", "w") as f:
             json.dump(meta, f, indent=2)
         print(f"  Wrote {level}_meta.json ({len(meta)} entries)")
+
+    with open(year_dir / "workshop_meta.json", "w") as f:
+        json.dump(workshop_meta, f, indent=2)
+    print(f"  Wrote workshop_meta.json ({len(workshop_meta)} entries)")
 
     # 14. Update manifest
     print("\n13. Updating manifest...")
