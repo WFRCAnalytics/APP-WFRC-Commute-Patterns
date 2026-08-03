@@ -13,6 +13,14 @@ const STYLE_URLS = {
 
 const INITIAL_VIEW = { center: [-111.5, 39.5], zoom: 6.5 };
 
+// All 8 boundary-backed geography types across both modes (Civic Boundaries:
+// county/city/house/senate; Planning Boundaries: small/medium/large/super).
+// map.js doesn't need to know about "mode" — it just needs the full type
+// list so boundary layers/visibility toggling cover every possible
+// aggregation value, exactly like house/senate already worked before the
+// mode split existed.
+const ALL_GEO_TYPES = ['county', 'city', 'house', 'senate', 'small', 'medium', 'large', 'super'];
+
 // ── Custom control helpers ────────────────────────────────────────────────────
 const _SVG_HOME  = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
 const _SVG_NORTH = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>`;
@@ -62,7 +70,7 @@ function _lerpScheme(scheme, t) {
 let map         = null;
 let deckOverlay = null;
 let _theme      = 'light';
-let _boundaries = { county: null, city: null, house: null, senate: null };
+let _boundaries = { county: null, city: null, house: null, senate: null, small: null, medium: null, large: null, super: null };
 // Stored so it can be replayed after boundary layers are added asynchronously
 let _pendingChoropleth = null;
 let _tooltipEl  = null;
@@ -269,7 +277,7 @@ export function switchTheme(theme, onReady) {
   // so we can update theme-sensitive paint properties immediately.
   map.once('style.load', () => {
     _filterLabels();
-    if (_boundaries.county || _boundaries.city || _boundaries.house || _boundaries.senate) _addBoundaryLayers();
+    if (ALL_GEO_TYPES.some(t => _boundaries[t])) _addBoundaryLayers();
     _addInfoLayers();
     _addNeighborLayer();
     _enforceLayerOrder();
@@ -287,7 +295,7 @@ export function setFlowVisible(v) {
 export function setPolygonsVisible(v) {
   _polygonsVisible = v;
   if (!v) {
-    ['county','city','house','senate'].flatMap(t => [`${t}-fill`,`${t}-outline`,`${t}-selected`]).forEach(id => {
+    ALL_GEO_TYPES.flatMap(t => [`${t}-fill`,`${t}-outline`,`${t}-selected`]).forEach(id => {
       if (map?.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
     });
   } else if (_pendingChoropleth) {
@@ -300,7 +308,7 @@ export function initPolygonInteraction(onAreaClick) {
   _onPolygonClick = onAreaClick;
   if (!map) return;
 
-  ['county-fill', 'city-fill', 'house-fill', 'senate-fill'].forEach(layerId => {
+  ALL_GEO_TYPES.map(t => `${t}-fill`).forEach(layerId => {
     map.on('click', layerId, (e) => {
       if (_deckClickedThisTick || !_polygonsVisible) return;
       const name = e.features?.[0]?.properties?.name;
@@ -472,14 +480,21 @@ export async function loadBoundaries(base, theme) {
     } catch { return null; }
   };
 
-  const [countyGj, cityGj, houseGj, senateGj] = await Promise.all([
+  const [countyGj, cityGj, houseGj, senateGj, smallGj, mediumGj, largeGj, superGj] = await Promise.all([
     tryFetch(`${base}data/county_boundaries.geojson`),
     tryFetch(`${base}data/city_boundaries.geojson`),
     tryFetch(`${base}data/house_boundaries.geojson`),
     tryFetch(`${base}data/senate_boundaries.geojson`),
+    tryFetch(`${base}data/small_boundaries.geojson`),
+    tryFetch(`${base}data/medium_boundaries.geojson`),
+    tryFetch(`${base}data/large_boundaries.geojson`),
+    tryFetch(`${base}data/super_boundaries.geojson`),
   ]);
 
-  _boundaries = { county: countyGj, city: cityGj, house: houseGj, senate: senateGj };
+  _boundaries = {
+    county: countyGj, city: cityGj, house: houseGj, senate: senateGj,
+    small: smallGj, medium: mediumGj, large: largeGj, super: superGj,
+  };
 
   if (!countyGj && !cityGj) {
     console.info('Boundary files not available — polygon layer disabled. Run: uv run scripts/process_data.py --boundaries');
@@ -541,7 +556,7 @@ export function updateChoropleth(flows, selectedArea, aggregation, theme, direct
 
   // If polygons hidden, keep everything invisible
   if (!_polygonsVisible) {
-    ['county','city','house','senate'].flatMap(t => [`${t}-fill`,`${t}-outline`,`${t}-selected`]).forEach(id => {
+    ALL_GEO_TYPES.flatMap(t => [`${t}-fill`,`${t}-outline`,`${t}-selected`]).forEach(id => {
       if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
     });
     return;
@@ -551,7 +566,7 @@ export function updateChoropleth(flows, selectedArea, aggregation, theme, direct
   const showSubjOutline = selectedAreaType && selectedAreaType !== aggregation;
   const subjSelId = showSubjOutline ? `${selectedAreaType}-selected` : null;
 
-  ['county', 'city', 'house', 'senate'].forEach(t => {
+  ALL_GEO_TYPES.forEach(t => {
     const isAgg  = t === aggregation;
     const isSubj = showSubjOutline && t === selectedAreaType;
     if (map.getLayer(`${t}-fill`))     map.setLayoutProperty(`${t}-fill`,     'visibility', isAgg  ? 'visible' : 'none');
@@ -784,7 +799,7 @@ function _fillInsertionLayer() {
 function _enforceLayerOrder() {
   if (!map || !map.getLayer('custom-info-fill')) return;
   // selected borders → below neighbor dots → below custom-info (HAFB)
-  for (const t of ['county', 'city', 'house', 'senate']) {
+  for (const t of ALL_GEO_TYPES) {
     const id = `${t}-selected`;
     if (map.getLayer(id)) map.moveLayer(id, 'custom-info-fill');
   }
@@ -891,6 +906,66 @@ function _addBoundaryLayers() {
       () => {
         map.setPaintProperty('senate-outline',  'line-color', outlineColor);
         map.setPaintProperty('senate-selected', 'line-color', selColor);
+      },
+    );
+  }
+
+  if (_boundaries.small) {
+    _addOrUpdate(
+      'small-zones', 'small-fill', _boundaries.small,
+      () => {
+        map.addLayer({ id: 'small-fill',     type: 'fill', source: 'small-zones', layout: { visibility: 'none' }, paint: { 'fill-color': 'rgba(0,0,0,0)' } }, before);
+        map.addLayer({ id: 'small-outline',  type: 'line', source: 'small-zones', layout: { visibility: 'none' }, paint: { 'line-color': outlineColorCity, 'line-width': 0.5 } }, before);
+        map.addLayer({ id: 'small-selected', type: 'line', source: 'small-zones', layout: { visibility: 'none' }, filter: ['==', ['get', 'name'], ''], paint: { 'line-color': selColor, 'line-width': 2.5 } }, before);
+      },
+      () => {
+        map.setPaintProperty('small-outline',  'line-color', outlineColorCity);
+        map.setPaintProperty('small-selected', 'line-color', selColor);
+      },
+    );
+  }
+
+  if (_boundaries.medium) {
+    _addOrUpdate(
+      'medium-zones', 'medium-fill', _boundaries.medium,
+      () => {
+        map.addLayer({ id: 'medium-fill',     type: 'fill', source: 'medium-zones', layout: { visibility: 'none' }, paint: { 'fill-color': 'rgba(0,0,0,0)' } }, before);
+        map.addLayer({ id: 'medium-outline',  type: 'line', source: 'medium-zones', layout: { visibility: 'none' }, paint: { 'line-color': outlineColor, 'line-width': 0.8 } }, before);
+        map.addLayer({ id: 'medium-selected', type: 'line', source: 'medium-zones', layout: { visibility: 'none' }, filter: ['==', ['get', 'name'], ''], paint: { 'line-color': selColor, 'line-width': 2.5 } }, before);
+      },
+      () => {
+        map.setPaintProperty('medium-outline',  'line-color', outlineColor);
+        map.setPaintProperty('medium-selected', 'line-color', selColor);
+      },
+    );
+  }
+
+  if (_boundaries.large) {
+    _addOrUpdate(
+      'large-zones', 'large-fill', _boundaries.large,
+      () => {
+        map.addLayer({ id: 'large-fill',     type: 'fill', source: 'large-zones', layout: { visibility: 'none' }, paint: { 'fill-color': 'rgba(0,0,0,0)' } }, before);
+        map.addLayer({ id: 'large-outline',  type: 'line', source: 'large-zones', layout: { visibility: 'none' }, paint: { 'line-color': outlineColor, 'line-width': 1 } }, before);
+        map.addLayer({ id: 'large-selected', type: 'line', source: 'large-zones', layout: { visibility: 'none' }, filter: ['==', ['get', 'name'], ''], paint: { 'line-color': selColor, 'line-width': 2.5 } }, before);
+      },
+      () => {
+        map.setPaintProperty('large-outline',  'line-color', outlineColor);
+        map.setPaintProperty('large-selected', 'line-color', selColor);
+      },
+    );
+  }
+
+  if (_boundaries.super) {
+    _addOrUpdate(
+      'super-zones', 'super-fill', _boundaries.super,
+      () => {
+        map.addLayer({ id: 'super-fill',     type: 'fill', source: 'super-zones', layout: { visibility: 'none' }, paint: { 'fill-color': 'rgba(0,0,0,0)' } }, before);
+        map.addLayer({ id: 'super-outline',  type: 'line', source: 'super-zones', layout: { visibility: 'none' }, paint: { 'line-color': outlineColor, 'line-width': 1.2 } }, before);
+        map.addLayer({ id: 'super-selected', type: 'line', source: 'super-zones', layout: { visibility: 'none' }, filter: ['==', ['get', 'name'], ''], paint: { 'line-color': selColor, 'line-width': 2.5 } }, before);
+      },
+      () => {
+        map.setPaintProperty('super-outline',  'line-color', outlineColor);
+        map.setPaintProperty('super-selected', 'line-color', selColor);
       },
     );
   }

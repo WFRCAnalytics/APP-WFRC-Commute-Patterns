@@ -10,6 +10,7 @@ import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, 
 // ── Global app state ─────────────────────────────────────────────────────────
 const state = {
   theme:            document.documentElement.getAttribute('data-theme') || 'light',
+  geoMode:          'census',   // 'census' (Civic Boundaries) | 'planning' (Planning Boundaries)
   aggregation:      'city',
   direction:        'inflow',
   selectedArea:     'Salt Lake City',
@@ -19,10 +20,18 @@ const state = {
   loading:          false,
 };
 
+// Display Geography types exposed in the UI per mode — kept in sync with the
+// identical constant in sidebar.js (used here to validate the `agg` URL param).
+const DISPLAY_TYPES_BY_MODE = { census: ['city', 'county'], planning: ['small', 'medium'] };
+
 let cityMeta     = {};
 let countyMeta   = {};
 let houseMeta    = {};
 let senateMeta   = {};
+let smallMeta    = {};
+let mediumMeta   = {};
+let largeMeta    = {};
+let superMeta    = {};
 // Neighbor zone metadata: {display_name -> {lat, lon, state, state_abbr, ...}}
 let neighborMeta = {};
 
@@ -54,7 +63,10 @@ let _availableYears = [];
 
 // ── Meta helpers ─────────────────────────────────────────────────────────────
 function _getMetaFor(type) {
-  return { city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta }[type] ?? cityMeta;
+  return {
+    city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta,
+    small: smallMeta, medium: mediumMeta, large: largeMeta, super: superMeta,
+  }[type] ?? cityMeta;
 }
 
 // ── Haversine helper ──────────────────────────────────────────────────────────
@@ -114,11 +126,16 @@ async function main() {
   // 3. Load year-specific metadata + ACS data
   const _safeJson = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
 
-  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
+  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
+         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, neighborMetaArr] = await Promise.all([
     fetch(`${base}data/lehd/${state.year}/city_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/county_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/house_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/senate_meta.json`).then(r => r.json()),
+    _safeJson(`${base}data/lehd/${state.year}/small_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/medium_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/large_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/super_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/neighbor_meta.json`),
     _loadAcs(base, state.year),
   ]);
@@ -126,6 +143,10 @@ async function main() {
   countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
   houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
   senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+  smallMeta    = Object.fromEntries(smallMetaArr.map(d => [d.name, d]));
+  mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
+  largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
+  superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
   neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
 
   setProgress(15);
@@ -176,10 +197,15 @@ async function main() {
   const _numSort = (a, b) => a.localeCompare(b, undefined, { numeric: true });
   const houseNames  = houseMetaArr.map(d => d.name).sort(_numSort);
   const senateNames = senateMetaArr.map(d => d.name).sort(_numSort);
+  const smallNames  = smallMetaArr.map(d => d.name).sort();
+  const mediumNames = mediumMetaArr.map(d => d.name).sort();
+  const largeNames  = largeMetaArr.map(d => d.name).sort();
+  const superNames  = superMetaArr.map(d => d.name).sort();
 
   initSidebar({
     cityNames, countyNames, houseNames, senateNames,
-    cityMeta, houseMeta, senateMeta,
+    smallNames, mediumNames, largeNames, superNames,
+    cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
     state,
     onSelectionChange: () => refreshVisualization(),
     onAreaFly: () => {},
@@ -448,18 +474,28 @@ async function _changeYear(newYear, base) {
   try {
     setProgress(5);
 
-    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
+    const _safeJsonYr = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
+           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, neighborMetaArr] = await Promise.all([
       fetch(`${base}data/lehd/${newYear}/city_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/county_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/house_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/senate_meta.json`).then(r => r.json()),
-      fetch(`${base}data/lehd/${newYear}/neighbor_meta.json`).then(r => r.ok ? r.json() : []).catch(() => []),
+      _safeJsonYr(`${base}data/lehd/${newYear}/small_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/medium_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/large_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/super_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/neighbor_meta.json`),
       _loadAcs(base, newYear),
     ]);
     cityMeta     = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
     countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
     houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
     senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+    smallMeta    = Object.fromEntries(smallMetaArr.map(d => [d.name, d]));
+    mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
+    largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
+    superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
     neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
     loadNeighborZones(neighborMetaArr);
 
@@ -471,16 +507,29 @@ async function _changeYear(newYear, base) {
     _updateScrubber(newYear, _availableYears);
 
     if (!_getMetaFor(state.selectedAreaType)[state.selectedArea]) {
-      state.selectedArea     = 'Salt Lake City';
-      state.selectedAreaType = 'city';
+      // Fall back to city/Salt Lake City only within Civic Boundaries mode;
+      // a Planning Boundaries selection missing from the new year falls back
+      // to that mode's first type instead of jumping modes.
+      if (state.geoMode === 'planning') {
+        state.selectedAreaType = 'small';
+        state.selectedArea     = smallMetaArr[0]?.name ?? state.selectedArea;
+      } else {
+        state.selectedArea     = 'Salt Lake City';
+        state.selectedAreaType = 'city';
+      }
     }
 
+    const _numSort = (a, b) => a.localeCompare(b, undefined, { numeric: true });
     initSidebar({
       cityNames:   cityMetaArr.map(d => d.name).filter(n => !n.toLowerCase().includes('unincorporated')).sort(),
       countyNames: countyMetaArr.map(d => d.name).sort(),
-      houseNames:  houseMetaArr.map(d => d.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-      senateNames: senateMetaArr.map(d => d.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-      cityMeta, houseMeta, senateMeta,
+      houseNames:  houseMetaArr.map(d => d.name).sort(_numSort),
+      senateNames: senateMetaArr.map(d => d.name).sort(_numSort),
+      smallNames:  smallMetaArr.map(d => d.name).sort(),
+      mediumNames: mediumMetaArr.map(d => d.name).sort(),
+      largeNames:  largeMetaArr.map(d => d.name).sort(),
+      superNames:  superMetaArr.map(d => d.name).sort(),
+      cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
       state,
       onSelectionChange: () => refreshVisualization(),
       onAreaFly: () => {},
@@ -757,10 +806,13 @@ function _getUrlYear(availableYears, defaultYear) {
 
 function _applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
+
+  const mode = p.get('mode');
+  if (mode === 'census' || mode === 'planning') state.geoMode = mode;
+
   const agg = p.get('agg');
-  // TO RE-ENABLE district map zones: replace the line below with the commented-out one
-  if (['city', 'county'].includes(agg)) state.aggregation = agg;
-  // if (['city', 'county', 'house', 'senate'].includes(agg)) state.aggregation = agg;
+  if (DISPLAY_TYPES_BY_MODE[state.geoMode].includes(agg)) state.aggregation = agg;
+
   const area = p.get('area');
   if (area) {
     const meta = _getMetaFor(state.aggregation);
@@ -776,6 +828,7 @@ function _applyUrlParams() {
 function _syncUrl() {
   const url = new URL(window.location.href);
   url.searchParams.set('year', state.year);
+  url.searchParams.set('mode', state.geoMode);
   url.searchParams.set('area', state.selectedArea);
   url.searchParams.set('dir',  state.direction);
   url.searchParams.set('agg',  state.aggregation);

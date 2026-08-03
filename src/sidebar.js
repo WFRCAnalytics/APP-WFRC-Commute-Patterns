@@ -3,30 +3,65 @@ let _state = null;
 let _onSelectionChange = null;
 let _onAreaFly = null;
 let _infoOnlyPlaces = [];  // GeoJSON features for info-only custom places
+let _names = {};           // full name-list bundle, kept for mode-switch handler
 
 export function setInfoOnlyPlaces(features) {
   _infoOnlyPlaces = features ?? [];
 }
 
+// Subject (Area of Interest) types selectable per geography mode — all 4 active.
+const SUBJECT_TYPES_BY_MODE = {
+  census:   ['city', 'county', 'house', 'senate'],
+  planning: ['small', 'medium', 'large', 'super'],
+};
+
+// Display (Map Display Geography) types exposed per mode — only the smallest
+// two of each mode's four; the coarsest two are built end-to-end but kept out
+// of the UI (see the commented-out buttons below), matching how House/Senate
+// have always worked for Civic Boundaries.
+const DISPLAY_TYPES_BY_MODE = {
+  census:   ['city', 'county'],
+  planning: ['small', 'medium'],
+};
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function initSidebar({ cityNames, countyNames, houseNames, senateNames, cityMeta, houseMeta, senateMeta, state, onSelectionChange, onAreaFly }) {
+export function initSidebar({
+  cityNames, countyNames, houseNames, senateNames,
+  smallNames, mediumNames, largeNames, superNames,
+  cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
+  state, onSelectionChange, onAreaFly,
+}) {
   _state = state;
   _onSelectionChange = onSelectionChange;
   _onAreaFly = onAreaFly;
+  _names = { cityNames, countyNames, houseNames, senateNames, smallNames, mediumNames, largeNames, superNames };
 
   const panel = document.getElementById('left-panel');
   if (!panel) return;
 
   panel.innerHTML = `
+    <!-- GEOGRAPHY MODE -->
+    <div class="rail-section tight">
+      <div class="eyebrow">Geography</div>
+      <div class="type-strip" id="geomode-toggle" role="group" aria-label="Geography mode">
+        <button data-value="census"   class="${state.geoMode !== 'planning' ? 'active' : ''}">Civic Boundaries</button>
+        <button data-value="planning" class="${state.geoMode === 'planning' ? 'active' : ''}">Planning Boundaries</button>
+      </div>
+    </div>
+
     <!-- AREA TYPE -->
     <div class="rail-section tight">
       <div class="eyebrow">Area of Interest Type</div>
       <div class="type-strip" id="areatype-toggle" role="group" aria-label="Area of interest type">
-        <button data-value="city"   class="${state.selectedAreaType === 'city' ? 'active' : ''}">City</button>
-        <button data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
-        <button data-value="house"  class="${state.selectedAreaType === 'house' ? 'active' : ''}">Utah House</button>
-        <button data-value="senate" class="${state.selectedAreaType === 'senate' ? 'active' : ''}">Utah Senate</button>
+        <button data-mode="census"   data-value="city"   class="${state.selectedAreaType === 'city' ? 'active' : ''}">City</button>
+        <button data-mode="census"   data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
+        <button data-mode="census"   data-value="house"  class="${state.selectedAreaType === 'house' ? 'active' : ''}">Utah House</button>
+        <button data-mode="census"   data-value="senate" class="${state.selectedAreaType === 'senate' ? 'active' : ''}">Utah Senate</button>
+        <button data-mode="planning" data-value="small"  class="${state.selectedAreaType === 'small' ? 'active' : ''}">Small</button>
+        <button data-mode="planning" data-value="medium" class="${state.selectedAreaType === 'medium' ? 'active' : ''}">Medium</button>
+        <button data-mode="planning" data-value="large"  class="${state.selectedAreaType === 'large' ? 'active' : ''}">Large</button>
+        <button data-mode="planning" data-value="super"  class="${state.selectedAreaType === 'super' ? 'active' : ''}">Super</button>
       </div>
     </div>
 
@@ -80,11 +115,16 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     <div class="rail-section tight">
       <div class="eyebrow">Map Display Geography</div>
       <div class="type-strip" id="aggregation-toggle" role="group" aria-label="Aggregation level">
-        <button data-value="city"   class="${state.aggregation === 'city' ? 'active' : ''}">City</button>
-        <button data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
+        <button data-mode="census"   data-value="city"   class="${state.aggregation === 'city' ? 'active' : ''}">City</button>
+        <button data-mode="census"   data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
         <!-- TO RE-ENABLE district map zones: uncomment the two lines below -->
-        <!-- <button data-value="house"  class="${state.aggregation === 'house' ? 'active' : ''}">Utah House</button> -->
-        <!-- <button data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
+        <!-- <button data-mode="census" data-value="house"  class="${state.aggregation === 'house' ? 'active' : ''}">Utah House</button> -->
+        <!-- <button data-mode="census" data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
+        <button data-mode="planning" data-value="small"  class="${state.aggregation === 'small' ? 'active' : ''}">Small</button>
+        <button data-mode="planning" data-value="medium" class="${state.aggregation === 'medium' ? 'active' : ''}">Medium</button>
+        <!-- TO RE-ENABLE district map zones: uncomment the two lines below -->
+        <!-- <button data-mode="planning" data-value="large" class="${state.aggregation === 'large' ? 'active' : ''}">Large</button> -->
+        <!-- <button data-mode="planning" data-value="super" class="${state.aggregation === 'super' ? 'active' : ''}">Super</button> -->
       </div>
     </div>
 
@@ -127,6 +167,38 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
 
   // Reflect direction on body so map toolbar + slider can pick up the accent color
   document.body.dataset.direction = _state.direction;
+  // Reflect geo mode on the panel so the inactive mode's buttons can be hidden via CSS
+  panel.dataset.geoMode = _state.geoMode ?? 'census';
+
+  // Wire geography mode toggle
+  document.getElementById('geomode-toggle').addEventListener('click', e => {
+    const btn = e.target.closest('[data-value]');
+    if (!btn) return;
+    const newMode = btn.dataset.value;
+    if (newMode === _state.geoMode) return;
+
+    _state.geoMode = newMode;
+    panel.dataset.geoMode = newMode;
+    _setActiveToggle('geomode-toggle', newMode);
+
+    const newType = SUBJECT_TYPES_BY_MODE[newMode][0];
+    const newAgg  = DISPLAY_TYPES_BY_MODE[newMode][0];
+    _state.selectedAreaType = newType;
+    _state.aggregation      = newAgg;
+    _setActiveToggle('areatype-toggle', newType);
+    _setActiveToggle('aggregation-toggle', newAgg);
+
+    const currentAreas = _getAreaList(newType, _names, cityMeta);
+    const input = document.getElementById('area-search');
+    if (currentAreas.length) {
+      _state.selectedArea = currentAreas[0].label;
+      if (input) input.value = currentAreas[0].label;
+    }
+    if (input) input.placeholder = _searchPlaceholder(newType);
+
+    _updateSearchContext();
+    _onSelectionChange();
+  });
 
   // Wire area type toggle
   document.getElementById('areatype-toggle').addEventListener('click', e => {
@@ -142,8 +214,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     if (input) input.placeholder = _searchPlaceholder(newType);
 
     // Reset selected area if it doesn't exist in the new type's list
-    const names = { cityNames, countyNames, houseNames, senateNames };
-    const currentAreas = _getAreaList(newType, names, cityMeta);
+    const currentAreas = _getAreaList(newType, _names, cityMeta);
     const existing = currentAreas.find(a => a.label === _state.selectedArea);
     if (!existing && currentAreas.length) {
       _state.selectedArea = currentAreas[0].label;
@@ -174,7 +245,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
   });
 
   // Wire search dropdown
-  _initDropdown({ cityNames, countyNames, houseNames, senateNames }, cityMeta);
+  _initDropdown(_names, cityMeta);
 
   // Modals
   _initAboutModal();
@@ -328,7 +399,10 @@ function _bandMedian(n0_5, n5_10, n10_25, n25_50, n50_100, n100p) {
 }
 
 function _aggregationLabel(agg) {
-  const labels = { city: 'City', county: 'County', house: 'Utah House District', senate: 'Utah Senate District' };
+  const labels = {
+    city: 'City', county: 'County', house: 'Utah House District', senate: 'Utah Senate District',
+    small: 'Small District', medium: 'Medium District', large: 'Large District', super: 'Super District',
+  };
   return labels[agg] ?? 'City';
 }
 
@@ -338,6 +412,10 @@ function _searchPlaceholder(type) {
     county: 'Search counties…',
     house: 'Search house districts…',
     senate: 'Search senate districts…',
+    small: 'Search small districts…',
+    medium: 'Search medium districts…',
+    large: 'Search large districts…',
+    super: 'Search super districts…',
   };
   return ph[type] ?? ph.city;
 }
@@ -364,6 +442,10 @@ function _getAreaList(type, names, cityMeta) {
   if (type === 'county') return names.countyNames.map(n => ({ label: n, type: 'county' }));
   if (type === 'house') return names.houseNames.map(n => ({ label: n, type: 'house' }));
   if (type === 'senate') return names.senateNames.map(n => ({ label: n, type: 'senate' }));
+  if (type === 'small') return names.smallNames.map(n => ({ label: n, type: 'small' }));
+  if (type === 'medium') return names.mediumNames.map(n => ({ label: n, type: 'medium' }));
+  if (type === 'large') return names.largeNames.map(n => ({ label: n, type: 'large' }));
+  if (type === 'super') return names.superNames.map(n => ({ label: n, type: 'super' }));
   return names.cityNames.map(n => ({ label: n, type: cityMeta?.[n]?.place_type ?? 'city' }));
 }
 
@@ -420,18 +502,15 @@ function _initDropdown(names, cityMeta) {
     // Sync area type toggle
     _setActiveToggle('areatype-toggle', effectiveType);
 
-    // TO RE-ENABLE district map zones: replace the current if-block with the commented one
-    const _ZONE_TYPES = ['city', 'county'];
-    if (_ZONE_TYPES.includes(effectiveType) && effectiveType !== _state.aggregation) {
+    // Only update the map's display geography when the picked type is one of
+    // the current mode's active Display Geography types (Large/Super District
+    // and House/Senate are subject-only, same as before the mode split).
+    const zoneTypes = DISPLAY_TYPES_BY_MODE[_state.geoMode] ?? DISPLAY_TYPES_BY_MODE.census;
+    if (zoneTypes.includes(effectiveType) && effectiveType !== _state.aggregation) {
       _state.aggregation = effectiveType;
       _setActiveToggle('aggregation-toggle', effectiveType);
       _updateSearchContext();
     }
-    // if (effectiveType !== _state.aggregation) {  // ← restore this block instead
-    //   _state.aggregation = effectiveType;
-    //   _setActiveToggle('aggregation-toggle', effectiveType);
-    //   _updateSearchContext();
-    // }
     hide();
     _onAreaFly?.(label, effectiveType);
     _onSelectionChange();

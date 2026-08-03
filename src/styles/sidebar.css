@@ -251,6 +251,15 @@
 #aggregation-toggle button { padding: 4px 10px 5px; margin-right: 0; border-radius: 2px; }
 #aggregation-toggle button.active::after { display: none; }
 
+/* Geography mode: hide the inactive mode's buttons in both strips (flex:1
+   redistributes evenly among whichever 4/2 buttons remain visible) */
+#left-panel[data-geo-mode="census"]   #areatype-toggle [data-mode="planning"],
+#left-panel[data-geo-mode="census"]   #aggregation-toggle [data-mode="planning"],
+#left-panel[data-geo-mode="planning"] #areatype-toggle [data-mode="census"],
+#left-panel[data-geo-mode="planning"] #aggregation-toggle [data-mode="census"] {
+  display: none;
+}
+
 /* ============================================================
    KPI BLOCK
    ============================================================ */
