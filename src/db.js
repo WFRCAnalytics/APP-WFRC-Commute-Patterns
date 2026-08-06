@@ -154,10 +154,13 @@ const _COLS = {
   // house/senate/city/county so it gets the full cross-type query engine
   // (self-flow exclusion, reach drill, etc.) for free.
   workshop: { home: 'home_workshop', work: 'work_workshop' },
+  // MAG's Utah County workshop subregions — sibling hidden geography to
+  // 'workshop' above, same district_flows treatment.
+  mag_workshop: { home: 'home_mag_workshop', work: 'work_mag_workshop' },
 };
 
 const _PLANNING_TYPES = ['small', 'medium', 'large', 'super'];
-const _DISTRICT_TYPES = ['house', 'senate', 'workshop'];
+const _DISTRICT_TYPES = ['house', 'senate', 'workshop', 'mag_workshop'];
 
 function _cols(type) {
   return _COLS[type] ?? _COLS.city;
@@ -204,8 +207,14 @@ export async function queryFlows(area, areaType, direction, aggregation) {
   // geography level per row, so this correctly strips self-containment out of a
   // parent-geography bucket (e.g. City subject + County display) too, not just
   // same-type selections.
+  // IS DISTINCT FROM, not != : district_flows columns for regionally-limited
+  // geographies (workshop/mag_workshop) are NULL for rows outside their
+  // coverage area. In SQL, NULL != 'X' evaluates to NULL (not TRUE), so a
+  // plain != would silently drop every destination outside that coverage
+  // footprint from the WHERE clause instead of just excluding the true
+  // self-flow rows.
   const selfCol    = direction === 'outflow' ? srcCols.work : srcCols.home;
-  const selfClause = `AND cf.${selfCol} != '${safe}'`;
+  const selfClause = `AND cf.${selfCol} IS DISTINCT FROM '${safe}'`;
 
   const bandCols = _hasDistanceBands
     ? 'SUM(cf.d0_5) AS d0_5, SUM(cf.d5_10) AS d5_10, SUM(cf.d10_25) AS d10_25, SUM(cf.d25_50) AS d25_50, SUM(cf.d50_100) AS d50_100, SUM(cf.d100p) AS d100p,'
@@ -297,6 +306,10 @@ export async function queryReachFlows(area, areaType, direction) {
     ? 'd0_5, d5_10, d10_25, d25_50, d50_100, d100p'
     : '0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p';
 
+  // IS DISTINCT FROM, not != : see the identical note in queryFlows — regionally-
+  // limited geographies (workshop/mag_workshop) leave excludeCol NULL for rows
+  // outside their coverage area, and a plain != would silently drop those
+  // instead of just excluding true self-flow rows.
   if (isDistrict) {
     // For district subject: return city-level pairs within/outside the district
     const filterCol  = direction === 'outflow' ? distCol.home : distCol.work;
@@ -305,7 +318,7 @@ export async function queryReachFlows(area, areaType, direction) {
       SELECT home_name, work_name, home_county, work_county, S000,
              ${reachBands}
       FROM district_flows
-      WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
+      WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
     `);
     return result.toArray().map(r => r.toJSON());
   }
@@ -322,7 +335,7 @@ export async function queryReachFlows(area, areaType, direction) {
              home_medium AS home_county, work_medium AS work_county, S000,
              ${reachBands}
       FROM planning_flows
-      WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
+      WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
     `);
     return result.toArray().map(r => r.toJSON());
   }
@@ -334,7 +347,7 @@ export async function queryReachFlows(area, areaType, direction) {
     SELECT home_name, work_name, home_county, work_county, S000,
            ${reachBands}
     FROM city_flows
-    WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
+    WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
   `);
   return result.toArray().map(r => r.toJSON());
 }

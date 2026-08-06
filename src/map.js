@@ -22,8 +22,9 @@ const INITIAL_VIEW = { center: [-111.5, 39.5], zoom: 6.5 };
 // 'workshop' is the hidden Wasatch Front Workshop Areas geography (see
 // sidebar.js) — included here like house/senate so its boundary layer and
 // dashed subject-outline overlay exist even though it's never a Display
-// Geography aggregation value.
-const ALL_GEO_TYPES = ['county', 'city', 'house', 'senate', 'small', 'medium', 'large', 'super', 'workshop'];
+// Geography aggregation value. 'mag_workshop' is its sibling — MAG's Utah
+// County workshop subregions, same hidden-geography treatment.
+const ALL_GEO_TYPES = ['county', 'city', 'house', 'senate', 'small', 'medium', 'large', 'super', 'workshop', 'mag_workshop'];
 
 // ── Custom control helpers ────────────────────────────────────────────────────
 const _SVG_HOME  = `<svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>`;
@@ -74,7 +75,7 @@ function _lerpScheme(scheme, t) {
 let map         = null;
 let deckOverlay = null;
 let _theme      = 'light';
-let _boundaries = { county: null, city: null, house: null, senate: null, small: null, medium: null, large: null, super: null, workshop: null };
+let _boundaries = { county: null, city: null, house: null, senate: null, small: null, medium: null, large: null, super: null, workshop: null, mag_workshop: null };
 // Stored so it can be replayed after boundary layers are added asynchronously
 let _pendingChoropleth = null;
 let _tooltipEl  = null;
@@ -484,7 +485,7 @@ export async function loadBoundaries(base, theme) {
     } catch { return null; }
   };
 
-  const [countyGj, cityGj, houseGj, senateGj, smallGj, mediumGj, largeGj, superGj, workshopGj] = await Promise.all([
+  const [countyGj, cityGj, houseGj, senateGj, smallGj, mediumGj, largeGj, superGj, workshopGj, magWorkshopGj] = await Promise.all([
     tryFetch(`${base}data/county_boundaries.geojson`),
     tryFetch(`${base}data/city_boundaries.geojson`),
     tryFetch(`${base}data/house_boundaries.geojson`),
@@ -494,12 +495,13 @@ export async function loadBoundaries(base, theme) {
     tryFetch(`${base}data/large_boundaries.geojson`),
     tryFetch(`${base}data/super_boundaries.geojson`),
     tryFetch(`${base}data/workshop_boundaries.geojson`),
+    tryFetch(`${base}data/mag_workshop_boundaries.geojson`),
   ]);
 
   _boundaries = {
     county: countyGj, city: cityGj, house: houseGj, senate: senateGj,
     small: smallGj, medium: mediumGj, large: largeGj, super: superGj,
-    workshop: workshopGj,
+    workshop: workshopGj, mag_workshop: magWorkshopGj,
   };
 
   if (!countyGj && !cityGj) {
@@ -987,6 +989,21 @@ function _addBoundaryLayers() {
       () => {
         map.setPaintProperty('workshop-outline',  'line-color', outlineColor);
         map.setPaintProperty('workshop-selected', 'line-color', selColor);
+      },
+    );
+  }
+
+  if (_boundaries.mag_workshop) {
+    _addOrUpdate(
+      'mag_workshop-zones', 'mag_workshop-fill', _boundaries.mag_workshop,
+      () => {
+        map.addLayer({ id: 'mag_workshop-fill',     type: 'fill', source: 'mag_workshop-zones', layout: { visibility: 'none' }, paint: { 'fill-color': 'rgba(0,0,0,0)' } }, before);
+        map.addLayer({ id: 'mag_workshop-outline',  type: 'line', source: 'mag_workshop-zones', layout: { visibility: 'none' }, paint: { 'line-color': outlineColor, 'line-width': 1 } }, before);
+        map.addLayer({ id: 'mag_workshop-selected', type: 'line', source: 'mag_workshop-zones', layout: { visibility: 'none' }, filter: ['==', ['get', 'name'], ''], paint: { 'line-color': selColor, 'line-width': 2.5 } }, before);
+      },
+      () => {
+        map.setPaintProperty('mag_workshop-outline',  'line-color', outlineColor);
+        map.setPaintProperty('mag_workshop-selected', 'line-color', selColor);
       },
     );
   }

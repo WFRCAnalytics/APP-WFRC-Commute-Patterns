@@ -93,6 +93,7 @@ let mediumMeta   = {};
 let largeMeta    = {};
 let superMeta    = {};
 let workshopMeta = {};
+let magWorkshopMeta = {};
 // Neighbor zone metadata: {display_name -> {lat, lon, state, state_abbr, ...}}
 let neighborMeta = {};
 
@@ -127,7 +128,7 @@ function _getMetaFor(type) {
   return {
     city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta,
     small: smallMeta, medium: mediumMeta, large: largeMeta, super: superMeta,
-    workshop: workshopMeta,
+    workshop: workshopMeta, mag_workshop: magWorkshopMeta,
   }[type] ?? cityMeta;
 }
 
@@ -191,7 +192,7 @@ async function main() {
   const _safeJson = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
 
   const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
-         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, neighborMetaArr] = await Promise.all([
+         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, magWorkshopMetaArr, neighborMetaArr] = await Promise.all([
     fetch(`${base}data/lehd/${state.year}/city_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/county_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/house_meta.json`).then(r => r.json()),
@@ -201,6 +202,7 @@ async function main() {
     _safeJson(`${base}data/lehd/${state.year}/large_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/super_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/workshop_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/mag_workshop_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/neighbor_meta.json`),
     _loadAcs(base, state.year),
   ]);
@@ -213,6 +215,7 @@ async function main() {
   largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
   superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
   workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
+  magWorkshopMeta = Object.fromEntries(magWorkshopMetaArr.map(d => [d.name, d]));
   neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
 
   setProgress(15);
@@ -269,11 +272,12 @@ async function main() {
   const largeNames  = largeMetaArr.map(d => d.name).sort();
   const superNames  = superMetaArr.map(d => d.name).sort();
   const workshopNames = workshopMetaArr.map(d => d.name).sort();
+  const magWorkshopNames = magWorkshopMetaArr.map(d => d.name).sort();
 
   initSidebar({
     cityNames, countyNames, houseNames, senateNames,
     smallNames, mediumNames, largeNames, superNames,
-    workshopNames,
+    workshopNames, magWorkshopNames,
     cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
     state,
     onSelectionChange: () => refreshVisualization(),
@@ -545,7 +549,7 @@ async function _changeYear(newYear, base) {
 
     const _safeJsonYr = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
     const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
-           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, neighborMetaArr] = await Promise.all([
+           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, magWorkshopMetaArr, neighborMetaArr] = await Promise.all([
       fetch(`${base}data/lehd/${newYear}/city_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/county_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/house_meta.json`).then(r => r.json()),
@@ -555,6 +559,7 @@ async function _changeYear(newYear, base) {
       _safeJsonYr(`${base}data/lehd/${newYear}/large_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/super_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/workshop_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/mag_workshop_meta.json`),
       _safeJsonYr(`${base}data/lehd/${newYear}/neighbor_meta.json`),
       _loadAcs(base, newYear),
     ]);
@@ -567,6 +572,7 @@ async function _changeYear(newYear, base) {
     largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
     superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
     workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
+    magWorkshopMeta = Object.fromEntries(magWorkshopMetaArr.map(d => [d.name, d]));
     neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
     loadNeighborZones(neighborMetaArr);
 
@@ -584,6 +590,9 @@ async function _changeYear(newYear, base) {
       if (state.geoMode === 'planning') {
         state.selectedAreaType = 'small';
         state.selectedArea     = smallMetaArr[0]?.name ?? state.selectedArea;
+      } else if (state.geoMode === 'workshop' && state.selectedAreaType === 'mag_workshop') {
+        state.selectedAreaType = 'mag_workshop';
+        state.selectedArea     = magWorkshopMetaArr[0]?.name ?? state.selectedArea;
       } else if (state.geoMode === 'workshop') {
         state.selectedAreaType = 'workshop';
         state.selectedArea     = workshopMetaArr[0]?.name ?? state.selectedArea;
@@ -604,6 +613,7 @@ async function _changeYear(newYear, base) {
       largeNames:  largeMetaArr.map(d => d.name).sort(),
       superNames:  superMetaArr.map(d => d.name).sort(),
       workshopNames: workshopMetaArr.map(d => d.name).sort(),
+      magWorkshopNames: magWorkshopMetaArr.map(d => d.name).sort(),
       cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
       state,
       onSelectionChange: () => refreshVisualization(),

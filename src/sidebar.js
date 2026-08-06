@@ -13,8 +13,10 @@ export function setInfoOnlyPlaces(features) {
 const SUBJECT_TYPES_BY_MODE = {
   census:   ['city', 'county', 'house', 'senate'],
   planning: ['small', 'medium', 'large', 'super'],
-  // Hidden mode — see the "workshop" section below. Wasatch Front only.
-  workshop: ['workshop'],
+  // Hidden mode — see the "workshop" section below. 'workshop' = WFRC
+  // (Wasatch Front), 'mag_workshop' = MAG (Utah County) — two separate,
+  // non-overlapping subject types under the same hidden geography mode.
+  workshop: ['workshop', 'mag_workshop'],
 };
 
 // Display (Map Display Geography) types exposed per mode. Civic/Planning
@@ -35,14 +37,14 @@ const DISPLAY_TYPES_BY_MODE = {
 export function initSidebar({
   cityNames, countyNames, houseNames, senateNames,
   smallNames, mediumNames, largeNames, superNames,
-  workshopNames,
+  workshopNames, magWorkshopNames,
   cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
   state, onSelectionChange, onAreaFly,
 }) {
   _state = state;
   _onSelectionChange = onSelectionChange;
   _onAreaFly = onAreaFly;
-  _names = { cityNames, countyNames, houseNames, senateNames, smallNames, mediumNames, largeNames, superNames, workshopNames };
+  _names = { cityNames, countyNames, houseNames, senateNames, smallNames, mediumNames, largeNames, superNames, workshopNames, magWorkshopNames };
 
   const panel = document.getElementById('left-panel');
   if (!panel) return;
@@ -55,8 +57,8 @@ export function initSidebar({
       <div class="eyebrow">Geography</div>
       <div class="type-strip" id="geomode-toggle" role="group" aria-label="Geography mode">
         <button data-value="census"   class="${state.geoMode !== 'planning' && state.geoMode !== 'workshop' ? 'active' : ''}">Civic Boundaries</button>
-        <button data-value="planning" class="${state.geoMode === 'planning' ? 'active' : ''}">Planning Boundaries</button>
-        ${wsUnlocked ? `<button data-value="workshop" class="${state.geoMode === 'workshop' ? 'active' : ''}">Workshop Areas</button>` : ''}
+        <button data-value="planning" class="${state.geoMode === 'planning' ? 'active' : ''}">Planning Districts</button>
+        ${wsUnlocked ? `<button data-value="workshop" class="${state.geoMode === 'workshop' ? 'active' : ''}">Workshop</button>` : ''}
       </div>
     </div>
 
@@ -72,7 +74,8 @@ export function initSidebar({
         <button data-mode="planning" data-value="medium" class="${state.selectedAreaType === 'medium' ? 'active' : ''}">Medium</button>
         <button data-mode="planning" data-value="large"  class="${state.selectedAreaType === 'large' ? 'active' : ''}">Large</button>
         <button data-mode="planning" data-value="super"  class="${state.selectedAreaType === 'super' ? 'active' : ''}">Super</button>
-        ${wsUnlocked ? `<button data-mode="workshop" data-value="workshop" class="${state.selectedAreaType === 'workshop' ? 'active' : ''}">Workshop Area</button>` : ''}
+        ${wsUnlocked ? `<button data-mode="workshop" data-value="workshop" class="${state.selectedAreaType === 'workshop' ? 'active' : ''}">WFRC</button>` : ''}
+        ${wsUnlocked ? `<button data-mode="workshop" data-value="mag_workshop" class="${state.selectedAreaType === 'mag_workshop' ? 'active' : ''}">MAG</button>` : ''}
       </div>
     </div>
 
@@ -444,7 +447,7 @@ function _aggregationLabel(agg) {
   const labels = {
     city: 'City', county: 'County', house: 'Utah House District', senate: 'Utah Senate District',
     small: 'Small District', medium: 'Medium District', large: 'Large District', super: 'Super District',
-    workshop: 'Workshop Area',
+    workshop: 'WFRC Workshop Area', mag_workshop: 'MAG Workshop Area',
   };
   return labels[agg] ?? 'City';
 }
@@ -459,9 +462,19 @@ function _searchPlaceholder(type) {
     medium: 'Search medium districts…',
     large: 'Search large districts…',
     super: 'Search super districts…',
-    workshop: 'Search workshop areas…',
+    workshop: 'Search WFRC workshop areas…',
+    mag_workshop: 'Search MAG workshop areas…',
   };
   return ph[type] ?? ph.city;
+}
+
+// Dropdown row-type tag: matches the raw `type` value for most types (city,
+// county, small, etc. — CSS uppercases them), but the two hidden workshop
+// types get short display labels instead of their raw 'workshop'/'mag_workshop' keys.
+function _rowTypeLabel(type) {
+  if (type === 'workshop') return 'WFRC';
+  if (type === 'mag_workshop') return 'MAG';
+  return type;
 }
 
 function _escHtml(str) {
@@ -491,6 +504,7 @@ function _getAreaList(type, names, cityMeta) {
   if (type === 'large') return names.largeNames.map(n => ({ label: n, type: 'large' }));
   if (type === 'super') return names.superNames.map(n => ({ label: n, type: 'super' }));
   if (type === 'workshop') return (names.workshopNames ?? []).map(n => ({ label: n, type: 'workshop' }));
+  if (type === 'mag_workshop') return (names.magWorkshopNames ?? []).map(n => ({ label: n, type: 'mag_workshop' }));
   return names.cityNames.map(n => ({ label: n, type: cityMeta?.[n]?.place_type ?? 'city' }));
 }
 
@@ -524,7 +538,7 @@ function _initDropdown(names, cityMeta) {
       <li role="option" data-value="${_escHtml(a.label)}" data-type="${a.type}"
           aria-selected="false" id="drop-item-${i}">
         <span>${_escHtml(a.label)}</span>
-        <span class="row-type">${a.type}</span>
+        <span class="row-type">${_rowTypeLabel(a.type)}</span>
       </li>
     `).join('');
     dropdown.hidden = false;
