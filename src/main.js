@@ -39,12 +39,25 @@ const DISPLAY_TYPES_BY_MODE = {
 // load that finds a still-valid unlock pushes the expiry another 24h out,
 // but a browser left unused for a day forgets it again. This avoids the
 // alternative of a permanent flag staying live forever on a shared/borrowed
-// machine long after whoever unlocked it is done with it.
+// machine long after whoever unlocked it is done with it. The same 5-click
+// gesture toggles it back off immediately when already unlocked, instead of
+// making you wait out the 24h window.
 const WS_UNLOCK_KEY     = 'wfrc_ws_unlocked';
 const WS_UNLOCK_TTL_MS  = 24 * 60 * 60 * 1000;
 
 function _refreshWsUnlock() {
   try { localStorage.setItem(WS_UNLOCK_KEY, String(Date.now())); } catch {}
+}
+
+function _clearWsUnlock() {
+  try { localStorage.removeItem(WS_UNLOCK_KEY); } catch {}
+  // Also strip ?ws=1 so a lock triggered from a URL-unlocked session actually
+  // sticks on reload instead of immediately re-unlocking itself.
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('ws');
+    history.replaceState(null, '', url);
+  } catch {}
 }
 
 function _checkWsUnlock() {
@@ -63,10 +76,11 @@ function _checkWsUnlock() {
   return false;
 }
 
-// 5 clicks on the logo within 2 seconds unlocks Workshop Areas mode.
+// 5 clicks on the logo within 2 seconds toggles Workshop Areas mode: unlocks
+// it if locked, locks it back immediately (no 24h wait) if already unlocked.
 function _initSecretUnlock() {
   const brand = document.querySelector('.mast-brand');
-  if (!brand || state.wsUnlocked) return; // already unlocked — nothing to arm
+  if (!brand) return;
 
   const WINDOW_MS = 2000;
   const NEEDED    = 5;
@@ -78,8 +92,13 @@ function _initSecretUnlock() {
     clicks.push(now);
     if (clicks.length < NEEDED) return;
 
-    _refreshWsUnlock();
-    showUnlockToast();
+    if (state.wsUnlocked) {
+      _clearWsUnlock();
+      showUnlockToast('Workshop Areas locked');
+    } else {
+      _refreshWsUnlock();
+      showUnlockToast();
+    }
     setTimeout(() => location.reload(), 550);
   });
 }
