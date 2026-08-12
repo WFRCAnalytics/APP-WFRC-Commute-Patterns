@@ -667,7 +667,7 @@ function _initAboutModal() {
 
       <div class="credits-section">
         <div class="credits-section-label">What this map shows</div>
-        <p class="about-body">Commute flows between Utah cities, counties, and neighboring-state areas using anonymized employment data from the US Census Bureau. Flows represent workers' <strong>reported home and work locations</strong> — not daily travel routes. A flow from Provo to Salt Lake City means a worker reports living in Provo and working in Salt Lake City, not that they make that specific trip every workday.</p>
+        <p class="about-body">Commute flows between Utah cities, counties, and neighboring-state areas using anonymized employment data from the US Census Bureau. Flows represent workers' <strong>reported home and work locations</strong> — not daily travel routes. A flow from Provo to Salt Lake City indicates that workers live in Provo and their employers report their place of work as Salt Lake City; it does not imply that the worker necessarily travels between those locations every workday.</p>
       </div>
 
       <div class="credits-section">
