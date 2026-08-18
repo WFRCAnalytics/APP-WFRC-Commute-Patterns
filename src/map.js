@@ -88,7 +88,6 @@ let _selfFlowCount    = 0;
 let _selfOutTotal     = 0;   // total commuters who reside in selected area
 let _selfInTotal      = 0;   // total workers employed in selected area
 let _onPolygonClick      = null;
-let _deckClickedThisTick = false;
 let _infoFeatures        = [];
 // Neighbor zones: {display_name -> {lat, lon, state, state_abbr}}
 let _neighborMeta       = {};
@@ -309,13 +308,23 @@ export function setPolygonsVisible(v) {
   }
 }
 
+// Flow arcs/dots (deck.gl) and polygon fills (MapLibre) are both hit-tested on
+// the same click, and the two libraries' listeners don't have a guaranteed
+// firing order — so a boolean "deck went first" flag can't reliably arbitrate
+// between them. Picking deck.gl directly at the click point instead makes the
+// priority (flow layer wins when both are hit) hold regardless of which
+// library's click handler happens to run first.
+function _deckHitAt(point) {
+  return !!deckOverlay?.pickObject({ x: point.x, y: point.y, radius: 4 });
+}
+
 export function initPolygonInteraction(onAreaClick) {
   _onPolygonClick = onAreaClick;
   if (!map) return;
 
   ALL_GEO_TYPES.map(t => `${t}-fill`).forEach(layerId => {
     map.on('click', layerId, (e) => {
-      if (_deckClickedThisTick || !_polygonsVisible) return;
+      if (!_polygonsVisible || _deckHitAt(e.point)) return;
       const name = e.features?.[0]?.properties?.name;
       if (name) _onPolygonClick(name);
     });
@@ -449,8 +458,6 @@ export function updateLayers(flows, state, onArcClick, total = 0) {
       }
     },
     onClick: (info) => {
-      _deckClickedThisTick = true;
-      setTimeout(() => { _deckClickedThisTick = false; }, 0);
       _hideTooltip();
       if (!onArcClick) return;
       const obj = info?.object;
@@ -762,7 +769,7 @@ function _addInfoLayers() {
   map.on('mouseenter', 'custom-info-fill', () => { map.getCanvas().style.cursor = 'pointer'; });
   map.on('mouseleave', 'custom-info-fill', () => { map.getCanvas().style.cursor = ''; });
   map.on('click', 'custom-info-fill', (e) => {
-    if (_deckClickedThisTick) return;
+    if (_deckHitAt(e.point)) return;
     const p = e.features?.[0]?.properties;
     if (!p) return;
     new maplibregl.Popup({ maxWidth: '280px', className: 'custom-info-popup' })
