@@ -749,7 +749,12 @@ async function refreshVisualization() {
                      || state.aggregation  !== _lastFlewAggregation;
     if (src?.lat && areaChanged) {
       let zoom;
-      if (state.aggregation === 'county') {
+      if (_lastFlewArea === null) {
+        // First fly of the session (default Salt Lake City load): use a wider
+        // regional zoom instead of the tight per-area one below, so the app
+        // doesn't read as Salt Lake City-only to first-time viewers.
+        zoom = 8.5;
+      } else if (state.aggregation === 'county') {
         zoom = 8;
       } else {
         let distNum = 0, distDen = 0;
