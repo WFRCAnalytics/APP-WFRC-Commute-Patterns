@@ -519,12 +519,13 @@ export function exportSankeyCsv() {
   if (activeTab === 'trend') {
     const years  = _trendsData?.years ?? [];
     const series = _trendsData?.types?.[_lastState.selectedAreaType]?.[area];
+    const net    = series ? _netTrendSeries(series) : null;
     const header = ['Year', 'Inflow (Workers In)', 'Outflow (Residents Out)', 'Live & Work'];
     const rows = years.map((y, i) => [
       y,
-      series?.in[i]   ?? '',
-      series?.out[i]  ?? '',
-      series?.self[i] ?? '',
+      net?.in[i]   ?? '',
+      net?.out[i]  ?? '',
+      net?.self[i] ?? '',
     ]);
     _csvDownload([header, ...rows], `commute-trend-${area}`);
     return;
@@ -1300,13 +1301,31 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
 
 // ── 2c. Flow Trend — historical line chart ────────────────────────────────────
 //
-// Three raw-count lines (out / in / self) across every year in
-// data/trends.json, for whichever Area of Interest is currently selected —
-// independent of the Direction/Aggregation toggles and the year scrubber,
-// same as the Overview/Venn tabs it sits beside. `mode` is a placeholder
-// seam for a future percent-of-total view (each line has its own natural
-// denominator — residents for out, jobs for in — so it isn't a simple flag
-// flip; left as 'value' only for now).
+// Three lines (out / in / self) across every year in data/trends.json, for
+// whichever Area of Interest is currently selected — independent of the
+// Direction/Aggregation toggles and the year scrubber, same as the
+// Overview/Venn tabs it sits beside. `mode` is a placeholder seam for a
+// future percent-of-total view (each line has its own natural denominator —
+// residents for out, jobs for in — so it isn't a simple flag flip; left as
+// 'value' only for now).
+
+/**
+ * data/trends.json stores raw totals (workers who live/work in the area at
+ * all -- self-contained workers included in both `out` and `in`). Derive
+ * the same net in/out the rest of the app already shows (dataline,
+ * flow-wheel, Venn -- see _applyFilter()'s netOut/netIn in src/main.js) by
+ * subtracting self, so this chart/export agrees with those panels for the
+ * same year instead of double-counting self-contained workers into both
+ * the out and in lines.
+ */
+function _netTrendSeries(series) {
+  return {
+    out:  series.out.map((v, i) => (v == null || series.self[i] == null) ? null : v - series.self[i]),
+    in:   series.in.map((v, i)  => (v == null || series.self[i] == null) ? null : v - series.self[i]),
+    self: series.self,
+  };
+}
+
 function _renderFlowTrend(state, mode = 'value') {
   const el = document.getElementById('flow-trend-chart');
   if (!el) return;
@@ -1326,6 +1345,8 @@ function _renderFlowTrend(state, mode = 'value') {
     return;
   }
 
+  const netSeries = _netTrendSeries(series);
+
   function fmt(n) {
     if (n == null) return '—';
     if (n >= 10000) return `${Math.round(n / 1000)}k`;
@@ -1337,7 +1358,7 @@ function _renderFlowTrend(state, mode = 'value') {
   const ml = 40, mr = 10, mt = 12, mb = 24;
   const cw = W - ml - mr, ch = H - mt - mb;
 
-  const allVals = [...series.out, ...series.in, ...series.self].filter(v => v != null);
+  const allVals = [...netSeries.out, ...netSeries.in, ...netSeries.self].filter(v => v != null);
   const maxVal  = Math.max(...allVals, 1);
   const step    = _niceStep(maxVal);
   const yMax    = Math.ceil(maxVal / step) * step || 1;
@@ -1387,7 +1408,7 @@ function _renderFlowTrend(state, mode = 'value') {
     const x = xAt(curIdx).toFixed(1);
     guideSvg = `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ch}" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="2,3" opacity="0.6"/>`;
     [['out', 'var(--outflow)'], ['in', 'var(--inflow)'], ['self', 'var(--internal)']].forEach(([key, color]) => {
-      const v = series[key][curIdx];
+      const v = netSeries[key][curIdx];
       if (v == null) return;
       guideSvg += `<circle cx="${x}" cy="${yAt(v).toFixed(1)}" r="3" fill="${color}" stroke="var(--paper)" stroke-width="1.5"/>`;
     });
@@ -1404,9 +1425,9 @@ function _renderFlowTrend(state, mode = 'value') {
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible;font-family:inherit;">
       ${gridSvg}
-      <path d="${pathFor(series.out)}"  fill="none" stroke="var(--outflow)"  stroke-width="2"/>
-      <path d="${pathFor(series.in)}"   fill="none" stroke="var(--inflow)"   stroke-width="2"/>
-      <path d="${pathFor(series.self)}" fill="none" stroke="var(--internal)" stroke-width="2"/>
+      <path d="${pathFor(netSeries.out)}"  fill="none" stroke="var(--outflow)"  stroke-width="2"/>
+      <path d="${pathFor(netSeries.in)}"   fill="none" stroke="var(--inflow)"   stroke-width="2"/>
+      <path d="${pathFor(netSeries.self)}" fill="none" stroke="var(--internal)" stroke-width="2"/>
       ${guideSvg}
       ${xLabels}
       ${hoverSvg}
@@ -1418,9 +1439,9 @@ function _renderFlowTrend(state, mode = 'value') {
       const y   = years[idx];
       const tt  = _ensureSankeyTooltip();
       tt.innerHTML = `<strong>${y}</strong><br>`
-        + `<span style="color:var(--inflow)">Workers In</span> ${fmt(series.in[idx])}<br>`
-        + `<span style="color:var(--outflow)">Residents Out</span> ${fmt(series.out[idx])}<br>`
-        + `<span style="color:var(--internal)">Live &amp; Work</span> ${fmt(series.self[idx])}`;
+        + `<span style="color:var(--inflow)">Workers In</span> ${fmt(netSeries.in[idx])}<br>`
+        + `<span style="color:var(--outflow)">Residents Out</span> ${fmt(netSeries.out[idx])}<br>`
+        + `<span style="color:var(--internal)">Live &amp; Work</span> ${fmt(netSeries.self[idx])}`;
       tt.style.display = 'block';
       tt.style.left    = `${e.clientX + 14}px`;
       tt.style.top     = `${e.clientY - 32}px`;
