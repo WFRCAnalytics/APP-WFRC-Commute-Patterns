@@ -23,7 +23,22 @@ let _reachInVisible   = true;
 let _reachSelfVisible = true;
 let _lastSelfBands    = null;
 
+// Historical trend data — { years: [...], types: { [areaType]: { [areaName]: {out,in,self} } } }.
+// Set once at boot (src/main.js fetches data/trends.json), independent of
+// the current year/direction/aggregation — see setTrendsData().
+let _trendsData = null;
+
 // ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Provide the precomputed historical trend dataset (data/trends.json, built
+ * offline by scripts/build_trends.py). Value-only for now — out/in/self raw
+ * totals per (areaType, area, year) — a percent-of-total view can be added
+ * later without a schema change; see _renderFlowTrend()'s `mode` param.
+ */
+export function setTrendsData(data) {
+  _trendsData = data;
+}
 
 export function initCharts(onAreaSelect) {
   _onAreaSelect = onAreaSelect;
@@ -95,8 +110,10 @@ export function initCharts(onAreaSelect) {
       const tab = flowTabBtn.dataset.tab;
       const overviewPanel = document.getElementById('flow-overview-panel');
       const vennPanel     = document.getElementById('flow-venn-panel');
+      const trendPanel    = document.getElementById('flow-trend-panel');
       if (overviewPanel) overviewPanel.style.display = tab === 'overview' ? '' : 'none';
       if (vennPanel)     vennPanel.style.display     = tab === 'venn'     ? '' : 'none';
+      if (trendPanel)    trendPanel.style.display    = tab === 'trend'    ? '' : 'none';
       return;
     }
 
@@ -151,6 +168,7 @@ export function updateCharts(outflows, inflows, totalOut, totalIn, selfFlow, app
   _renderSankey(outflows, inflows, appState);
   _renderFlowWheel(totalIn, totalOut, selfFlow ?? 0, appState);
   _renderFlowSummary(totalIn, totalOut, selfFlow ?? 0, appState);
+  _renderFlowTrend(appState);
   _renderDemographics(outflows, inflows, appState);
   _renderReach(_lastReachOut, _lastReachIn, _lastSelfBands, appState);
   _renderIndustry(outflows, inflows, appState);
@@ -356,7 +374,11 @@ export function exportSankeyPng() {
   const area      = _lastState.selectedArea ?? 'chart';
   const year      = _lastState.year ?? '';
   const activeTab = document.querySelector('#flow-tab-toggle .mini-toggle-btn.active')?.dataset.tab;
-  const svgEl     = activeTab === 'overview'
+  if (activeTab === 'trend') {
+    _svgToPng(document.getElementById('flow-trend-chart')?.querySelector('svg'), `commute-trend-${area}.png`);
+    return;
+  }
+  const svgEl = activeTab === 'overview'
     ? document.getElementById('flow-wheel')?.querySelector('svg')
     : document.getElementById('flow-summary')?.querySelector('svg');
   _svgToPng(svgEl, `commute-flow-${area}-${year}.png`);
@@ -492,7 +514,21 @@ export function exportBarCsv() {
 
 export function exportSankeyCsv() {
   if (!_lastState) return;
-  const area = _lastState.selectedArea;
+  const area      = _lastState.selectedArea;
+  const activeTab = document.querySelector('#flow-tab-toggle .mini-toggle-btn.active')?.dataset.tab;
+  if (activeTab === 'trend') {
+    const years  = _trendsData?.years ?? [];
+    const series = _trendsData?.types?.[_lastState.selectedAreaType]?.[area];
+    const header = ['Year', 'Inflow (Workers In)', 'Outflow (Residents Out)', 'Live & Work'];
+    const rows = years.map((y, i) => [
+      y,
+      series?.in[i]   ?? '',
+      series?.out[i]  ?? '',
+      series?.self[i] ?? '',
+    ]);
+    _csvDownload([header, ...rows], `commute-trend-${area}`);
+    return;
+  }
   const header = ['Direction', 'From', 'To', 'Commuters'];
   const rows = [
     ..._lastInflows.slice(0, 5).map(f  => ['Inflow',  f.dest_name, area,        Number(f.S000)]),
@@ -528,7 +564,7 @@ export function exportReachCsv() {
   const header = ['Direction', ...REACH_LABELS, 'Total'];
   const rows = [
     ['Inflow',   ...inB,   inB.reduce((s, v) => s + v, 0)],
-    ['Internal', ...selfB, selfB.reduce((s, v) => s + v, 0)],
+    ['Live & Work', ...selfB, selfB.reduce((s, v) => s + v, 0)],
     ['Outflow',  ...outB,  outB.reduce((s, v) => s + v, 0)],
   ];
   _csvDownload([header, ...rows], `commute-reach-${_lastState.selectedArea}-${_lastState.year}`);
@@ -1262,6 +1298,139 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
     </svg>`;
 }
 
+// ── 2c. Flow Trend — historical line chart ────────────────────────────────────
+//
+// Three raw-count lines (out / in / self) across every year in
+// data/trends.json, for whichever Area of Interest is currently selected —
+// independent of the Direction/Aggregation toggles and the year scrubber,
+// same as the Overview/Venn tabs it sits beside. `mode` is a placeholder
+// seam for a future percent-of-total view (each line has its own natural
+// denominator — residents for out, jobs for in — so it isn't a simple flag
+// flip; left as 'value' only for now).
+function _renderFlowTrend(state, mode = 'value') {
+  const el = document.getElementById('flow-trend-chart');
+  if (!el) return;
+
+  const years  = _trendsData?.years ?? [];
+  const series = _trendsData?.types?.[state.selectedAreaType]?.[state.selectedArea];
+  // A real but effectively empty geography (e.g. a TAZ district with zero
+  // recorded commuters in every year) still has a `series` entry -- all
+  // three arrays are just null throughout -- so check for any actual value,
+  // not just presence of the entry.
+  const hasAnyValue = series && [...series.out, ...series.in, ...series.self].some(v => v != null);
+
+  if (!years.length || !hasAnyValue) {
+    el.innerHTML = `<div style="padding:24px 4px;text-align:center;font-size:12px;color:var(--ink-4);">
+      No historical data for this area.
+    </div>`;
+    return;
+  }
+
+  function fmt(n) {
+    if (n == null) return '—';
+    if (n >= 10000) return `${Math.round(n / 1000)}k`;
+    if (n >= 1000)  return `${parseFloat((n / 1000).toFixed(1))}k`;
+    return n.toLocaleString();
+  }
+
+  const W = 460, H = 220;
+  const ml = 40, mr = 10, mt = 12, mb = 24;
+  const cw = W - ml - mr, ch = H - mt - mb;
+
+  const allVals = [...series.out, ...series.in, ...series.self].filter(v => v != null);
+  const maxVal  = Math.max(...allVals, 1);
+  const step    = _niceStep(maxVal);
+  const yMax    = Math.ceil(maxVal / step) * step || 1;
+
+  const xAt = i => ml + (years.length > 1 ? (i / (years.length - 1)) * cw : cw / 2);
+  const yAt = v => mt + ch - (v / yMax) * ch;
+
+  // Break each line into separate M..L.. segments at null gaps, so a year
+  // an area didn't yet exist in (e.g. a newly incorporated city) renders as
+  // a gap rather than a false dip to zero.
+  function pathFor(arr) {
+    let d = '', open = false;
+    arr.forEach((v, i) => {
+      if (v == null) { open = false; return; }
+      const x = xAt(i).toFixed(1), y = yAt(v).toFixed(1);
+      d += (open ? ' L ' : (d ? ' M ' : 'M ')) + `${x} ${y}`;
+      open = true;
+    });
+    return d;
+  }
+
+  // Axis label sizing matches the Commute Length chart's live SVG axes
+  // (_renderReach below) — 12px / weight 500 / --ink-4, not the smaller
+  // sizes used only in canvas PNG-export renders elsewhere in this file.
+  let gridSvg = '';
+  for (let i = 0; i <= 2; i++) {
+    const val = (yMax / 2) * i;
+    const y = yAt(val).toFixed(1);
+    gridSvg += `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="var(--rule)" stroke-width="1"/>`;
+    gridSvg += `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${fmt(val)}</text>`;
+  }
+
+  // Sparse X labels — first/last year plus every 5th, mirroring the year
+  // scrubber's own major-tick convention (src/main.js _buildScrubberTicks).
+  let xLabels = '';
+  years.forEach((y, i) => {
+    if (i === 0 || i === years.length - 1 || y % 5 === 0) {
+      xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${y}</text>`;
+    }
+  });
+
+  // Guide marking the year currently shown on the map — ties this
+  // always-full-history chart back to the single-year scrubber above it.
+  const curIdx = years.indexOf(state.year);
+  let guideSvg = '';
+  if (curIdx >= 0) {
+    const x = xAt(curIdx).toFixed(1);
+    guideSvg = `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ch}" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="2,3" opacity="0.6"/>`;
+    [['out', 'var(--outflow)'], ['in', 'var(--inflow)'], ['self', 'var(--internal)']].forEach(([key, color]) => {
+      const v = series[key][curIdx];
+      if (v == null) return;
+      guideSvg += `<circle cx="${x}" cy="${yAt(v).toFixed(1)}" r="3" fill="${color}" stroke="var(--paper)" stroke-width="1.5"/>`;
+    });
+  }
+
+  // Invisible per-year hover columns for the tooltip
+  let hoverSvg = '';
+  years.forEach((y, i) => {
+    const x0 = i === 0 ? ml : (xAt(i - 1) + xAt(i)) / 2;
+    const x1 = i === years.length - 1 ? W - mr : (xAt(i) + xAt(i + 1)) / 2;
+    hoverSvg += `<rect class="trend-hover-col" data-idx="${i}" x="${x0.toFixed(1)}" y="${mt}" width="${Math.max(x1 - x0, 0).toFixed(1)}" height="${ch}" fill="transparent"/>`;
+  });
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible;font-family:inherit;">
+      ${gridSvg}
+      <path d="${pathFor(series.out)}"  fill="none" stroke="var(--outflow)"  stroke-width="2"/>
+      <path d="${pathFor(series.in)}"   fill="none" stroke="var(--inflow)"   stroke-width="2"/>
+      <path d="${pathFor(series.self)}" fill="none" stroke="var(--internal)" stroke-width="2"/>
+      ${guideSvg}
+      ${xLabels}
+      ${hoverSvg}
+    </svg>`;
+
+  el.querySelectorAll('.trend-hover-col').forEach(rect => {
+    rect.addEventListener('mousemove', e => {
+      const idx = Number(rect.dataset.idx);
+      const y   = years[idx];
+      const tt  = _ensureSankeyTooltip();
+      tt.innerHTML = `<strong>${y}</strong><br>`
+        + `<span style="color:var(--inflow)">Workers In</span> ${fmt(series.in[idx])}<br>`
+        + `<span style="color:var(--outflow)">Residents Out</span> ${fmt(series.out[idx])}<br>`
+        + `<span style="color:var(--internal)">Live &amp; Work</span> ${fmt(series.self[idx])}`;
+      tt.style.display = 'block';
+      tt.style.left    = `${e.clientX + 14}px`;
+      tt.style.top     = `${e.clientY - 32}px`;
+    });
+    rect.addEventListener('mouseleave', () => {
+      if (_sankeyTooltip) _sankeyTooltip.style.display = 'none';
+    });
+  });
+}
+
 // ── 3. Worker Demographics — diverging grouped bar ────────────────────────────
 
 function _renderDemographics(outflows, inflows, state) {
@@ -1419,7 +1588,7 @@ function _renderReach(outflows, inflows, selfBands, state) {
   if (legendEl) {
     legendEl.innerHTML =
       `<button class="balance-sort-btn reach-dir-btn${_reachInVisible   ? ' active' : ''}" data-dir="inflow"><span class="pip in"></span>Inflow</button>` +
-      `<button class="balance-sort-btn reach-dir-btn${_reachSelfVisible ? ' active' : ''}" data-dir="internal"><span class="pip self"></span>Internal</button>` +
+      `<button class="balance-sort-btn reach-dir-btn${_reachSelfVisible ? ' active' : ''}" data-dir="internal"><span class="pip self"></span>Live &amp; Work</button>` +
       `<button class="balance-sort-btn reach-dir-btn${_reachOutVisible  ? ' active' : ''}" data-dir="outflow"><span class="pip out"></span>Outflow</button>`;
   }
 }

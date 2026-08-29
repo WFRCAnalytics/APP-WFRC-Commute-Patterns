@@ -164,12 +164,21 @@ export function initSidebar({
       <div class="mini-toggle" id="flow-tab-toggle">
         <button class="mini-toggle-btn active" data-tab="overview">Overview</button>
         <button class="mini-toggle-btn" data-tab="venn">Venn</button>
+        <button class="mini-toggle-btn" data-tab="trend">Trend</button>
       </div>
       <div id="flow-overview-panel">
         <div id="flow-wheel"></div>
       </div>
       <div id="flow-venn-panel" style="display:none;">
         <div class="flow-summary" id="flow-summary"></div>
+      </div>
+      <div id="flow-trend-panel" style="display:none;">
+        <div class="balance-legend" style="margin-bottom:10px;">
+          <span><span class="pip in"></span> Inflow</span>
+          <span><span class="pip out"></span> Outflow</span>
+          <span><span class="pip self"></span> Live &amp; Work</span>
+        </div>
+        <div id="flow-trend-chart"></div>
       </div>
       <div class="cp-info-note" style="margin-top:10px;margin-bottom:0;">
         <strong>Note:</strong> Headline totals use LEHD aux file data — inflow covers all home states; outflow covers the six surrounding states. Border-area flows to neighboring cities and counties are also shown in the charts and flow arcs.

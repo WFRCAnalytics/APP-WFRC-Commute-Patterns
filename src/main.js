@@ -5,7 +5,7 @@ import './styles/toolbar.css';
 import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, queryReachFlows, queryNeighborFlows } from './db.js';
 import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
 import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle, syncGeoMode, showUnlockToast } from './sidebar.js';
-import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts } from './charts.js';
+import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts, setTrendsData } from './charts.js';
 
 // ── Global app state ─────────────────────────────────────────────────────────
 const state = {
@@ -198,8 +198,13 @@ async function main() {
 
   const base = import.meta.env.BASE_URL ?? '/';
 
-  // 1. Load manifest
-  const manifest = await fetch(`${base}data/manifest.json`).then(r => r.json());
+  // 1. Load manifest + historical trend data (year-independent — fetched
+  //    once, not re-fetched on year switch, unlike the per-year flow files).
+  const [manifest, trendsData] = await Promise.all([
+    fetch(`${base}data/manifest.json`).then(r => r.json()),
+    fetch(`${base}data/trends.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  setTrendsData(trendsData);
   const availableYears = manifest.years.map(Number).sort((a, b) => b - a);
   _availableYears = availableYears;
 
