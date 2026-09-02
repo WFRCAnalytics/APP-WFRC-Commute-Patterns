@@ -28,9 +28,9 @@
   --inflow:          #1e6f6f;
   --inflow-2:        #155656;
   --inflow-tint:     rgba(30, 111, 111, 0.14);
-  --internal:        #ac7453;
-  --internal-2:      #8c5c3c;
-  --internal-tint:   rgba(172, 116, 83, 0.14);
+  --internal:        #8f8f8f;
+  --internal-2:      #6f6f6f;
+  --internal-tint:   rgba(143, 143, 143, 0.14);
 
   --highlight:    #f4ecd9;
   --highlight-2:  #eadeba;
@@ -68,9 +68,9 @@
   --inflow:          #5aa6a7;
   --inflow-2:        #408687;
   --inflow-tint:     rgba(90, 166, 167, 0.16);
-  --internal:        #b78564;
-  --internal-2:      #9a6e50;
-  --internal-tint:   rgba(183, 133, 100, 0.16);
+  --internal:        #9a9a9e;
+  --internal-2:      #7c7c80;
+  --internal-tint:   rgba(154, 154, 158, 0.16);
 
   --highlight:    #1a1f30;
   --highlight-2:  #232a3d;

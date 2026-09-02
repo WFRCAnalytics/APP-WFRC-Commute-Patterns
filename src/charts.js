@@ -192,8 +192,8 @@ function _svgToPng(svgEl, filename, inlineStyle) {
     '--inflow-2':     dk ? '#408687' : '#155656',
     '--outflow':      dk ? '#e4895a' : '#cc683a',
     '--outflow-2':    dk ? '#c5703f' : '#b35828',
-    '--internal':     dk ? '#b78564' : '#ac7453',
-    '--internal-2':   dk ? '#9a6e50' : '#8c5c3c',
+    '--internal':     dk ? '#9a9a9e' : '#8f8f8f',
+    '--internal-2':   dk ? '#7c7c80' : '#6f6f6f',
   };
   const vb    = svgEl.getAttribute('viewBox')?.split(' ');
   const vbW   = vb ? parseFloat(vb[2]) : 460;
@@ -395,7 +395,7 @@ export function exportReachPng() {
 
   const outColor  = dk ? '#e4895a' : '#cc683a';
   const inColor   = dk ? '#5aa6a7' : '#1e6f6f';
-  const selfColor = dk ? '#b78564' : '#ac7453';
+  const selfColor = dk ? '#9a9a9e' : '#8f8f8f';
   const bg        = dk ? '#0a0e17' : '#f6f3eb';
   const ink4      = dk ? '#696a73' : '#898d9c';
   const axisLine  = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
@@ -1078,7 +1078,7 @@ function _renderFlowWheel(totalIn, totalOut, selfFlow, state) {
     ? Math.round(selfFlow / (totalOut + selfFlow) * 100) : 0;
 
   // Same overlap color as the Venn diagram's LIVE & WORK lens
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
 
   // Rotation arc geometry — two CW 150° arcs, 30° gaps at top/bottom
   const topY = cy - R;
@@ -1261,7 +1261,7 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
   const legendY = H - 28;
   const dotR = 5, textOff = dotR * 2 + 6;
   const hasSelf = selfFlow > 0;
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
   // Distribute legend items: 2 or 3 items centered in W
   const leg1X = hasSelf ? 38  : 110;
   const leg2X = 175;
@@ -1269,8 +1269,13 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible">
+      ${hasSelf ? `<defs><clipPath id="venn-lens-clip">
+        <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}"/>
+      </clipPath></defs>` : ''}
       <circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"  fill="var(--inflow)"  opacity="0.72"/>
       <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}" fill="var(--outflow)" opacity="0.72"/>
+      ${hasSelf ? `<circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"
+        fill="${overlapColor}" clip-path="url(#venn-lens-clip)"/>` : ''}
 
       <text x="${numInX.toFixed(1)}" y="${cy + 6}" text-anchor="middle"
             font-size="18" font-weight="700" font-family="${font}" fill="white" opacity="0.95">${fmt(totalIn)}</text>
