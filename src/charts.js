@@ -388,17 +388,26 @@ export function exportDemoPng() {
 }
 export function exportReachPng() {
   if (!_lastState) return;
-  const outB = _bucketFlows(_lastReachOut);
-  const inB  = _bucketFlows(_lastReachIn);
-  const outT = outB.reduce((s, v) => s + v, 0) || 1;
-  const inT  = inB.reduce((s, v) => s + v, 0) || 1;
-  const dk   = _lastState.theme === 'dark';
+  const outB  = _bucketFlows(_lastReachOut);
+  const inB   = _bucketFlows(_lastReachIn);
+  const selfB = _lastSelfBands ?? [0, 0, 0, 0, 0, 0];
+  const dk    = _lastState.theme === 'dark';
 
-  const outColor = dk ? '#e4895a' : '#cc683a';
-  const inColor  = dk ? '#5aa6a7' : '#1e6f6f';
-  const bg       = dk ? '#0a0e17' : '#f6f3eb';
-  const ink4     = dk ? '#696a73' : '#898d9c';
-  const axisLine = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+  const outColor  = dk ? '#e4895a' : '#cc683a';
+  const inColor   = dk ? '#5aa6a7' : '#1e6f6f';
+  const selfColor = dk ? '#b78564' : '#ac7453';
+  const bg        = dk ? '#0a0e17' : '#f6f3eb';
+  const ink4      = dk ? '#696a73' : '#898d9c';
+  const axisLine  = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+
+  // Mirror the on-screen chart: same series, same show/hide state.
+  const series = [
+    { label: 'Inflow',     color: inColor,   bars: inB,   visible: _reachInVisible },
+    { label: 'Live & Work', color: selfColor, bars: selfB, visible: _reachSelfVisible },
+    { label: 'Outflow',    color: outColor,  bars: outB,   visible: _reachOutVisible },
+  ].filter(s => s.visible);
+  const shown = series.length ? series : [{ label: 'Inflow', color: inColor, bars: inB }];
+  shown.forEach(s => { s.total = s.bars.reduce((a, v) => a + v, 0) || 1; });
 
   const W = 560, H = 260;
   const ml = 48, mr = 16, mt = 24, mb = 44, lgdH = 22;
@@ -413,7 +422,7 @@ export function exportReachPng() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  const maxCount = Math.max(...outB, ...inB) || 1;
+  const maxCount = Math.max(1, ...shown.flatMap(s => s.bars)) || 1;
   const step = _niceStep(maxCount);
   const yMax = Math.ceil(maxCount / step) * step || 1;
   const yFmt = v => v >= 1_000_000 ? (v / 1_000_000).toFixed(1) + 'M'
@@ -436,39 +445,30 @@ export function exportReachPng() {
   ctx.strokeStyle = axisLine; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(ml, bly); ctx.lineTo(W - mr, bly); ctx.stroke();
 
-  const groupW  = cw / 6;
-  const barW    = Math.min(22, groupW * 0.28);
-  const barGap  = 4;
-  const pairOff = (groupW - barW * 2 - barGap) / 2;
+  const groupW = cw / 6;
+  const barGap = shown.length > 2 ? 3 : 4;
+  const barW   = Math.min(22, (groupW * 0.82 - (shown.length - 1) * barGap) / shown.length);
+  const rowOff = (groupW - barW * shown.length - barGap * (shown.length - 1)) / 2;
 
   REACH_LABELS.forEach((lbl, i) => {
-    const ov = outB[i], iv = inB[i];
-    const opct = Math.round((ov / outT) * 100);
-    const ipct = Math.round((iv / inT) * 100);
-
     const gx = ml + i * groupW;
-    const ox = gx + pairOff;
-    const ix = ox + barW + barGap;
-    const oh = (ov / yMax) * ch;
-    const ih = (iv / yMax) * ch;
-    const oy = mt + ch - oh;
-    const iy = mt + ch - ih;
 
-    ctx.fillStyle = outColor;
-    ctx.fillRect(Math.round(ox), Math.round(oy), barW, Math.round(oh));
-    ctx.fillStyle = inColor;
-    ctx.fillRect(Math.round(ix), Math.round(iy), barW, Math.round(ih));
-
-    ctx.font = '500 9px Inter, system-ui, sans-serif';
-    ctx.textBaseline = 'bottom';
-    if (oh > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${opct}%`, ox + barW / 2, oy - 2);
-    }
-    if (ih > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${ipct}%`, ix + barW / 2, iy - 2);
-    }
+    shown.forEach((s, si) => {
+      const v  = s.bars[i];
+      const bx = gx + rowOff + si * (barW + barGap);
+      const bh = (v / yMax) * ch;
+      const by = mt + ch - bh;
+      ctx.fillStyle = s.color;
+      ctx.fillRect(Math.round(bx), Math.round(by), Math.round(barW), Math.round(bh));
+      // Match the on-screen chart: label every non-zero band, not just tall bars.
+      const pct = Math.round((v / s.total) * 100);
+      if (pct > 0) {
+        ctx.fillStyle = ink4;
+        ctx.font = '500 9px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`${pct}%`, bx + barW / 2, by - 2);
+      }
+    });
 
     ctx.fillStyle = ink4;
     ctx.font = '500 9.5px Inter, system-ui, sans-serif';
@@ -480,7 +480,7 @@ export function exportReachPng() {
   const lgdY = H - lgdH + 4;
   const SW = 10;
   let lx = ml;
-  [['Outflow', outColor], ['Inflow', inColor]].forEach(([label, color]) => {
+  shown.forEach(({ label, color }) => {
     ctx.fillStyle = color;
     ctx.fillRect(lx, lgdY, SW, SW);
     ctx.fillStyle = ink4;
