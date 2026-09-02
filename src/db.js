@@ -304,6 +304,25 @@ export async function querySelfFlowBands(area, areaType) {
 }
 
 /**
+ * Block-level weighted-distance aggregate for the self-flow (live + work in the
+ * same area) pool: { wsum: Σ(S000 × block_haversine_miles), n: Σ(S000) }.
+ * Feeds the "All commutes" scope of the Commute Length mean, which folds this
+ * pool in with the active direction's cross-boundary flows.
+ */
+export async function querySelfFlowDistance(area, areaType) {
+  if (!_conn || !_hasDistWsum) return { wsum: 0, n: 0 };
+  const safe  = area.replace(/'/g, "''");
+  const table = _table(areaType, areaType);
+  const col   = _cols(areaType);
+  const result = await _conn.query(
+    `SELECT COALESCE(SUM(dist_wsum), 0) AS wsum, COALESCE(SUM(dist_n), 0) AS n
+     FROM ${table} WHERE ${col.home} = '${safe}' AND ${col.work} = '${safe}'`
+  );
+  const row = result.toArray()[0]?.toJSON() ?? {};
+  return { wsum: Number(row.wsum || 0), n: Number(row.n || 0) };
+}
+
+/**
  * City-level pair flows for the commute reach chart when a county is selected.
  * For district selections, uses district_flows to get city-level detail.
  */
