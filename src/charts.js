@@ -1906,8 +1906,10 @@ function _pngDownload(chart, filename) {
 }
 
 function _csvDownload(rows, filename) {
-  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  // Lead with a UTF-8 BOM so Excel / Windows decodes the file as UTF-8
+  // instead of the system ANSI codepage, which mangles en-dashes and the like.
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   _dlUrl(url, `${filename}.csv`);
   setTimeout(() => URL.revokeObjectURL(url), 1000);
