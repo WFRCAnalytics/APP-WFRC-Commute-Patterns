@@ -301,7 +301,7 @@ export function syncGeoMode(mode) {
   _setActiveToggle('geomode-toggle', mode);
 }
 
-export function updateSidebarStats(flows, appState) {
+export function updateSidebarStats(flows, appState, selfBands = null, selfDist = null) {
   const state = appState;
 
   _updateSearchContext();
@@ -362,17 +362,27 @@ export function updateSidebarStats(flows, appState) {
   // dist_wsum = Σ(S000 × block_haversine_miles) per destination zone pair
   // dist_n    = Σ(S000) for block pairs with valid coordinates
   // Summing across all destination zones gives the true weighted mean for the subject area.
-  const totalWsum = flows.reduce((s, f) => s + Number(f.dist_wsum || 0), 0);
-  const totalN = flows.reduce((s, f) => s + Number(f.dist_n || 0), 0);
+  //
+  // Scope switch (.reach-scope-switch): 'all' (default) covers every worker who
+  // lives in the area (outflow) or works in it (inflow) by folding in the
+  // self-flow (live + work in the same area) pool; 'crossing' counts only the
+  // active direction's cross-boundary commuters. selfBands / selfDist are the
+  // self-flow pool's band counts and weighted-distance aggregate.
+  const allScope = state.reachScope === 'all' && selfBands;
+  const sb = allScope ? selfBands : [0, 0, 0, 0, 0, 0];
+  const sd = allScope && selfDist ? selfDist : { wsum: 0, n: 0 };
+
+  const totalWsum = flows.reduce((s, f) => s + Number(f.dist_wsum || 0), 0) + sd.wsum;
+  const totalN = flows.reduce((s, f) => s + Number(f.dist_n || 0), 0) + sd.n;
   const avgMiles = totalN > 0 ? totalWsum / totalN : null;
 
   // Median: interpolate within the band that straddles the 50th percentile.
-  const bn0 = flows.reduce((s, f) => s + Number(f.d0_5 || 0), 0);
-  const bn5 = flows.reduce((s, f) => s + Number(f.d5_10 || 0), 0);
-  const bn10 = flows.reduce((s, f) => s + Number(f.d10_25 || 0), 0);
-  const bn25 = flows.reduce((s, f) => s + Number(f.d25_50 || 0), 0);
-  const bn50 = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0);
-  const bn100 = flows.reduce((s, f) => s + Number(f.d100p || 0), 0);
+  const bn0 = flows.reduce((s, f) => s + Number(f.d0_5 || 0), 0) + Number(sb[0] || 0);
+  const bn5 = flows.reduce((s, f) => s + Number(f.d5_10 || 0), 0) + Number(sb[1] || 0);
+  const bn10 = flows.reduce((s, f) => s + Number(f.d10_25 || 0), 0) + Number(sb[2] || 0);
+  const bn25 = flows.reduce((s, f) => s + Number(f.d25_50 || 0), 0) + Number(sb[3] || 0);
+  const bn50 = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0) + Number(sb[4] || 0);
+  const bn100 = flows.reduce((s, f) => s + Number(f.d100p || 0), 0) + Number(sb[5] || 0);
   const medianMiles = _bandMedian(bn0, bn5, bn10, bn25, bn50, bn100);
 
   const avgEl = document.getElementById('reach-avg');

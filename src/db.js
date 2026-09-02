@@ -5,6 +5,10 @@ let _conn             = null;
 let _hasDistanceBands = false;
 let _hasDistWsum      = false;
 let _hasNeighborFlows = false;
+// Planning-district subject columns on neighbor_flows (utah_small/medium/large/
+// super). Absent on neighbor_flows.parquet generated before that schema change,
+// so Planning-mode subjects fall back to no cross-state flows for those years.
+let _neighborHasPlanning = false;
 
 /**
  * Initialize DuckDB-WASM and load Parquet files for the given year.
@@ -123,8 +127,15 @@ async function _loadYearFiles(year, onProgress) {
       `CREATE OR REPLACE VIEW neighbor_flows AS SELECT * FROM read_parquet('${neighborFile}');`
     );
     _hasNeighborFlows = true;
+    const nbColResult = await _conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'neighbor_flows'`
+    );
+    const nbCols = new Set(nbColResult.toArray().map(r => r.toJSON().column_name));
+    _neighborHasPlanning = ['utah_small', 'utah_medium', 'utah_large', 'utah_super']
+      .every(c => nbCols.has(c));
   } catch {
     _hasNeighborFlows = false;
+    _neighborHasPlanning = false;
     await _conn.query(`CREATE OR REPLACE VIEW neighbor_flows AS
       SELECT '' AS utah_zone, '' AS neighbor_zone, '' AS state_abbr, '' AS direction,
              0 AS S000, 0 AS SA01, 0 AS SA02, 0 AS SA03,
@@ -293,6 +304,25 @@ export async function querySelfFlowBands(area, areaType) {
 }
 
 /**
+ * Block-level weighted-distance aggregate for the self-flow (live + work in the
+ * same area) pool: { wsum: Σ(S000 × block_haversine_miles), n: Σ(S000) }.
+ * Feeds the "All commutes" scope of the Commute Length mean, which folds this
+ * pool in with the active direction's cross-boundary flows.
+ */
+export async function querySelfFlowDistance(area, areaType) {
+  if (!_conn || !_hasDistWsum) return { wsum: 0, n: 0 };
+  const safe  = area.replace(/'/g, "''");
+  const table = _table(areaType, areaType);
+  const col   = _cols(areaType);
+  const result = await _conn.query(
+    `SELECT COALESCE(SUM(dist_wsum), 0) AS wsum, COALESCE(SUM(dist_n), 0) AS n
+     FROM ${table} WHERE ${col.home} = '${safe}' AND ${col.work} = '${safe}'`
+  );
+  const row = result.toArray()[0]?.toJSON() ?? {};
+  return { wsum: Number(row.wsum || 0), n: Number(row.n || 0) };
+}
+
+/**
  * City-level pair flows for the commute reach chart when a county is selected.
  * For district selections, uses district_flows to get city-level detail.
  */
@@ -355,28 +385,49 @@ export async function queryReachFlows(area, areaType, direction) {
 /**
  * Cross-state neighbor flows for the selected Utah area.
  *
- * areaType    — 'city' | 'county'  (subject area type, controls filter column)
+ * areaType    — 'city' | 'county' | 'small' | 'medium' | 'large' | 'super'
+ *               (subject area type, controls filter column)
  * direction   — 'outflow' | 'inflow'
- * aggregation — 'city' | 'county'  (destination granularity, controls group column)
+ * aggregation — destination granularity: 'county' groups to neighbor_county,
+ *               anything else (city or a Planning level) groups to neighbor_zone
  *
  * Mirrors the queryFlows() areaType/aggregation split so the neighbor layer
  * follows the same map zone setting as the main Utah choropleth.
  */
+const _NEIGHBOR_SUBJECT_COL = {
+  city:   'utah_zone',
+  county: 'utah_county',
+  small:  'utah_small',
+  medium: 'utah_medium',
+  large:  'utah_large',
+  super:  'utah_super',
+};
+
 export async function queryNeighborFlows(area, areaType, direction, aggregation) {
   if (!_conn || !_hasNeighborFlows) return [];
-  // neighbor_flows only carries city/county columns (utah_zone/utah_county).
-  // Every other areaType (house/senate/small/medium/large/super) must return
-  // early rather than falling through to the 'utah_zone' default below —
-  // some Planning District display names are identical to real city names
-  // (e.g. Small District "Salt Lake City"), which would otherwise silently
-  // match unrelated city-level neighbor-flow rows.
-  if (areaType !== 'city' && areaType !== 'county') return [];
+  // Only areaTypes with a matching subject column on neighbor_flows are
+  // supported. house/senate and the hidden workshop geographies have none —
+  // they must return early rather than falling through to a wrong column, and
+  // some Planning District display names collide with real city names (e.g.
+  // Small District "Salt Lake City"), which would otherwise match unrelated
+  // city-level rows.
+  const filterCol = _NEIGHBOR_SUBJECT_COL[areaType];
+  if (!filterCol) return [];
+  // Planning-district columns only exist on neighbor_flows regenerated after
+  // that schema change; older years silently have no cross-state Planning flows.
+  const isPlanning = _PLANNING_TYPES.includes(areaType);
+  if (isPlanning && !_neighborHasPlanning) return [];
   const safe = area.replace(/'/g, "''");
 
-  // Filter column: city → utah_zone, county → utah_county
-  const filterCol = (areaType === 'county') ? 'utah_county' : 'utah_zone';
-  // Destination column: city → neighbor_zone, county → neighbor_county
-  const destCol   = (aggregation === 'county') ? 'neighbor_county' : 'neighbor_zone';
+  // Destination column: neighbor_county for county subjects, county-level map
+  // zone, AND every Planning-district subject; neighbor_zone (city) only for a
+  // city subject on a city-level zone. Planning subjects must use the county
+  // key because neighbor_meta.json (which the frontend joins dest_name against
+  // for lat/lon) is border-filtered — every neighbor COUNTY is present, but
+  // ~half the neighbor CITY names (unincorporated CDPs, far Las Vegas suburbs)
+  // are not, and those rows would be silently dropped, undercounting the
+  // cross-state commute distance relative to the equivalent Civic county.
+  const destCol   = (aggregation === 'county' || isPlanning) ? 'neighbor_county' : 'neighbor_zone';
   const dirFilter = direction === 'outflow' ? "AND direction = 'out'" : "AND direction = 'in'";
 
   const sql = `

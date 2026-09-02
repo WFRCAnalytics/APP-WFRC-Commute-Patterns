@@ -192,8 +192,8 @@ function _svgToPng(svgEl, filename, inlineStyle) {
     '--inflow-2':     dk ? '#408687' : '#155656',
     '--outflow':      dk ? '#e4895a' : '#cc683a',
     '--outflow-2':    dk ? '#c5703f' : '#b35828',
-    '--internal':     dk ? '#b78564' : '#ac7453',
-    '--internal-2':   dk ? '#9a6e50' : '#8c5c3c',
+    '--internal':     dk ? '#9a9a9e' : '#8f8f8f',
+    '--internal-2':   dk ? '#7c7c80' : '#6f6f6f',
   };
   const vb    = svgEl.getAttribute('viewBox')?.split(' ');
   const vbW   = vb ? parseFloat(vb[2]) : 460;
@@ -388,17 +388,26 @@ export function exportDemoPng() {
 }
 export function exportReachPng() {
   if (!_lastState) return;
-  const outB = _bucketFlows(_lastReachOut);
-  const inB  = _bucketFlows(_lastReachIn);
-  const outT = outB.reduce((s, v) => s + v, 0) || 1;
-  const inT  = inB.reduce((s, v) => s + v, 0) || 1;
-  const dk   = _lastState.theme === 'dark';
+  const outB  = _bucketFlows(_lastReachOut);
+  const inB   = _bucketFlows(_lastReachIn);
+  const selfB = _lastSelfBands ?? [0, 0, 0, 0, 0, 0];
+  const dk    = _lastState.theme === 'dark';
 
-  const outColor = dk ? '#e4895a' : '#cc683a';
-  const inColor  = dk ? '#5aa6a7' : '#1e6f6f';
-  const bg       = dk ? '#0a0e17' : '#f6f3eb';
-  const ink4     = dk ? '#696a73' : '#898d9c';
-  const axisLine = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+  const outColor  = dk ? '#e4895a' : '#cc683a';
+  const inColor   = dk ? '#5aa6a7' : '#1e6f6f';
+  const selfColor = dk ? '#9a9a9e' : '#8f8f8f';
+  const bg        = dk ? '#0a0e17' : '#f6f3eb';
+  const ink4      = dk ? '#696a73' : '#898d9c';
+  const axisLine  = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+
+  // Mirror the on-screen chart: same series, same show/hide state.
+  const series = [
+    { label: 'Inflow',     color: inColor,   bars: inB,   visible: _reachInVisible },
+    { label: 'Live & Work', color: selfColor, bars: selfB, visible: _reachSelfVisible },
+    { label: 'Outflow',    color: outColor,  bars: outB,   visible: _reachOutVisible },
+  ].filter(s => s.visible);
+  const shown = series.length ? series : [{ label: 'Inflow', color: inColor, bars: inB }];
+  shown.forEach(s => { s.total = s.bars.reduce((a, v) => a + v, 0) || 1; });
 
   const W = 560, H = 260;
   const ml = 48, mr = 16, mt = 24, mb = 44, lgdH = 22;
@@ -413,7 +422,7 @@ export function exportReachPng() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  const maxCount = Math.max(...outB, ...inB) || 1;
+  const maxCount = Math.max(1, ...shown.flatMap(s => s.bars)) || 1;
   const step = _niceStep(maxCount);
   const yMax = Math.ceil(maxCount / step) * step || 1;
   const yFmt = v => v >= 1_000_000 ? (v / 1_000_000).toFixed(1) + 'M'
@@ -436,39 +445,30 @@ export function exportReachPng() {
   ctx.strokeStyle = axisLine; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(ml, bly); ctx.lineTo(W - mr, bly); ctx.stroke();
 
-  const groupW  = cw / 6;
-  const barW    = Math.min(22, groupW * 0.28);
-  const barGap  = 4;
-  const pairOff = (groupW - barW * 2 - barGap) / 2;
+  const groupW = cw / 6;
+  const barGap = shown.length > 2 ? 3 : 4;
+  const barW   = Math.min(22, (groupW * 0.82 - (shown.length - 1) * barGap) / shown.length);
+  const rowOff = (groupW - barW * shown.length - barGap * (shown.length - 1)) / 2;
 
   REACH_LABELS.forEach((lbl, i) => {
-    const ov = outB[i], iv = inB[i];
-    const opct = Math.round((ov / outT) * 100);
-    const ipct = Math.round((iv / inT) * 100);
-
     const gx = ml + i * groupW;
-    const ox = gx + pairOff;
-    const ix = ox + barW + barGap;
-    const oh = (ov / yMax) * ch;
-    const ih = (iv / yMax) * ch;
-    const oy = mt + ch - oh;
-    const iy = mt + ch - ih;
 
-    ctx.fillStyle = outColor;
-    ctx.fillRect(Math.round(ox), Math.round(oy), barW, Math.round(oh));
-    ctx.fillStyle = inColor;
-    ctx.fillRect(Math.round(ix), Math.round(iy), barW, Math.round(ih));
-
-    ctx.font = '500 9px Inter, system-ui, sans-serif';
-    ctx.textBaseline = 'bottom';
-    if (oh > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${opct}%`, ox + barW / 2, oy - 2);
-    }
-    if (ih > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${ipct}%`, ix + barW / 2, iy - 2);
-    }
+    shown.forEach((s, si) => {
+      const v  = s.bars[i];
+      const bx = gx + rowOff + si * (barW + barGap);
+      const bh = (v / yMax) * ch;
+      const by = mt + ch - bh;
+      ctx.fillStyle = s.color;
+      ctx.fillRect(Math.round(bx), Math.round(by), Math.round(barW), Math.round(bh));
+      // Match the on-screen chart: label every non-zero band, not just tall bars.
+      const pct = Math.round((v / s.total) * 100);
+      if (pct > 0) {
+        ctx.fillStyle = ink4;
+        ctx.font = '500 9px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`${pct}%`, bx + barW / 2, by - 2);
+      }
+    });
 
     ctx.fillStyle = ink4;
     ctx.font = '500 9.5px Inter, system-ui, sans-serif';
@@ -480,7 +480,7 @@ export function exportReachPng() {
   const lgdY = H - lgdH + 4;
   const SW = 10;
   let lx = ml;
-  [['Outflow', outColor], ['Inflow', inColor]].forEach(([label, color]) => {
+  shown.forEach(({ label, color }) => {
     ctx.fillStyle = color;
     ctx.fillRect(lx, lgdY, SW, SW);
     ctx.fillStyle = ink4;
@@ -1078,7 +1078,7 @@ function _renderFlowWheel(totalIn, totalOut, selfFlow, state) {
     ? Math.round(selfFlow / (totalOut + selfFlow) * 100) : 0;
 
   // Same overlap color as the Venn diagram's LIVE & WORK lens
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
 
   // Rotation arc geometry — two CW 150° arcs, 30° gaps at top/bottom
   const topY = cy - R;
@@ -1261,7 +1261,7 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
   const legendY = H - 28;
   const dotR = 5, textOff = dotR * 2 + 6;
   const hasSelf = selfFlow > 0;
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
   // Distribute legend items: 2 or 3 items centered in W
   const leg1X = hasSelf ? 38  : 110;
   const leg2X = 175;
@@ -1269,8 +1269,13 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible">
+      ${hasSelf ? `<defs><clipPath id="venn-lens-clip">
+        <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}"/>
+      </clipPath></defs>` : ''}
       <circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"  fill="var(--inflow)"  opacity="0.72"/>
       <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}" fill="var(--outflow)" opacity="0.72"/>
+      ${hasSelf ? `<circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"
+        fill="${overlapColor}" clip-path="url(#venn-lens-clip)"/>` : ''}
 
       <text x="${numInX.toFixed(1)}" y="${cy + 6}" text-anchor="middle"
             font-size="18" font-weight="700" font-family="${font}" fill="white" opacity="0.95">${fmt(totalIn)}</text>
@@ -1906,8 +1911,10 @@ function _pngDownload(chart, filename) {
 }
 
 function _csvDownload(rows, filename) {
-  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  // Lead with a UTF-8 BOM so Excel / Windows decodes the file as UTF-8
+  // instead of the system ANSI codepage, which mangles en-dashes and the like.
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   _dlUrl(url, `${filename}.csv`);
   setTimeout(() => URL.revokeObjectURL(url), 1000);

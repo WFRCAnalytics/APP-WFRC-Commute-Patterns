@@ -94,6 +94,76 @@
   background: var(--ink);
 }
 
+/* ── Reach scope switch (Commute Length: crossing-only vs all commutes) ── */
+.reach-scope-switch {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.reach-scope-switch input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.reach-scope-switch .rss-track {
+  position: relative;
+  flex: none;
+  width: 28px;
+  height: 16px;
+  border-radius: 999px;
+  background: var(--rule-strong);
+  transition: background 0.16s ease;
+}
+
+.reach-scope-switch .rss-thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.28);
+  transition: transform 0.16s ease;
+}
+
+.reach-scope-switch input:checked + .rss-track {
+  background: var(--ink-3);
+}
+
+/* On-state track follows the workers/residents (inflow/outflow) mode, like the
+   area-type and aggregation toggles. */
+[data-direction="outflow"] .reach-scope-switch input:checked + .rss-track { background: var(--outflow); }
+[data-direction="inflow"]  .reach-scope-switch input:checked + .rss-track { background: var(--inflow); }
+
+.reach-scope-switch input:checked + .rss-track .rss-thumb {
+  transform: translateX(12px);
+}
+
+.reach-scope-switch input:focus-visible + .rss-track {
+  outline: 2px solid var(--ink-4);
+  outline-offset: 2px;
+}
+
+.reach-scope-switch .rss-label {
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-4);
+  transition: color 0.15s ease;
+}
+
+.reach-scope-switch:hover .rss-label { color: var(--ink-2); }
+.reach-scope-switch input:checked ~ .rss-label { color: var(--ink); }
+
 /* ── Chart canvas areas ────────────────────────────────────── */
 .chart-canvas {
   position: relative;

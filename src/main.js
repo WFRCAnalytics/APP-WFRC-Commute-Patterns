@@ -2,7 +2,7 @@ import './styles/main.css';
 import './styles/sidebar.css';
 import './styles/charts.css';
 import './styles/toolbar.css';
-import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, queryReachFlows, queryNeighborFlows } from './db.js';
+import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, querySelfFlowDistance, queryReachFlows, queryNeighborFlows } from './db.js';
 import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
 import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle, syncGeoMode, showUnlockToast } from './sidebar.js';
 import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts, setTrendsData } from './charts.js';
@@ -19,6 +19,7 @@ const state = {
   year:             null,
   minFlow:          50,
   loading:          false,
+  reachScope:       'all',  // Commute Length stat scope: 'all' (every worker who lives/works here) | 'crossing' (cross-boundary only)
 };
 
 // Display Geography types exposed in the UI per mode — kept in sync with the
@@ -129,6 +130,7 @@ let _lastTotalOut  = 0;
 let _lastTotalIn   = 0;
 let _lastSelfCount = 0;
 let _lastSelfBands = null;
+let _lastSelfDist  = { wsum: 0, n: 0 };
 // City-level flows used exclusively for the reach chart.
 // For county selections these are cross-county city→city pairs (more accurate distances).
 // For city selections these mirror _lastOutflows/_lastInflows.
@@ -334,6 +336,30 @@ async function main() {
   document.getElementById('export-transport-csv')?.addEventListener('click', () => exportTransportCsv());
   document.getElementById('export-traveltime-png')?.addEventListener('click', () => exportTravelTimePng());
   document.getElementById('export-traveltime-csv')?.addEventListener('click', () => exportTravelTimeCsv());
+
+  // Commute Length scope switch — on = 'all' (every worker who lives/works in
+  // the area), off = 'crossing' (cross-boundary commuters only). The label
+  // states the scope currently in effect.
+  const reachScopeInput = document.getElementById('reach-scope-input');
+  const reachScopeLabel = document.getElementById('reach-scope-label');
+  const _syncReachScopeLabel = () => {
+    if (reachScopeLabel) {
+      reachScopeLabel.textContent = state.reachScope === 'all' ? 'All commutes' : 'Cross-boundary only';
+    }
+  };
+  if (reachScopeInput) {
+    reachScopeInput.checked = state.reachScope === 'all';
+    _syncReachScopeLabel();
+    reachScopeInput.addEventListener('change', () => {
+      state.reachScope = reachScopeInput.checked ? 'all' : 'crossing';
+      _syncReachScopeLabel();
+      _syncUrl();
+      updateSidebarStats(
+        state.direction === 'outflow' ? _lastOutflows : _lastInflows,
+        state, _lastSelfBands, _lastSelfDist,
+      );
+    });
+  }
 
   // 10. Wire year scrubber
   _initYearSelect(availableYears, base);
@@ -665,7 +691,7 @@ async function refreshVisualization() {
   try {
     const isNonCitySubject = state.selectedAreaType !== 'city';
 
-    const [outflows, inflows, totalOut, totalIn, selfCount, selfBands, reachRawOut, reachRawIn,
+    const [outflows, inflows, totalOut, totalIn, selfCount, selfBands, selfDist, reachRawOut, reachRawIn,
            neighborOut, neighborIn] = await Promise.all([
       queryFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
       queryFlows(state.selectedArea, state.selectedAreaType, 'inflow',  state.aggregation),
@@ -673,6 +699,7 @@ async function refreshVisualization() {
       queryTotal(state.selectedArea, state.selectedAreaType, 'inflow'),
       querySelfFlow(state.selectedArea, state.selectedAreaType),
       querySelfFlowBands(state.selectedArea, state.selectedAreaType),
+      querySelfFlowDistance(state.selectedArea, state.selectedAreaType),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'outflow') : Promise.resolve(null),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'inflow')  : Promise.resolve(null),
       queryNeighborFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
@@ -729,6 +756,7 @@ async function refreshVisualization() {
     _lastTotalIn   = totalIn;
     _lastSelfCount = selfCount;
     _lastSelfBands = selfBands;
+    _lastSelfDist  = selfDist;
 
     // Reach chart: use city-level pairs for non-city subjects so distances are
     // measured between city centroids rather than a single area centroid.
@@ -824,7 +852,7 @@ function _applyFilter() {
   // Charts always show both directions unfiltered — top N by volume handles their own slicing
   updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn, _lastSelfBands);
   updateChoropleth(dirFlows, state.selectedArea, state.aggregation, state.theme, state.direction, state.selectedAreaType);
-  updateSidebarStats(dirFlows, state);
+  updateSidebarStats(dirFlows, state, _lastSelfBands, _lastSelfDist);
   _updateDataline(total, state);
   _updateLegend(filtered, state.direction, state.theme);
 }
@@ -941,6 +969,9 @@ function _applyUrlParams() {
   }
   const dir = p.get('dir');
   if (dir === 'outflow' || dir === 'inflow') state.direction = dir;
+
+  const scope = p.get('scope');
+  if (scope === 'crossing' || scope === 'all') state.reachScope = scope;
 }
 
 function _syncUrl() {
@@ -950,6 +981,7 @@ function _syncUrl() {
   url.searchParams.set('area', state.selectedArea);
   url.searchParams.set('dir',  state.direction);
   url.searchParams.set('agg',  state.aggregation);
+  url.searchParams.set('scope', state.reachScope);
   history.replaceState(null, '', url);
 }
 
