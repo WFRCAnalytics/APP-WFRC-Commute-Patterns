@@ -827,6 +827,58 @@ def update_manifest(year_int):
     print(f"  Updated manifest.json: years={manifest['years']}, default={manifest['default']}")
 
 
+def regenerate_neighbor_flows(year_str):
+    """Rebuild neighbor_flows.parquet + neighbor_meta.json for one year, reusing
+    the full block lookup (city/county + TAZ planning districts) so the
+    cross-state flows carry every subject-geography column the frontend needs.
+
+    Deliberately narrow: it does NOT recompute city/county/district/planning
+    flows, boundaries, ACS, or the manifest — those are unchanged by a
+    neighbor-schema tweak, and rewriting them would churn unrelated Parquet.
+    """
+    main_cache = CACHE_DIR / f"ut_od_main_JT00_{year_str}.csv.gz"
+    if not main_cache.exists():
+        raise FileNotFoundError(f"no cached OD data for {year_str} ({main_cache.name})")
+
+    year_dir = DATA_DIR / "lehd" / str(year_str)
+    if not year_dir.exists():
+        raise FileNotFoundError(f"no data directory for {year_str} ({year_dir})")
+
+    print(f"\n--- {year_str} ---")
+    od, year = load_od([year_str])
+
+    nb_outflow = neighbor_zones.load_outflow_od(year, CACHE_DIR, download_cached)
+    if not nb_outflow.empty:
+        od = pd.concat([od, nb_outflow], ignore_index=True)
+
+    xw = load_xwalk()
+    nb_all_zones = neighbor_zones.build_neighbor_zones(CACHE_DIR, download_cached)
+    nb_border_fips, nb_border_zone_names = neighbor_zones.get_border_zone_set(
+        CACHE_DIR, download_cached, nb_all_zones
+    )
+
+    disambig = _detect_name_collisions(xw)
+    lookup = build_lookup(xw, disambig)
+    block_map = custom_places.get_custom_block_map(xw)
+    lookup = custom_places.apply_custom_places(lookup, block_map)
+    lookup = merge_taz_lookup(lookup, taz_districts.build_taz_lookup(xw))
+
+    od = join_od_with_lookup(od, lookup)
+    od = mark_out_of_state(od)
+    od = filter_utah(od)
+    od = fill_unincorporated(od)
+
+    nb_block_lookup = neighbor_zones.resolve_neighbor_blocks(
+        od, CACHE_DIR, download_cached
+    )
+    nb_flows = neighbor_zones.process_neighbor_flows(
+        od, nb_block_lookup, nb_border_fips, _haversine_miles_vec
+    )
+
+    neighbor_zones.export_neighbor_flows(year_dir, nb_flows)
+    neighbor_zones.build_and_export_meta(year_dir, nb_all_zones, nb_border_zone_names)
+
+
 def main():
     parser = argparse.ArgumentParser(description="Utah Commute Patterns Data Pipeline")
     parser.add_argument(
@@ -841,7 +893,27 @@ def main():
         "--skip-acs", action="store_true",
         help="Skip ACS data fetch (useful when Census API is unavailable)"
     )
+    parser.add_argument(
+        "--neighbor-only", action="store_true",
+        help="Regenerate only neighbor_flows.parquet + neighbor_meta.json "
+             "(all years unless --year given). Leaves every other output file "
+             "untouched — use after a change to the cross-state flow schema."
+    )
     args = parser.parse_args()
+
+    if args.neighbor_only:
+        years = [str(args.year)] if args.year else LODES_YEARS_DEFAULT
+        print("=== Regenerating neighbor flows only ===\n")
+        ok = []
+        for y in years:
+            try:
+                regenerate_neighbor_flows(y)
+                ok.append(y)
+            except FileNotFoundError as e:
+                print(f"  Skipping {y}: {e}")
+        print(f"\nDone! Regenerated neighbor flows for {len(ok)} year(s): "
+              f"{', '.join(ok)}")
+        return
 
     if args.boundaries:
         print("=== Generating Boundary Files ===\n")

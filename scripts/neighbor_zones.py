@@ -571,6 +571,9 @@ def process_neighbor_flows(
     Produces BOTH city-level and county-level aggregation columns so the
     frontend can switch between granularities without a separate query:
       utah_zone / utah_county  — subject area at city or county level
+      utah_small / utah_medium / utah_large / utah_super — subject area at each
+        Planning Boundaries level (so Planning-mode subjects also see their
+        cross-state commuters in the flow / distance stats)
       neighbor_zone / neighbor_county — destination at city or county level
     """
     if not block_lookup:
@@ -579,6 +582,11 @@ def process_neighbor_flows(
 
     h_utah = od["h_geocode"].str.startswith("49")
     w_utah = od["w_geocode"].str.startswith("49")
+
+    # Planning Boundaries levels carried through from join_od_with_lookup(). The
+    # Utah side of a cross-state pair is the work block for inflow, the home
+    # block for outflow — mirror the utah_zone / utah_county assignment below.
+    PLANNING_LEVELS = ("small", "medium", "large", "super")
 
     segments = []
 
@@ -592,6 +600,8 @@ def process_neighbor_flows(
         inflow["utah_county"]    = inflow["w_county"]
         inflow["utah_blk_lat"]   = inflow["w_blk_lat"]
         inflow["utah_blk_lon"]   = inflow["w_blk_lon"]
+        for lvl in PLANNING_LEVELS:
+            inflow[f"utah_{lvl}"] = inflow[f"w_{lvl}"]
         segments.append(inflow)
         print(f"  Inflow records (home OOS, work UT): {inflow_mask.sum():,}")
 
@@ -605,6 +615,8 @@ def process_neighbor_flows(
         outflow["utah_county"]    = outflow["h_county"]
         outflow["utah_blk_lat"]   = outflow["h_blk_lat"]
         outflow["utah_blk_lon"]   = outflow["h_blk_lon"]
+        for lvl in PLANNING_LEVELS:
+            outflow[f"utah_{lvl}"] = outflow[f"h_{lvl}"]
         segments.append(outflow)
         print(f"  Outflow records (home UT, work OOS): {outflow_mask.sum():,}")
 
@@ -669,6 +681,7 @@ def process_neighbor_flows(
     # between granularities (city/county map zone) without re-running the pipeline.
     group_cols = [
         "utah_zone", "utah_county",
+        "utah_small", "utah_medium", "utah_large", "utah_super",
         "neighbor_zone", "neighbor_county",
         "state_abbr", "direction",
     ]
@@ -686,6 +699,7 @@ def _empty_flows() -> pd.DataFrame:
     """Return empty DataFrame with the correct neighbor_flows schema."""
     cols = [
         "utah_zone", "utah_county",
+        "utah_small", "utah_medium", "utah_large", "utah_super",
         "neighbor_zone", "neighbor_county",
         "state_abbr", "direction",
     ] + ALL_FLOW_COLS
