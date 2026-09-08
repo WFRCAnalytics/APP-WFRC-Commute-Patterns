@@ -829,8 +829,9 @@ def update_manifest(year_int):
 
 def regenerate_neighbor_flows(year_str):
     """Rebuild neighbor_flows.parquet + neighbor_meta.json for one year, reusing
-    the full block lookup (city/county + TAZ planning districts) so the
-    cross-state flows carry every subject-geography column the frontend needs.
+    the full block lookup (city/county + TAZ planning districts + House/Senate +
+    both Workshop geographies) so the cross-state flows carry every
+    subject-geography column the frontend needs.
 
     Deliberately narrow: it does NOT recompute city/county/district/planning
     flows, boundaries, ACS, or the manifest — those are unchanged by a
@@ -858,10 +859,12 @@ def regenerate_neighbor_flows(year_str):
     )
 
     disambig = _detect_name_collisions(xw)
-    lookup = build_lookup(xw, disambig)
+    lookup = build_lookup(xw, disambig)  # carries house_name / senate_name
     block_map = custom_places.get_custom_block_map(xw)
     lookup = custom_places.apply_custom_places(lookup, block_map)
     lookup = merge_taz_lookup(lookup, taz_districts.build_taz_lookup(xw))
+    lookup = merge_workshop_lookup(lookup, workshop_areas.build_workshop_lookup(xw))
+    lookup = merge_mag_workshop_lookup(lookup, mag_workshop_areas.build_mag_workshop_lookup(xw))
 
     od = join_od_with_lookup(od, lookup)
     od = mark_out_of_state(od)
