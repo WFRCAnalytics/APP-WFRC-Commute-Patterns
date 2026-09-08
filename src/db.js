@@ -5,10 +5,11 @@ let _conn             = null;
 let _hasDistanceBands = false;
 let _hasDistWsum      = false;
 let _hasNeighborFlows = false;
-// Planning-district subject columns on neighbor_flows (utah_small/medium/large/
-// super). Absent on neighbor_flows.parquet generated before that schema change,
-// so Planning-mode subjects fall back to no cross-state flows for those years.
-let _neighborHasPlanning = false;
+// Column names present on the loaded neighbor_flows.parquet. Older years lack
+// the non-city/county subject columns (utah_small…, utah_house…, utah_workshop…),
+// so queryNeighborFlows() checks this before filtering on one and otherwise
+// returns no cross-state flows for that subject type / year.
+let _neighborCols = new Set();
 
 /**
  * Initialize DuckDB-WASM and load Parquet files for the given year.
@@ -130,12 +131,10 @@ async function _loadYearFiles(year, onProgress) {
     const nbColResult = await _conn.query(
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'neighbor_flows'`
     );
-    const nbCols = new Set(nbColResult.toArray().map(r => r.toJSON().column_name));
-    _neighborHasPlanning = ['utah_small', 'utah_medium', 'utah_large', 'utah_super']
-      .every(c => nbCols.has(c));
+    _neighborCols = new Set(nbColResult.toArray().map(r => r.toJSON().column_name));
   } catch {
     _hasNeighborFlows = false;
-    _neighborHasPlanning = false;
+    _neighborCols = new Set();
     await _conn.query(`CREATE OR REPLACE VIEW neighbor_flows AS
       SELECT '' AS utah_zone, '' AS neighbor_zone, '' AS state_abbr, '' AS direction,
              0 AS S000, 0 AS SA01, 0 AS SA02, 0 AS SA03,
@@ -385,49 +384,52 @@ export async function queryReachFlows(area, areaType, direction) {
 /**
  * Cross-state neighbor flows for the selected Utah area.
  *
- * areaType    — 'city' | 'county' | 'small' | 'medium' | 'large' | 'super'
- *               (subject area type, controls filter column)
+ * areaType    — any subject type: 'city' | 'county' | Planning level
+ *               (small/medium/large/super) | 'house' | 'senate' |
+ *               'workshop' | 'mag_workshop' (controls the filter column)
  * direction   — 'outflow' | 'inflow'
  * aggregation — destination granularity: 'county' groups to neighbor_county,
- *               anything else (city or a Planning level) groups to neighbor_zone
+ *               anything else groups to neighbor_zone — but every non-city
+ *               subject is forced to neighbor_county (see destCol below)
  *
  * Mirrors the queryFlows() areaType/aggregation split so the neighbor layer
  * follows the same map zone setting as the main Utah choropleth.
  */
 const _NEIGHBOR_SUBJECT_COL = {
-  city:   'utah_zone',
-  county: 'utah_county',
-  small:  'utah_small',
-  medium: 'utah_medium',
-  large:  'utah_large',
-  super:  'utah_super',
+  city:         'utah_zone',
+  county:       'utah_county',
+  small:        'utah_small',
+  medium:       'utah_medium',
+  large:        'utah_large',
+  super:        'utah_super',
+  house:        'utah_house',
+  senate:       'utah_senate',
+  workshop:     'utah_workshop',
+  mag_workshop: 'utah_mag_workshop',
 };
 
 export async function queryNeighborFlows(area, areaType, direction, aggregation) {
   if (!_conn || !_hasNeighborFlows) return [];
-  // Only areaTypes with a matching subject column on neighbor_flows are
-  // supported. house/senate and the hidden workshop geographies have none —
-  // they must return early rather than falling through to a wrong column, and
-  // some Planning District display names collide with real city names (e.g.
-  // Small District "Salt Lake City"), which would otherwise match unrelated
-  // city-level rows.
+  // Filter on the subject's own column. A Planning District display name can
+  // collide with a real city name (e.g. Small District "Salt Lake City"), so
+  // an unmapped areaType must bail rather than fall through to utah_zone.
   const filterCol = _NEIGHBOR_SUBJECT_COL[areaType];
   if (!filterCol) return [];
-  // Planning-district columns only exist on neighbor_flows regenerated after
-  // that schema change; older years silently have no cross-state Planning flows.
-  const isPlanning = _PLANNING_TYPES.includes(areaType);
-  if (isPlanning && !_neighborHasPlanning) return [];
+  // The non-city/county subject columns were added to neighbor_flows.parquet
+  // in later regenerations; older years lack them, so there are simply no
+  // cross-state flows to report for those subject types / years.
+  if (!_neighborCols.has(filterCol)) return [];
   const safe = area.replace(/'/g, "''");
 
-  // Destination column: neighbor_county for county subjects, county-level map
-  // zone, AND every Planning-district subject; neighbor_zone (city) only for a
-  // city subject on a city-level zone. Planning subjects must use the county
-  // key because neighbor_meta.json (which the frontend joins dest_name against
-  // for lat/lon) is border-filtered — every neighbor COUNTY is present, but
-  // ~half the neighbor CITY names (unincorporated CDPs, far Las Vegas suburbs)
-  // are not, and those rows would be silently dropped, undercounting the
-  // cross-state commute distance relative to the equivalent Civic county.
-  const destCol   = (aggregation === 'county' || isPlanning) ? 'neighbor_county' : 'neighbor_zone';
+  // Destination column: neighbor_zone (city) only for a city subject on a
+  // city-level map zone; every other case — a county subject, a county-level
+  // zone, or ANY non-city subject (Planning / House / Senate / Workshop) —
+  // keys to neighbor_county. neighbor_meta.json (which the frontend joins
+  // dest_name against for lat/lon) is border-filtered: every neighbor COUNTY
+  // is present, but ~half the neighbor CITY names (unincorporated CDPs, far
+  // Las Vegas suburbs) are not, and city-keyed rows for those would be
+  // silently dropped, undercounting cross-state distance vs the Civic county.
+  const destCol   = (areaType !== 'city' || aggregation === 'county') ? 'neighbor_county' : 'neighbor_zone';
   const dirFilter = direction === 'outflow' ? "AND direction = 'out'" : "AND direction = 'in'";
 
   const sql = `

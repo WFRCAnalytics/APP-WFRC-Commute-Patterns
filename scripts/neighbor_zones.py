@@ -571,9 +571,11 @@ def process_neighbor_flows(
     Produces BOTH city-level and county-level aggregation columns so the
     frontend can switch between granularities without a separate query:
       utah_zone / utah_county  — subject area at city or county level
-      utah_small / utah_medium / utah_large / utah_super — subject area at each
-        Planning Boundaries level (so Planning-mode subjects also see their
-        cross-state commuters in the flow / distance stats)
+      utah_{small,medium,large,super} — the four Planning Boundaries levels
+      utah_{house,senate} — Utah legislative districts
+      utah_{workshop,mag_workshop} — the two hidden Workshop geographies
+        (all so a non-city/county subject also sees its cross-state commuters
+         in the flow / distance stats, matching the containing city/county)
       neighbor_zone / neighbor_county — destination at city or county level
     """
     if not block_lookup:
@@ -583,10 +585,16 @@ def process_neighbor_flows(
     h_utah = od["h_geocode"].str.startswith("49")
     w_utah = od["w_geocode"].str.startswith("49")
 
-    # Planning Boundaries levels carried through from join_od_with_lookup(). The
+    # Non-city/county subject geographies carried through from
+    # join_od_with_lookup() as h_<lvl> / w_<lvl>: the four Planning Boundaries
+    # levels, Utah House / Senate, and the two hidden Workshop geographies. The
     # Utah side of a cross-state pair is the work block for inflow, the home
-    # block for outflow — mirror the utah_zone / utah_county assignment below.
-    PLANNING_LEVELS = ("small", "medium", "large", "super")
+    # block for outflow — mirror the utah_zone / utah_county assignment below,
+    # so a border-adjacent district/area sees its cross-state commuters too.
+    SUBJECT_LEVELS = (
+        "small", "medium", "large", "super",
+        "house", "senate", "workshop", "mag_workshop",
+    )
 
     segments = []
 
@@ -600,7 +608,7 @@ def process_neighbor_flows(
         inflow["utah_county"]    = inflow["w_county"]
         inflow["utah_blk_lat"]   = inflow["w_blk_lat"]
         inflow["utah_blk_lon"]   = inflow["w_blk_lon"]
-        for lvl in PLANNING_LEVELS:
+        for lvl in SUBJECT_LEVELS:
             inflow[f"utah_{lvl}"] = inflow[f"w_{lvl}"]
         segments.append(inflow)
         print(f"  Inflow records (home OOS, work UT): {inflow_mask.sum():,}")
@@ -615,7 +623,7 @@ def process_neighbor_flows(
         outflow["utah_county"]    = outflow["h_county"]
         outflow["utah_blk_lat"]   = outflow["h_blk_lat"]
         outflow["utah_blk_lon"]   = outflow["h_blk_lon"]
-        for lvl in PLANNING_LEVELS:
+        for lvl in SUBJECT_LEVELS:
             outflow[f"utah_{lvl}"] = outflow[f"h_{lvl}"]
         segments.append(outflow)
         print(f"  Outflow records (home UT, work OOS): {outflow_mask.sum():,}")
@@ -682,6 +690,7 @@ def process_neighbor_flows(
     group_cols = [
         "utah_zone", "utah_county",
         "utah_small", "utah_medium", "utah_large", "utah_super",
+        "utah_house", "utah_senate", "utah_workshop", "utah_mag_workshop",
         "neighbor_zone", "neighbor_county",
         "state_abbr", "direction",
     ]
@@ -700,6 +709,7 @@ def _empty_flows() -> pd.DataFrame:
     cols = [
         "utah_zone", "utah_county",
         "utah_small", "utah_medium", "utah_large", "utah_super",
+        "utah_house", "utah_senate", "utah_workshop", "utah_mag_workshop",
         "neighbor_zone", "neighbor_county",
         "state_abbr", "direction",
     ] + ALL_FLOW_COLS
