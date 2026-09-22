@@ -2,14 +2,16 @@ import './styles/main.css';
 import './styles/sidebar.css';
 import './styles/charts.css';
 import './styles/toolbar.css';
-import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, queryReachFlows, queryNeighborFlows } from './db.js';
+import { initDB, reloadYear, queryFlows, queryTotal, querySelfFlow, querySelfFlowBands, querySelfFlowDistance, queryReachFlows, queryNeighborFlows } from './db.js';
 import { initMap, updateLayers, switchTheme, flyToArea, loadBoundaries, updateChoropleth, setFlowVisible, setPolygonsVisible, setSelfFlow, initPolygonInteraction, loadInfoOnlyPlaces, loadNeighborZones, updateNeighborFlowIndex, setNeighborAggregation } from './map.js';
-import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle } from './sidebar.js';
-import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts } from './charts.js';
+import { initSidebar, updateSidebarStats, setInfoOnlyPlaces, syncAreaTypeToggle, syncGeoMode, showUnlockToast } from './sidebar.js';
+import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, exportSankeyCsv, exportDemoPng, exportDemoCsv, exportReachPng, exportReachCsv, exportIndustryPng, exportIndustryCsv, exportTransportPng, exportTransportCsv, exportTravelTimePng, exportTravelTimeCsv, resizeCharts, setTrendsData } from './charts.js';
 
 // ── Global app state ─────────────────────────────────────────────────────────
 const state = {
-  theme:            document.documentElement.getAttribute('data-theme') || 'light',
+  theme:            document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
+  geoMode:          'census',   // 'census' (Civic) | 'planning' (Planning Boundaries) | 'workshop' (hidden)
+  wsUnlocked:       false,      // hidden Workshop Areas mode — see _checkWsUnlock()
   aggregation:      'city',
   direction:        'inflow',
   selectedArea:     'Salt Lake City',
@@ -17,12 +19,101 @@ const state = {
   year:             null,
   minFlow:          50,
   loading:          false,
+  reachScope:       'all',  // Commute Length stat scope: 'all' (every worker who lives/works here) | 'crossing' (cross-boundary only)
 };
+
+// Display Geography types exposed in the UI per mode — kept in sync with the
+// identical constant in sidebar.js (used here to validate the `agg` URL param).
+// TO RE-ENABLE house/senate for Workshop display: add 'house', 'senate' below
+// (and uncomment the matching buttons in sidebar.js).
+const DISPLAY_TYPES_BY_MODE = {
+  census:   ['city', 'county'],
+  planning: ['small', 'medium'],
+  workshop: ['city', 'county'],
+};
+
+// Hidden Workshop Areas mode. Not documented anywhere in the UI — unlocked
+// by clicking the WFRC logo/title (.mast-brand) 5 times within 2 seconds
+// (see _initSecretUnlock), or by visiting once with ?ws=1. Either path
+// stores a timestamp and reloads; from then on the real "Workshop Areas"
+// mode button exists for that browser for a sliding 24h window — every
+// load that finds a still-valid unlock pushes the expiry another 24h out,
+// but a browser left unused for a day forgets it again. This avoids the
+// alternative of a permanent flag staying live forever on a shared/borrowed
+// machine long after whoever unlocked it is done with it. The same 5-click
+// gesture toggles it back off immediately when already unlocked, instead of
+// making you wait out the 24h window.
+const WS_UNLOCK_KEY     = 'wfrc_ws_unlocked';
+const WS_UNLOCK_TTL_MS  = 24 * 60 * 60 * 1000;
+
+function _refreshWsUnlock() {
+  try { localStorage.setItem(WS_UNLOCK_KEY, String(Date.now())); } catch {}
+}
+
+function _clearWsUnlock() {
+  try { localStorage.removeItem(WS_UNLOCK_KEY); } catch {}
+  // Also strip ?ws=1 so a lock triggered from a URL-unlocked session actually
+  // sticks on reload instead of immediately re-unlocking itself.
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.delete('ws');
+    history.replaceState(null, '', url);
+  } catch {}
+}
+
+function _checkWsUnlock() {
+  const p = new URLSearchParams(window.location.search);
+  if (p.get('ws') === '1') {
+    _refreshWsUnlock();
+    return true;
+  }
+  try {
+    const unlockedAt = Number(localStorage.getItem(WS_UNLOCK_KEY));
+    if (unlockedAt && Date.now() - unlockedAt < WS_UNLOCK_TTL_MS) {
+      _refreshWsUnlock(); // sliding — extend another 24h from now
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+// 5 clicks on the logo within 2 seconds toggles Workshop Areas mode: unlocks
+// it if locked, locks it back immediately (no 24h wait) if already unlocked.
+function _initSecretUnlock() {
+  const brand = document.querySelector('.mast-brand');
+  if (!brand) return;
+
+  const WINDOW_MS = 2000;
+  const NEEDED    = 5;
+  let clicks = [];
+
+  brand.addEventListener('click', () => {
+    const now = Date.now();
+    clicks = clicks.filter(t => now - t < WINDOW_MS);
+    clicks.push(now);
+    if (clicks.length < NEEDED) return;
+
+    if (state.wsUnlocked) {
+      _clearWsUnlock();
+      showUnlockToast('Workshop Areas locked');
+    } else {
+      _refreshWsUnlock();
+      showUnlockToast();
+    }
+    setTimeout(() => location.reload(), 550);
+  });
+}
 
 let cityMeta     = {};
 let countyMeta   = {};
 let houseMeta    = {};
 let senateMeta   = {};
+let smallMeta    = {};
+let mediumMeta   = {};
+let largeMeta    = {};
+let superMeta    = {};
+let workshopMeta = {};
+let magWorkshopMeta = {};
 // Neighbor zone metadata: {display_name -> {lat, lon, state, state_abbr, ...}}
 let neighborMeta = {};
 
@@ -38,6 +129,8 @@ let _lastInflows   = [];
 let _lastTotalOut  = 0;
 let _lastTotalIn   = 0;
 let _lastSelfCount = 0;
+let _lastSelfBands = null;
+let _lastSelfDist  = { wsum: 0, n: 0 };
 // City-level flows used exclusively for the reach chart.
 // For county selections these are cross-county city→city pairs (more accurate distances).
 // For city selections these mirror _lastOutflows/_lastInflows.
@@ -53,7 +146,11 @@ let _availableYears = [];
 
 // ── Meta helpers ─────────────────────────────────────────────────────────────
 function _getMetaFor(type) {
-  return { city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta }[type] ?? cityMeta;
+  return {
+    city: cityMeta, county: countyMeta, house: houseMeta, senate: senateMeta,
+    small: smallMeta, medium: mediumMeta, large: largeMeta, super: superMeta,
+    workshop: workshopMeta, mag_workshop: magWorkshopMeta,
+  }[type] ?? cityMeta;
 }
 
 // ── Haversine helper ──────────────────────────────────────────────────────────
@@ -97,12 +194,19 @@ async function _loadAcs(base, year) {
 // ── Boot ─────────────────────────────────────────────────────────────────────
 async function main() {
   _initPanelToggles(); // no data dependency — run immediately so mobile layout is correct from the start
+  state.wsUnlocked = _checkWsUnlock();
+  _initSecretUnlock();
   setProgress(5);
 
   const base = import.meta.env.BASE_URL ?? '/';
 
-  // 1. Load manifest
-  const manifest = await fetch(`${base}data/manifest.json`).then(r => r.json());
+  // 1. Load manifest + historical trend data (year-independent — fetched
+  //    once, not re-fetched on year switch, unlike the per-year flow files).
+  const [manifest, trendsData] = await Promise.all([
+    fetch(`${base}data/manifest.json`).then(r => r.json()),
+    fetch(`${base}data/trends.json`).then(r => r.ok ? r.json() : null).catch(() => null),
+  ]);
+  setTrendsData(trendsData);
   const availableYears = manifest.years.map(Number).sort((a, b) => b - a);
   _availableYears = availableYears;
 
@@ -113,11 +217,18 @@ async function main() {
   // 3. Load year-specific metadata + ACS data
   const _safeJson = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
 
-  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
+  const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
+         smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, magWorkshopMetaArr, neighborMetaArr] = await Promise.all([
     fetch(`${base}data/lehd/${state.year}/city_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/county_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/house_meta.json`).then(r => r.json()),
     fetch(`${base}data/lehd/${state.year}/senate_meta.json`).then(r => r.json()),
+    _safeJson(`${base}data/lehd/${state.year}/small_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/medium_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/large_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/super_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/workshop_meta.json`),
+    _safeJson(`${base}data/lehd/${state.year}/mag_workshop_meta.json`),
     _safeJson(`${base}data/lehd/${state.year}/neighbor_meta.json`),
     _loadAcs(base, state.year),
   ]);
@@ -125,6 +236,12 @@ async function main() {
   countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
   houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
   senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+  smallMeta    = Object.fromEntries(smallMetaArr.map(d => [d.name, d]));
+  mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
+  largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
+  superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
+  workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
+  magWorkshopMeta = Object.fromEntries(magWorkshopMetaArr.map(d => [d.name, d]));
   neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
 
   setProgress(15);
@@ -141,6 +258,7 @@ async function main() {
     if (name === state.selectedArea) return;
     state.selectedArea     = name;
     state.selectedAreaType = state.aggregation;
+    if (state.geoMode === 'workshop') { state.geoMode = 'census'; syncGeoMode('census'); }
     syncAreaTypeToggle(state.aggregation);
     _updateSidebarAreaLabels(name);
     refreshVisualization();
@@ -175,10 +293,18 @@ async function main() {
   const _numSort = (a, b) => a.localeCompare(b, undefined, { numeric: true });
   const houseNames  = houseMetaArr.map(d => d.name).sort(_numSort);
   const senateNames = senateMetaArr.map(d => d.name).sort(_numSort);
+  const smallNames  = smallMetaArr.map(d => d.name).sort();
+  const mediumNames = mediumMetaArr.map(d => d.name).sort();
+  const largeNames  = largeMetaArr.map(d => d.name).sort();
+  const superNames  = superMetaArr.map(d => d.name).sort();
+  const workshopNames = workshopMetaArr.map(d => d.name).sort();
+  const magWorkshopNames = magWorkshopMetaArr.map(d => d.name).sort();
 
   initSidebar({
     cityNames, countyNames, houseNames, senateNames,
-    cityMeta, houseMeta, senateMeta,
+    smallNames, mediumNames, largeNames, superNames,
+    workshopNames, magWorkshopNames,
+    cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
     state,
     onSelectionChange: () => refreshVisualization(),
     onAreaFly: () => {},
@@ -210,6 +336,30 @@ async function main() {
   document.getElementById('export-transport-csv')?.addEventListener('click', () => exportTransportCsv());
   document.getElementById('export-traveltime-png')?.addEventListener('click', () => exportTravelTimePng());
   document.getElementById('export-traveltime-csv')?.addEventListener('click', () => exportTravelTimeCsv());
+
+  // Commute Length scope switch — on = 'all' (every worker who lives/works in
+  // the area), off = 'crossing' (cross-boundary commuters only). The label
+  // states the scope currently in effect.
+  const reachScopeInput = document.getElementById('reach-scope-input');
+  const reachScopeLabel = document.getElementById('reach-scope-label');
+  const _syncReachScopeLabel = () => {
+    if (reachScopeLabel) {
+      reachScopeLabel.textContent = state.reachScope === 'all' ? 'All commutes' : 'Cross-boundary only';
+    }
+  };
+  if (reachScopeInput) {
+    reachScopeInput.checked = state.reachScope === 'all';
+    _syncReachScopeLabel();
+    reachScopeInput.addEventListener('change', () => {
+      state.reachScope = reachScopeInput.checked ? 'all' : 'crossing';
+      _syncReachScopeLabel();
+      _syncUrl();
+      updateSidebarStats(
+        state.direction === 'outflow' ? _lastOutflows : _lastInflows,
+        state, _lastSelfBands, _lastSelfDist,
+      );
+    });
+  }
 
   // 10. Wire year scrubber
   _initYearSelect(availableYears, base);
@@ -447,18 +597,32 @@ async function _changeYear(newYear, base) {
   try {
     setProgress(5);
 
-    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr, neighborMetaArr] = await Promise.all([
+    const _safeJsonYr = url => fetch(url).then(r => r.ok ? r.json() : []).catch(() => []);
+    const [cityMetaArr, countyMetaArr, houseMetaArr, senateMetaArr,
+           smallMetaArr, mediumMetaArr, largeMetaArr, superMetaArr, workshopMetaArr, magWorkshopMetaArr, neighborMetaArr] = await Promise.all([
       fetch(`${base}data/lehd/${newYear}/city_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/county_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/house_meta.json`).then(r => r.json()),
       fetch(`${base}data/lehd/${newYear}/senate_meta.json`).then(r => r.json()),
-      fetch(`${base}data/lehd/${newYear}/neighbor_meta.json`).then(r => r.ok ? r.json() : []).catch(() => []),
+      _safeJsonYr(`${base}data/lehd/${newYear}/small_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/medium_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/large_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/super_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/workshop_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/mag_workshop_meta.json`),
+      _safeJsonYr(`${base}data/lehd/${newYear}/neighbor_meta.json`),
       _loadAcs(base, newYear),
     ]);
     cityMeta     = Object.fromEntries(cityMetaArr.map(d => [d.name, d]));
     countyMeta   = Object.fromEntries(countyMetaArr.map(d => [d.name, d]));
     houseMeta    = Object.fromEntries(houseMetaArr.map(d => [d.name, d]));
     senateMeta   = Object.fromEntries(senateMetaArr.map(d => [d.name, d]));
+    smallMeta    = Object.fromEntries(smallMetaArr.map(d => [d.name, d]));
+    mediumMeta   = Object.fromEntries(mediumMetaArr.map(d => [d.name, d]));
+    largeMeta    = Object.fromEntries(largeMetaArr.map(d => [d.name, d]));
+    superMeta    = Object.fromEntries(superMetaArr.map(d => [d.name, d]));
+    workshopMeta = Object.fromEntries(workshopMetaArr.map(d => [d.name, d]));
+    magWorkshopMeta = Object.fromEntries(magWorkshopMetaArr.map(d => [d.name, d]));
     neighborMeta = Object.fromEntries(neighborMetaArr.map(d => [d.display_name, d]));
     loadNeighborZones(neighborMetaArr);
 
@@ -470,16 +634,37 @@ async function _changeYear(newYear, base) {
     _updateScrubber(newYear, _availableYears);
 
     if (!_getMetaFor(state.selectedAreaType)[state.selectedArea]) {
-      state.selectedArea     = 'Salt Lake City';
-      state.selectedAreaType = 'city';
+      // Fall back to city/Salt Lake City only within Civic Boundaries mode;
+      // a Planning Boundaries selection missing from the new year falls back
+      // to that mode's first type instead of jumping modes.
+      if (state.geoMode === 'planning') {
+        state.selectedAreaType = 'small';
+        state.selectedArea     = smallMetaArr[0]?.name ?? state.selectedArea;
+      } else if (state.geoMode === 'workshop' && state.selectedAreaType === 'mag_workshop') {
+        state.selectedAreaType = 'mag_workshop';
+        state.selectedArea     = magWorkshopMetaArr[0]?.name ?? state.selectedArea;
+      } else if (state.geoMode === 'workshop') {
+        state.selectedAreaType = 'workshop';
+        state.selectedArea     = workshopMetaArr[0]?.name ?? state.selectedArea;
+      } else {
+        state.selectedArea     = 'Salt Lake City';
+        state.selectedAreaType = 'city';
+      }
     }
 
+    const _numSort = (a, b) => a.localeCompare(b, undefined, { numeric: true });
     initSidebar({
       cityNames:   cityMetaArr.map(d => d.name).filter(n => !n.toLowerCase().includes('unincorporated')).sort(),
       countyNames: countyMetaArr.map(d => d.name).sort(),
-      houseNames:  houseMetaArr.map(d => d.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-      senateNames: senateMetaArr.map(d => d.name).sort((a, b) => a.localeCompare(b, undefined, { numeric: true })),
-      cityMeta, houseMeta, senateMeta,
+      houseNames:  houseMetaArr.map(d => d.name).sort(_numSort),
+      senateNames: senateMetaArr.map(d => d.name).sort(_numSort),
+      smallNames:  smallMetaArr.map(d => d.name).sort(),
+      mediumNames: mediumMetaArr.map(d => d.name).sort(),
+      largeNames:  largeMetaArr.map(d => d.name).sort(),
+      superNames:  superMetaArr.map(d => d.name).sort(),
+      workshopNames: workshopMetaArr.map(d => d.name).sort(),
+      magWorkshopNames: magWorkshopMetaArr.map(d => d.name).sort(),
+      cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
       state,
       onSelectionChange: () => refreshVisualization(),
       onAreaFly: () => {},
@@ -506,13 +691,15 @@ async function refreshVisualization() {
   try {
     const isNonCitySubject = state.selectedAreaType !== 'city';
 
-    const [outflows, inflows, totalOut, totalIn, selfCount, reachRawOut, reachRawIn,
+    const [outflows, inflows, totalOut, totalIn, selfCount, selfBands, selfDist, reachRawOut, reachRawIn,
            neighborOut, neighborIn] = await Promise.all([
       queryFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
       queryFlows(state.selectedArea, state.selectedAreaType, 'inflow',  state.aggregation),
       queryTotal(state.selectedArea, state.selectedAreaType, 'outflow'),
       queryTotal(state.selectedArea, state.selectedAreaType, 'inflow'),
       querySelfFlow(state.selectedArea, state.selectedAreaType),
+      querySelfFlowBands(state.selectedArea, state.selectedAreaType),
+      querySelfFlowDistance(state.selectedArea, state.selectedAreaType),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'outflow') : Promise.resolve(null),
       isNonCitySubject ? queryReachFlows(state.selectedArea, state.selectedAreaType, 'inflow')  : Promise.resolve(null),
       queryNeighborFlows(state.selectedArea, state.selectedAreaType, 'outflow', state.aggregation),
@@ -568,6 +755,8 @@ async function refreshVisualization() {
     _lastTotalOut  = totalOut;
     _lastTotalIn   = totalIn;
     _lastSelfCount = selfCount;
+    _lastSelfBands = selfBands;
+    _lastSelfDist  = selfDist;
 
     // Reach chart: use city-level pairs for non-city subjects so distances are
     // measured between city centroids rather than a single area centroid.
@@ -593,7 +782,12 @@ async function refreshVisualization() {
                      || state.aggregation  !== _lastFlewAggregation;
     if (src?.lat && areaChanged) {
       let zoom;
-      if (state.aggregation === 'county') {
+      if (_lastFlewArea === null) {
+        // First fly of the session (default Salt Lake City load): use a wider
+        // regional zoom instead of the tight per-area one below, so the app
+        // doesn't read as Salt Lake City-only to first-time viewers.
+        zoom = 8.5;
+      } else if (state.aggregation === 'county') {
         zoom = 8;
       } else {
         let distNum = 0, distDen = 0;
@@ -656,9 +850,9 @@ function _applyFilter() {
 
   updateLayers(filtered, state, arcClickHandler, total);
   // Charts always show both directions unfiltered — top N by volume handles their own slicing
-  updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn);
+  updateCharts(_lastOutflows, _lastInflows, netOut, netIn, _lastSelfCount, state, acsEntry, _lastReachOut, _lastReachIn, _lastSelfBands);
   updateChoropleth(dirFlows, state.selectedArea, state.aggregation, state.theme, state.direction, state.selectedAreaType);
-  updateSidebarStats(dirFlows, state);
+  updateSidebarStats(dirFlows, state, _lastSelfBands, _lastSelfDist);
   _updateDataline(total, state);
   _updateLegend(filtered, state.direction, state.theme);
 }
@@ -728,6 +922,9 @@ function arcClickHandler(flow) {
 
   state.selectedArea     = newArea;
   state.selectedAreaType = state.aggregation;
+  // Workshop's display types (city/county/house/senate) aren't Workshop-mode
+  // subjects — drilling into one graduates back to Civic Boundaries.
+  if (state.geoMode === 'workshop') { state.geoMode = 'census'; syncGeoMode('census'); }
   syncAreaTypeToggle(state.aggregation);
 
   _updateSidebarAreaLabels(newArea);
@@ -754,10 +951,14 @@ function _getUrlYear(availableYears, defaultYear) {
 
 function _applyUrlParams() {
   const p = new URLSearchParams(window.location.search);
+
+  const mode = p.get('mode');
+  const validModes = state.wsUnlocked ? ['census', 'planning', 'workshop'] : ['census', 'planning'];
+  if (validModes.includes(mode)) state.geoMode = mode;
+
   const agg = p.get('agg');
-  // TO RE-ENABLE district map zones: replace the line below with the commented-out one
-  if (['city', 'county'].includes(agg)) state.aggregation = agg;
-  // if (['city', 'county', 'house', 'senate'].includes(agg)) state.aggregation = agg;
+  if (DISPLAY_TYPES_BY_MODE[state.geoMode].includes(agg)) state.aggregation = agg;
+
   const area = p.get('area');
   if (area) {
     const meta = _getMetaFor(state.aggregation);
@@ -768,14 +969,19 @@ function _applyUrlParams() {
   }
   const dir = p.get('dir');
   if (dir === 'outflow' || dir === 'inflow') state.direction = dir;
+
+  const scope = p.get('scope');
+  if (scope === 'crossing' || scope === 'all') state.reachScope = scope;
 }
 
 function _syncUrl() {
   const url = new URL(window.location.href);
   url.searchParams.set('year', state.year);
+  url.searchParams.set('mode', state.geoMode);
   url.searchParams.set('area', state.selectedArea);
   url.searchParams.set('dir',  state.direction);
   url.searchParams.set('agg',  state.aggregation);
+  url.searchParams.set('scope', state.reachScope);
   history.replaceState(null, '', url);
 }
 

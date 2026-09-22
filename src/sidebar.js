@@ -1,32 +1,81 @@
 // ── Module state ──────────────────────────────────────────────────────────────
-let _state              = null;
-let _onSelectionChange  = null;
-let _onAreaFly          = null;
-let _infoOnlyPlaces     = [];  // GeoJSON features for info-only custom places
+let _state = null;
+let _onSelectionChange = null;
+let _onAreaFly = null;
+let _infoOnlyPlaces = [];  // GeoJSON features for info-only custom places
+let _names = {};           // full name-list bundle, kept for mode-switch handler
 
 export function setInfoOnlyPlaces(features) {
   _infoOnlyPlaces = features ?? [];
 }
 
+// Subject (Area of Interest) types selectable per geography mode — all active.
+const SUBJECT_TYPES_BY_MODE = {
+  census:   ['city', 'county', 'house', 'senate'],
+  planning: ['small', 'medium', 'large', 'super'],
+  // Hidden mode — see the "workshop" section below. 'workshop' = WFRC
+  // (Wasatch Front), 'mag_workshop' = MAG (Utah County) — two separate,
+  // non-overlapping subject types under the same hidden geography mode.
+  workshop: ['workshop', 'mag_workshop'],
+};
+
+// Display (Map Display Geography) types exposed per mode. Civic/Planning
+// only expose the smallest two of their four (the coarsest two are built
+// end-to-end but kept out of the UI, matching how House/Senate have always
+// worked). Workshop mode currently exposes City/County only — House/Senate
+// are built and wired (see the commented-out buttons below) but kept out
+// for now; flip both this array and those buttons on if legislative-district
+// breakdowns turn out to matter for workshop discussions.
+const DISPLAY_TYPES_BY_MODE = {
+  census:   ['city', 'county'],
+  planning: ['small', 'medium'],
+  workshop: ['city', 'county'],
+};
+
 // ── Public API ────────────────────────────────────────────────────────────────
 
-export function initSidebar({ cityNames, countyNames, houseNames, senateNames, cityMeta, houseMeta, senateMeta, state, onSelectionChange, onAreaFly }) {
-  _state             = state;
+export function initSidebar({
+  cityNames, countyNames, houseNames, senateNames,
+  smallNames, mediumNames, largeNames, superNames,
+  workshopNames, magWorkshopNames,
+  cityMeta, houseMeta, senateMeta, smallMeta, mediumMeta, largeMeta, superMeta,
+  state, onSelectionChange, onAreaFly,
+}) {
+  _state = state;
   _onSelectionChange = onSelectionChange;
-  _onAreaFly         = onAreaFly;
+  _onAreaFly = onAreaFly;
+  _names = { cityNames, countyNames, houseNames, senateNames, smallNames, mediumNames, largeNames, superNames, workshopNames, magWorkshopNames };
 
   const panel = document.getElementById('left-panel');
   if (!panel) return;
 
+  const wsUnlocked = !!state.wsUnlocked;
+
   panel.innerHTML = `
+    <!-- GEOGRAPHY MODE -->
+    <div class="rail-section tight">
+      <div class="eyebrow">Geography</div>
+      <div class="type-strip" id="geomode-toggle" role="group" aria-label="Geography mode">
+        <button data-value="census"   class="${state.geoMode !== 'planning' && state.geoMode !== 'workshop' ? 'active' : ''}">Civic Boundaries</button>
+        <button data-value="planning" class="${state.geoMode === 'planning' ? 'active' : ''}">Planning Districts</button>
+        ${wsUnlocked ? `<button data-value="workshop" class="${state.geoMode === 'workshop' ? 'active' : ''}">Workshop</button>` : ''}
+      </div>
+    </div>
+
     <!-- AREA TYPE -->
     <div class="rail-section tight">
       <div class="eyebrow">Area of Interest Type</div>
       <div class="type-strip" id="areatype-toggle" role="group" aria-label="Area of interest type">
-        <button data-value="city"   class="${state.selectedAreaType === 'city'   ? 'active' : ''}">City</button>
-        <button data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
-        <button data-value="house"  class="${state.selectedAreaType === 'house'  ? 'active' : ''}">Utah House</button>
-        <button data-value="senate" class="${state.selectedAreaType === 'senate' ? 'active' : ''}">Utah Senate</button>
+        <button data-mode="census"   data-value="city"   class="${state.selectedAreaType === 'city' ? 'active' : ''}">City</button>
+        <button data-mode="census"   data-value="county" class="${state.selectedAreaType === 'county' ? 'active' : ''}">County</button>
+        <button data-mode="census"   data-value="house"  class="${state.selectedAreaType === 'house' ? 'active' : ''}">Utah House</button>
+        <button data-mode="census"   data-value="senate" class="${state.selectedAreaType === 'senate' ? 'active' : ''}">Utah Senate</button>
+        <button data-mode="planning" data-value="small"  class="${state.selectedAreaType === 'small' ? 'active' : ''}">Small</button>
+        <button data-mode="planning" data-value="medium" class="${state.selectedAreaType === 'medium' ? 'active' : ''}">Medium</button>
+        <button data-mode="planning" data-value="large"  class="${state.selectedAreaType === 'large' ? 'active' : ''}">Large</button>
+        <button data-mode="planning" data-value="super"  class="${state.selectedAreaType === 'super' ? 'active' : ''}">Super</button>
+        ${wsUnlocked ? `<button data-mode="workshop" data-value="workshop" class="${state.selectedAreaType === 'workshop' ? 'active' : ''}">WFRC</button>` : ''}
+        ${wsUnlocked ? `<button data-mode="workshop" data-value="mag_workshop" class="${state.selectedAreaType === 'mag_workshop' ? 'active' : ''}">MAG</button>` : ''}
       </div>
     </div>
 
@@ -80,11 +129,24 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     <div class="rail-section tight">
       <div class="eyebrow">Map Display Geography</div>
       <div class="type-strip" id="aggregation-toggle" role="group" aria-label="Aggregation level">
-        <button data-value="city"   class="${state.aggregation === 'city'   ? 'active' : ''}">City</button>
-        <button data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
+        <button data-mode="census"   data-value="city"   class="${state.aggregation === 'city' ? 'active' : ''}">City</button>
+        <button data-mode="census"   data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
         <!-- TO RE-ENABLE district map zones: uncomment the two lines below -->
-        <!-- <button data-value="house"  class="${state.aggregation === 'house'  ? 'active' : ''}">Utah House</button> -->
-        <!-- <button data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
+        <!-- <button data-mode="census" data-value="house"  class="${state.aggregation === 'house' ? 'active' : ''}">Utah House</button> -->
+        <!-- <button data-mode="census" data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
+        <button data-mode="planning" data-value="small"  class="${state.aggregation === 'small' ? 'active' : ''}">Small</button>
+        <button data-mode="planning" data-value="medium" class="${state.aggregation === 'medium' ? 'active' : ''}">Medium</button>
+        <!-- TO RE-ENABLE district map zones: uncomment the two lines below -->
+        <!-- <button data-mode="planning" data-value="large" class="${state.aggregation === 'large' ? 'active' : ''}">Large</button> -->
+        <!-- <button data-mode="planning" data-value="super" class="${state.aggregation === 'super' ? 'active' : ''}">Super</button> -->
+        ${wsUnlocked ? `
+        <button data-mode="workshop" data-value="city"   class="${state.aggregation === 'city'   ? 'active' : ''}">City</button>
+        <button data-mode="workshop" data-value="county" class="${state.aggregation === 'county' ? 'active' : ''}">County</button>
+        <!-- TO RE-ENABLE house/senate for Workshop display: uncomment the two lines below
+             and add 'house','senate' to DISPLAY_TYPES_BY_MODE.workshop here and in main.js -->
+        <!-- <button data-mode="workshop" data-value="house"  class="${state.aggregation === 'house'  ? 'active' : ''}">Utah House</button> -->
+        <!-- <button data-mode="workshop" data-value="senate" class="${state.aggregation === 'senate' ? 'active' : ''}">Utah Senate</button> -->
+        ` : ''}
       </div>
     </div>
 
@@ -102,12 +164,21 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
       <div class="mini-toggle" id="flow-tab-toggle">
         <button class="mini-toggle-btn active" data-tab="overview">Overview</button>
         <button class="mini-toggle-btn" data-tab="venn">Venn</button>
+        <button class="mini-toggle-btn" data-tab="trend">Trend</button>
       </div>
       <div id="flow-overview-panel">
         <div id="flow-wheel"></div>
       </div>
       <div id="flow-venn-panel" style="display:none;">
         <div class="flow-summary" id="flow-summary"></div>
+      </div>
+      <div id="flow-trend-panel" style="display:none;">
+        <div class="balance-legend" style="margin-bottom:10px;">
+          <span><span class="pip in"></span> Inflow</span>
+          <span><span class="pip out"></span> Outflow</span>
+          <span><span class="pip self"></span> Live &amp; Work</span>
+        </div>
+        <div id="flow-trend-chart"></div>
       </div>
       <div class="cp-info-note" style="margin-top:10px;margin-bottom:0;">
         <strong>Note:</strong> Headline totals use LEHD aux file data — inflow covers all home states; outflow covers the six surrounding states. Border-area flows to neighboring cities and counties are also shown in the charts and flow arcs.
@@ -127,6 +198,38 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
 
   // Reflect direction on body so map toolbar + slider can pick up the accent color
   document.body.dataset.direction = _state.direction;
+  // Reflect geo mode on the panel so the inactive mode's buttons can be hidden via CSS
+  panel.dataset.geoMode = _state.geoMode ?? 'census';
+
+  // Wire geography mode toggle
+  document.getElementById('geomode-toggle').addEventListener('click', e => {
+    const btn = e.target.closest('[data-value]');
+    if (!btn) return;
+    const newMode = btn.dataset.value;
+    if (newMode === _state.geoMode) return;
+
+    _state.geoMode = newMode;
+    panel.dataset.geoMode = newMode;
+    _setActiveToggle('geomode-toggle', newMode);
+
+    const newType = SUBJECT_TYPES_BY_MODE[newMode][0];
+    const newAgg  = DISPLAY_TYPES_BY_MODE[newMode][0];
+    _state.selectedAreaType = newType;
+    _state.aggregation      = newAgg;
+    _setActiveToggle('areatype-toggle', newType);
+    _setActiveToggle('aggregation-toggle', newAgg);
+
+    const currentAreas = _getAreaList(newType, _names, cityMeta);
+    const input = document.getElementById('area-search');
+    if (currentAreas.length) {
+      _state.selectedArea = currentAreas[0].label;
+      if (input) input.value = currentAreas[0].label;
+    }
+    if (input) input.placeholder = _searchPlaceholder(newType);
+
+    _updateSearchContext();
+    _onSelectionChange();
+  });
 
   // Wire area type toggle
   document.getElementById('areatype-toggle').addEventListener('click', e => {
@@ -142,8 +245,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
     if (input) input.placeholder = _searchPlaceholder(newType);
 
     // Reset selected area if it doesn't exist in the new type's list
-    const names = { cityNames, countyNames, houseNames, senateNames };
-    const currentAreas = _getAreaList(newType, names, cityMeta);
+    const currentAreas = _getAreaList(newType, _names, cityMeta);
     const existing = currentAreas.find(a => a.label === _state.selectedArea);
     if (!existing && currentAreas.length) {
       _state.selectedArea = currentAreas[0].label;
@@ -174,7 +276,7 @@ export function initSidebar({ cityNames, countyNames, houseNames, senateNames, c
   });
 
   // Wire search dropdown
-  _initDropdown({ cityNames, countyNames, houseNames, senateNames }, cityMeta);
+  _initDropdown(_names, cityMeta);
 
   // Modals
   _initAboutModal();
@@ -187,7 +289,19 @@ export function syncAreaTypeToggle(type) {
   if (input) input.placeholder = _searchPlaceholder(type);
 }
 
-export function updateSidebarStats(flows, appState) {
+// Called when a map interaction (arc/polygon click) drills the subject into
+// a different geography mode than the one currently active — e.g. clicking
+// a City/County/House/Senate destination while in the hidden Workshop Areas
+// mode "graduates" the subject into Civic Boundaries, since none of
+// Workshop's display types are Workshop-mode subjects themselves.
+export function syncGeoMode(mode) {
+  if (_state) _state.geoMode = mode;
+  const panel = document.getElementById('left-panel');
+  if (panel) panel.dataset.geoMode = mode;
+  _setActiveToggle('geomode-toggle', mode);
+}
+
+export function updateSidebarStats(flows, appState, selfBands = null, selfDist = null) {
   const state = appState;
 
   _updateSearchContext();
@@ -215,10 +329,10 @@ export function updateSidebarStats(flows, appState) {
     SI03: acc.SI03 + Number(f.SI03 || 0),
   }), { SA01: 0, SA02: 0, SA03: 0, SE01: 0, SE02: 0, SE03: 0, SI01: 0, SI02: 0, SI03: 0 });
 
-  const ageSum      = bd.SA01 + bd.SA02 + bd.SA03 || 1;
+  const ageSum = bd.SA01 + bd.SA02 + bd.SA03 || 1;
   const earningsSum = bd.SE01 + bd.SE02 + bd.SE03 || 1;
   const industrySum = bd.SI01 + bd.SI02 + bd.SI03 || 1;
-  const dirClass    = state.direction === 'inflow' ? 'inflow' : '';
+  const dirClass = state.direction === 'inflow' ? 'inflow' : '';
 
   // ── Age rows ───────────────────────────────────────────────────────────────
   const ageEl = document.getElementById('demo-rows-age');
@@ -248,26 +362,47 @@ export function updateSidebarStats(flows, appState) {
   // dist_wsum = Σ(S000 × block_haversine_miles) per destination zone pair
   // dist_n    = Σ(S000) for block pairs with valid coordinates
   // Summing across all destination zones gives the true weighted mean for the subject area.
-  const totalWsum = flows.reduce((s, f) => s + Number(f.dist_wsum || 0), 0);
-  const totalN    = flows.reduce((s, f) => s + Number(f.dist_n    || 0), 0);
-  const avgMiles  = totalN > 0 ? totalWsum / totalN : null;
+  //
+  // Scope switch (.reach-scope-switch): 'all' (default) covers every worker who
+  // lives in the area (outflow) or works in it (inflow) by folding in the
+  // self-flow (live + work in the same area) pool; 'crossing' counts only the
+  // active direction's cross-boundary commuters. selfBands / selfDist are the
+  // self-flow pool's band counts and weighted-distance aggregate.
+  const allScope = state.reachScope === 'all' && selfBands;
+  const sb = allScope ? selfBands : [0, 0, 0, 0, 0, 0];
+  const sd = allScope && selfDist ? selfDist : { wsum: 0, n: 0 };
+
+  const totalWsum = flows.reduce((s, f) => s + Number(f.dist_wsum || 0), 0) + sd.wsum;
+  const totalN = flows.reduce((s, f) => s + Number(f.dist_n || 0), 0) + sd.n;
+  const avgMiles = totalN > 0 ? totalWsum / totalN : null;
 
   // Median: interpolate within the band that straddles the 50th percentile.
-  const bn0   = flows.reduce((s, f) => s + Number(f.d0_5    || 0), 0);
-  const bn5   = flows.reduce((s, f) => s + Number(f.d5_10   || 0), 0);
-  const bn10  = flows.reduce((s, f) => s + Number(f.d10_25  || 0), 0);
-  const bn25  = flows.reduce((s, f) => s + Number(f.d25_50  || 0), 0);
-  const bn50  = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0);
-  const bn100 = flows.reduce((s, f) => s + Number(f.d100p   || 0), 0);
+  const bn0 = flows.reduce((s, f) => s + Number(f.d0_5 || 0), 0) + Number(sb[0] || 0);
+  const bn5 = flows.reduce((s, f) => s + Number(f.d5_10 || 0), 0) + Number(sb[1] || 0);
+  const bn10 = flows.reduce((s, f) => s + Number(f.d10_25 || 0), 0) + Number(sb[2] || 0);
+  const bn25 = flows.reduce((s, f) => s + Number(f.d25_50 || 0), 0) + Number(sb[3] || 0);
+  const bn50 = flows.reduce((s, f) => s + Number(f.d50_100 || 0), 0) + Number(sb[4] || 0);
+  const bn100 = flows.reduce((s, f) => s + Number(f.d100p || 0), 0) + Number(sb[5] || 0);
   const medianMiles = _bandMedian(bn0, bn5, bn10, bn25, bn50, bn100);
 
-  const avgEl    = document.getElementById('reach-avg');
+  const avgEl = document.getElementById('reach-avg');
   const medianEl = document.getElementById('reach-median');
-  if (avgEl)    avgEl.innerHTML    = avgMiles    != null ? `${avgMiles.toFixed(1)}<span class="unit">mi</span>`    : '&mdash;<span class="unit">mi</span>';
+  if (avgEl) avgEl.innerHTML = avgMiles != null ? `${avgMiles.toFixed(1)}<span class="unit">mi</span>` : '&mdash;<span class="unit">mi</span>';
   if (medianEl) medianEl.innerHTML = medianMiles != null ? `${medianMiles.toFixed(1)}<span class="unit">mi</span>` : '&mdash;<span class="unit">mi</span>';
 }
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
+
+// Hidden Workshop Areas mode — unlocked via a secret gesture wired in
+// main.js (not documented anywhere in the UI). showUnlockToast() is the
+// shared confirmation shown right before the reload that reveals it.
+export function showUnlockToast(text = 'Workshop Areas unlocked') {
+  const el = document.createElement('div');
+  el.className = 'ws-unlock-toast';
+  el.textContent = text;
+  document.body.appendChild(el);
+  requestAnimationFrame(() => el.classList.add('is-visible'));
+}
 
 function _bdRow(label, count, sum, dirClass) {
   const pct = sum > 0 ? Math.round((count / sum) * 100) : 0;
@@ -294,7 +429,7 @@ function _updateInfoNote(state) {
 
   const p = match.properties;
   const note = document.createElement('div');
-  note.id        = 'cp-info-note';
+  note.id = 'cp-info-note';
   note.className = 'cp-info-note';
   note.innerHTML =
     `<strong>${p.name}</strong>${p.employees_approx ? ` &mdash; ${p.employees_approx} employees` : ''} ` +
@@ -328,18 +463,37 @@ function _bandMedian(n0_5, n5_10, n10_25, n25_50, n50_100, n100p) {
 }
 
 function _aggregationLabel(agg) {
-  const labels = { city: 'City', county: 'County', house: 'Utah House District', senate: 'Utah Senate District' };
+  const labels = {
+    city: 'City', county: 'County', house: 'Utah House District', senate: 'Utah Senate District',
+    small: 'Small District', medium: 'Medium District', large: 'Large District', super: 'Super District',
+    workshop: 'WFRC Workshop Area', mag_workshop: 'MAG Workshop Area',
+  };
   return labels[agg] ?? 'City';
 }
 
 function _searchPlaceholder(type) {
   const ph = {
-    city:   'Search cities…',
+    city: 'Search cities…',
     county: 'Search counties…',
-    house:  'Search house districts…',
+    house: 'Search house districts…',
     senate: 'Search senate districts…',
+    small: 'Search small districts…',
+    medium: 'Search medium districts…',
+    large: 'Search large districts…',
+    super: 'Search super districts…',
+    workshop: 'Search WFRC workshop areas…',
+    mag_workshop: 'Search MAG workshop areas…',
   };
   return ph[type] ?? ph.city;
+}
+
+// Dropdown row-type tag: matches the raw `type` value for most types (city,
+// county, small, etc. — CSS uppercases them), but the two hidden workshop
+// types get short display labels instead of their raw 'workshop'/'mag_workshop' keys.
+function _rowTypeLabel(type) {
+  if (type === 'workshop') return 'WFRC';
+  if (type === 'mag_workshop') return 'MAG';
+  return type;
 }
 
 function _escHtml(str) {
@@ -362,8 +516,14 @@ function _updateSearchContext() {
  */
 function _getAreaList(type, names, cityMeta) {
   if (type === 'county') return names.countyNames.map(n => ({ label: n, type: 'county' }));
-  if (type === 'house')  return names.houseNames.map(n => ({ label: n, type: 'house' }));
+  if (type === 'house') return names.houseNames.map(n => ({ label: n, type: 'house' }));
   if (type === 'senate') return names.senateNames.map(n => ({ label: n, type: 'senate' }));
+  if (type === 'small') return names.smallNames.map(n => ({ label: n, type: 'small' }));
+  if (type === 'medium') return names.mediumNames.map(n => ({ label: n, type: 'medium' }));
+  if (type === 'large') return names.largeNames.map(n => ({ label: n, type: 'large' }));
+  if (type === 'super') return names.superNames.map(n => ({ label: n, type: 'super' }));
+  if (type === 'workshop') return (names.workshopNames ?? []).map(n => ({ label: n, type: 'workshop' }));
+  if (type === 'mag_workshop') return (names.magWorkshopNames ?? []).map(n => ({ label: n, type: 'mag_workshop' }));
   return names.cityNames.map(n => ({ label: n, type: cityMeta?.[n]?.place_type ?? 'city' }));
 }
 
@@ -381,7 +541,7 @@ function _setActiveToggle(groupId, value) {
 }
 
 function _initDropdown(names, cityMeta) {
-  const input    = document.getElementById('area-search');
+  const input = document.getElementById('area-search');
   const dropdown = document.getElementById('area-dropdown');
   if (!input || !dropdown) return;
 
@@ -397,7 +557,7 @@ function _initDropdown(names, cityMeta) {
       <li role="option" data-value="${_escHtml(a.label)}" data-type="${a.type}"
           aria-selected="false" id="drop-item-${i}">
         <span>${_escHtml(a.label)}</span>
-        <span class="row-type">${a.type}</span>
+        <span class="row-type">${_rowTypeLabel(a.type)}</span>
       </li>
     `).join('');
     dropdown.hidden = false;
@@ -413,25 +573,22 @@ function _initDropdown(names, cityMeta) {
 
   function selectItem(label, type) {
     const effectiveType = type === 'cdp' ? 'city' : type;
-    _state.selectedArea     = label;
+    _state.selectedArea = label;
     _state.selectedAreaType = effectiveType;
     input.value = label;
 
     // Sync area type toggle
     _setActiveToggle('areatype-toggle', effectiveType);
 
-    // TO RE-ENABLE district map zones: replace the current if-block with the commented one
-    const _ZONE_TYPES = ['city', 'county'];
-    if (_ZONE_TYPES.includes(effectiveType) && effectiveType !== _state.aggregation) {
+    // Only update the map's display geography when the picked type is one of
+    // the current mode's active Display Geography types (Large/Super District
+    // and House/Senate are subject-only, same as before the mode split).
+    const zoneTypes = DISPLAY_TYPES_BY_MODE[_state.geoMode] ?? DISPLAY_TYPES_BY_MODE.census;
+    if (zoneTypes.includes(effectiveType) && effectiveType !== _state.aggregation) {
       _state.aggregation = effectiveType;
       _setActiveToggle('aggregation-toggle', effectiveType);
       _updateSearchContext();
     }
-    // if (effectiveType !== _state.aggregation) {  // ← restore this block instead
-    //   _state.aggregation = effectiveType;
-    //   _setActiveToggle('aggregation-toggle', effectiveType);
-    //   _updateSearchContext();
-    // }
     hide();
     _onAreaFly?.(label, effectiveType);
     _onSelectionChange();
@@ -529,12 +686,12 @@ function _initAboutModal() {
 
       <div class="credits-section">
         <div class="credits-section-label">What this map shows</div>
-        <p class="about-body">Commute flows between Utah cities, counties, and neighboring-state areas using anonymized employment data from the US Census Bureau. Flows represent workers' <strong>reported home and work locations</strong> — not daily travel routes. A flow from Provo to Salt Lake City means a worker reports living in Provo and working in Salt Lake City, not that they make that specific trip every workday.</p>
+        <p class="about-body">Commute flows between Utah cities, counties, and neighboring-state areas using anonymized employment data from the US Census Bureau. Flows represent workers' <strong>reported home and work locations</strong> — not daily travel routes. A flow from Provo to Salt Lake City indicates that workers live in Provo and their employers report their place of work as Salt Lake City; it does not imply that the worker necessarily travels between those locations every workday.</p>
       </div>
 
       <div class="credits-section">
         <div class="credits-section-label">Neighboring states</div>
-        <p class="about-body">Cities and counties in the six surrounding states (ID, WY, CO, NM, AZ, NV) are included by buffering Utah's boundary by approximately 80 km (50 mi) and intersecting with all counties in those states. Areas within this zone — including the Las Vegas (Clark County) metro area — appear as point markers on the map. They show cross-border inflow and outflow flows but are not selectable as a subject area.</p>
+        <p class="about-body">Cities and counties in the six surrounding states (ID, WY, CO, NM, AZ, NV) are included by buffering Utah's boundary by approximately 80 km (50 mi) and intersecting with all counties in those states. Areas within this zone — including the Las Vegas (Clark County) metro area — appear as point markers on the map. They show cross-border inflows and outflows but are not selectable as a subject area.</p>
       </div>
 
       <div class="credits-section">
@@ -546,7 +703,7 @@ function _initAboutModal() {
       </div>
 
       <div class="credits-rule"></div>
-      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section.</p>
+      <p class="about-body" style="margin:0;">To learn about the datasets powering this map, see the <button class="credits-inline-link" id="about-to-credits-btn">Data &amp; Credits</button> section or read our companion article at <a class="credits-inline-link" href="https://wfrc.utah.gov/what-commuting-patterns-reveal-about-wasatch-front-communities/" target="_blank" rel="noopener">WFRC Blog</a>.</p>
     </div>
   `;
 

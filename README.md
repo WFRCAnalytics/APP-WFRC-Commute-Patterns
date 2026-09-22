@@ -184,7 +184,7 @@ To enable GitHub Pages on a new repository fork:
 │   ├── fetch_acs.py            # Fetches ACS 5-Year Estimates via Census API
 │   ├── custom_places.py        # Modular extension for non-Census employment sites
 │   ├── verify_custom_places.py # LEHD coverage audit for custom places
-│   └── screenshot.cjs          # Playwright script — captures light/dark screenshots into docs/
+│   └── screenshot.cjs          # Playwright — boots the dev server, captures light/dark screenshots into docs/, tears it down (--port N to override 5174)
 │
 ├── public/
 │   ├── favicon-light.svg           # Theme-aware favicon (light mode)

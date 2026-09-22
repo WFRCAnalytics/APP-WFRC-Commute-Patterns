@@ -1,0 +1,2 @@
+year,wf_city_count,wf_county_fips,city_resident_workers,out_of_city_n,out_of_city_pct,total_commute_dist_mi,dist_n,avg_commute_dist_mi,dist_source,acs_workers,total_commute_time_min,avg_commute_time_min,t60plus_est_min
+2013,91,49003|49011|49035|49049|49057,920822,781245,84.8,13022288.4,925334,14.07,block_centroid,946014,23447806,24.8,97.3

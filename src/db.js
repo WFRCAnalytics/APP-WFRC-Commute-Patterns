@@ -5,6 +5,11 @@ let _conn             = null;
 let _hasDistanceBands = false;
 let _hasDistWsum      = false;
 let _hasNeighborFlows = false;
+// Column names present on the loaded neighbor_flows.parquet. Older years lack
+// the non-city/county subject columns (utah_small…, utah_house…, utah_workshop…),
+// so queryNeighborFlows() checks this before filtering on one and otherwise
+// returns no cross-state flows for that subject type / year.
+let _neighborCols = new Set();
 
 /**
  * Initialize DuckDB-WASM and load Parquet files for the given year.
@@ -77,6 +82,31 @@ async function _loadYearFiles(year, onProgress) {
     `CREATE OR REPLACE VIEW district_flows AS SELECT * FROM read_parquet('${districtFile}');`
   );
 
+  // planning_flows.parquet (Planning Boundaries mode) — optional, gracefully
+  // absent for years the pipeline hasn't been re-run for yet.
+  const planningFile = `planning_flows_${year}.parquet`;
+  try { await _db.dropFile(planningFile); } catch {}
+  try {
+    const planningBuf = await fetch(`${base}data/lehd/${year}/planning_flows.parquet`).then(r => {
+      if (!r.ok) throw new Error(r.status);
+      return r.arrayBuffer();
+    });
+    await _db.registerFileBuffer(planningFile, new Uint8Array(planningBuf));
+    await _conn.query(
+      `CREATE OR REPLACE VIEW planning_flows AS SELECT * FROM read_parquet('${planningFile}');`
+    );
+  } catch {
+    await _conn.query(`CREATE OR REPLACE VIEW planning_flows AS
+      SELECT '' AS home_small, '' AS work_small, '' AS home_medium, '' AS work_medium,
+             '' AS home_large, '' AS work_large, '' AS home_super, '' AS work_super,
+             0 AS S000, 0 AS SA01, 0 AS SA02, 0 AS SA03,
+             0 AS SE01, 0 AS SE02, 0 AS SE03,
+             0 AS SI01, 0 AS SI02, 0 AS SI03,
+             0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p,
+             0.0 AS dist_wsum, 0 AS dist_n
+      WHERE false`);
+  }
+
   // Detect distance band columns (older years may not have them).
   const colResult = await _conn.query(
     `SELECT column_name FROM information_schema.columns WHERE table_name = 'city_flows'`
@@ -98,8 +128,13 @@ async function _loadYearFiles(year, onProgress) {
       `CREATE OR REPLACE VIEW neighbor_flows AS SELECT * FROM read_parquet('${neighborFile}');`
     );
     _hasNeighborFlows = true;
+    const nbColResult = await _conn.query(
+      `SELECT column_name FROM information_schema.columns WHERE table_name = 'neighbor_flows'`
+    );
+    _neighborCols = new Set(nbColResult.toArray().map(r => r.toJSON().column_name));
   } catch {
     _hasNeighborFlows = false;
+    _neighborCols = new Set();
     await _conn.query(`CREATE OR REPLACE VIEW neighbor_flows AS
       SELECT '' AS utah_zone, '' AS neighbor_zone, '' AS state_abbr, '' AS direction,
              0 AS S000, 0 AS SA01, 0 AS SA02, 0 AS SA03,
@@ -117,20 +152,41 @@ async function _loadYearFiles(year, onProgress) {
 
 // Map area type → column names for home/work sides.
 const _COLS = {
-  city:   { home: 'home_name',   work: 'work_name'   },
-  county: { home: 'home_county', work: 'work_county' },
-  house:  { home: 'home_house',  work: 'work_house'  },
-  senate: { home: 'home_senate', work: 'work_senate' },
+  city:     { home: 'home_name',     work: 'work_name'     },
+  county:   { home: 'home_county',   work: 'work_county'   },
+  house:    { home: 'home_house',    work: 'work_house'    },
+  senate:   { home: 'home_senate',   work: 'work_senate'   },
+  small:    { home: 'home_small',    work: 'work_small'    },
+  medium:   { home: 'home_medium',   work: 'work_medium'   },
+  large:    { home: 'home_large',    work: 'work_large'    },
+  super:    { home: 'home_super',    work: 'work_super'    },
+  // Hidden geography — see sidebar.js. Lives on district_flows alongside
+  // house/senate/city/county so it gets the full cross-type query engine
+  // (self-flow exclusion, reach drill, etc.) for free.
+  workshop: { home: 'home_workshop', work: 'work_workshop' },
+  // MAG's Utah County workshop subregions — sibling hidden geography to
+  // 'workshop' above, same district_flows treatment.
+  mag_workshop: { home: 'home_mag_workshop', work: 'work_mag_workshop' },
 };
+
+const _PLANNING_TYPES = ['small', 'medium', 'large', 'super'];
+const _DISTRICT_TYPES = ['house', 'senate', 'workshop', 'mag_workshop'];
 
 function _cols(type) {
   return _COLS[type] ?? _COLS.city;
 }
 
-// Use district_flows when either side involves a legislative district.
+// Route to the flow table that carries both sides' geography columns.
+// Civic Boundaries (house/senate/workshop involved) uses district_flows;
+// Planning Boundaries (small/medium/large/super involved) uses
+// planning_flows; plain city/county uses city_flows. The two modes never
+// mix within one query — the UI never constructs a cross-mode
+// areaType/aggregation pair.
 function _table(areaType, aggregation) {
-  return (areaType === 'house' || areaType === 'senate' ||
-          aggregation === 'house' || aggregation === 'senate')
+  if (_PLANNING_TYPES.includes(areaType) || _PLANNING_TYPES.includes(aggregation)) {
+    return 'planning_flows';
+  }
+  return (_DISTRICT_TYPES.includes(areaType) || _DISTRICT_TYPES.includes(aggregation))
     ? 'district_flows'
     : 'city_flows';
 }
@@ -155,9 +211,20 @@ export async function queryFlows(area, areaType, direction, aggregation) {
   const filterCol = direction === 'outflow' ? srcCols.home  : srcCols.work;
   const destCol   = direction === 'outflow' ? destCols.work : destCols.home;
 
-  const selfClause = (areaType === aggregation)
-    ? `AND cf.${destCol} != '${safe}'`
-    : '';
+  // Exclude workers who both live and work in the exact subject place, regardless
+  // of the display geography. Always filtered on the subject's OWN-type column
+  // (srcCols), not the aggregation's column — the flow tables carry every
+  // geography level per row, so this correctly strips self-containment out of a
+  // parent-geography bucket (e.g. City subject + County display) too, not just
+  // same-type selections.
+  // IS DISTINCT FROM, not != : district_flows columns for regionally-limited
+  // geographies (workshop/mag_workshop) are NULL for rows outside their
+  // coverage area. In SQL, NULL != 'X' evaluates to NULL (not TRUE), so a
+  // plain != would silently drop every destination outside that coverage
+  // footprint from the WHERE clause instead of just excluding the true
+  // self-flow rows.
+  const selfCol    = direction === 'outflow' ? srcCols.work : srcCols.home;
+  const selfClause = `AND cf.${selfCol} IS DISTINCT FROM '${safe}'`;
 
   const bandCols = _hasDistanceBands
     ? 'SUM(cf.d0_5) AS d0_5, SUM(cf.d5_10) AS d5_10, SUM(cf.d10_25) AS d10_25, SUM(cf.d25_50) AS d25_50, SUM(cf.d50_100) AS d50_100, SUM(cf.d100p) AS d100p,'
@@ -210,18 +277,68 @@ export async function querySelfFlow(area, areaType) {
 }
 
 /**
+ * Distance-band breakdown for workers who both live and work in the same area.
+ * Returns [d0_5, d5_10, d10_25, d25_50, d50_100, d100p] counts.
+ */
+export async function querySelfFlowBands(area, areaType) {
+  if (!_conn) return [0, 0, 0, 0, 0, 0];
+  const safe   = area.replace(/'/g, "''");
+  const table  = _table(areaType, areaType);
+  const col    = _cols(areaType);
+  const bands  = _hasDistanceBands
+    ? 'COALESCE(SUM(d0_5),0) AS d0_5, COALESCE(SUM(d5_10),0) AS d5_10, COALESCE(SUM(d10_25),0) AS d10_25, COALESCE(SUM(d25_50),0) AS d25_50, COALESCE(SUM(d50_100),0) AS d50_100, COALESCE(SUM(d100p),0) AS d100p'
+    : '0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p';
+  const result = await _conn.query(
+    `SELECT ${bands} FROM ${table} WHERE ${col.home} = '${safe}' AND ${col.work} = '${safe}'`
+  );
+  const row = result.toArray()[0]?.toJSON() ?? {};
+  return [
+    Number(row.d0_5 || 0),
+    Number(row.d5_10 || 0),
+    Number(row.d10_25 || 0),
+    Number(row.d25_50 || 0),
+    Number(row.d50_100 || 0),
+    Number(row.d100p || 0),
+  ];
+}
+
+/**
+ * Block-level weighted-distance aggregate for the self-flow (live + work in the
+ * same area) pool: { wsum: Σ(S000 × block_haversine_miles), n: Σ(S000) }.
+ * Feeds the "All commutes" scope of the Commute Length mean, which folds this
+ * pool in with the active direction's cross-boundary flows.
+ */
+export async function querySelfFlowDistance(area, areaType) {
+  if (!_conn || !_hasDistWsum) return { wsum: 0, n: 0 };
+  const safe  = area.replace(/'/g, "''");
+  const table = _table(areaType, areaType);
+  const col   = _cols(areaType);
+  const result = await _conn.query(
+    `SELECT COALESCE(SUM(dist_wsum), 0) AS wsum, COALESCE(SUM(dist_n), 0) AS n
+     FROM ${table} WHERE ${col.home} = '${safe}' AND ${col.work} = '${safe}'`
+  );
+  const row = result.toArray()[0]?.toJSON() ?? {};
+  return { wsum: Number(row.wsum || 0), n: Number(row.n || 0) };
+}
+
+/**
  * City-level pair flows for the commute reach chart when a county is selected.
  * For district selections, uses district_flows to get city-level detail.
  */
 export async function queryReachFlows(area, areaType, direction) {
   if (!_conn) throw new Error('DB not initialized');
   const safe      = area.replace(/'/g, "''");
-  const isDistrict = areaType === 'house' || areaType === 'senate';
+  const isDistrict = _DISTRICT_TYPES.includes(areaType);
+  const isPlanning = _PLANNING_TYPES.includes(areaType);
   const distCol   = _cols(areaType);
   const reachBands = _hasDistanceBands
     ? 'd0_5, d5_10, d10_25, d25_50, d50_100, d100p'
     : '0 AS d0_5, 0 AS d5_10, 0 AS d10_25, 0 AS d25_50, 0 AS d50_100, 0 AS d100p';
 
+  // IS DISTINCT FROM, not != : see the identical note in queryFlows — regionally-
+  // limited geographies (workshop/mag_workshop) leave excludeCol NULL for rows
+  // outside their coverage area, and a plain != would silently drop those
+  // instead of just excluding true self-flow rows.
   if (isDistrict) {
     // For district subject: return city-level pairs within/outside the district
     const filterCol  = direction === 'outflow' ? distCol.home : distCol.work;
@@ -230,7 +347,24 @@ export async function queryReachFlows(area, areaType, direction) {
       SELECT home_name, work_name, home_county, work_county, S000,
              ${reachBands}
       FROM district_flows
-      WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
+      WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
+    `);
+    return result.toArray().map(r => r.toJSON());
+  }
+
+  if (isPlanning) {
+    // For Planning Boundaries subjects: drill to Small District (the finest
+    // unit within the mode), mirroring the house/senate -> city drill above
+    // but staying within Planning Boundaries rather than reaching into
+    // Civic Boundaries (no cross-mode geography columns to join against).
+    const filterCol  = direction === 'outflow' ? distCol.home : distCol.work;
+    const excludeCol = direction === 'outflow' ? distCol.work : distCol.home;
+    const result = await _conn.query(`
+      SELECT home_small AS home_name, work_small AS work_name,
+             home_medium AS home_county, work_medium AS work_county, S000,
+             ${reachBands}
+      FROM planning_flows
+      WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
     `);
     return result.toArray().map(r => r.toJSON());
   }
@@ -242,7 +376,7 @@ export async function queryReachFlows(area, areaType, direction) {
     SELECT home_name, work_name, home_county, work_county, S000,
            ${reachBands}
     FROM city_flows
-    WHERE ${filterCol} = '${safe}' AND ${excludeCol} != '${safe}'
+    WHERE ${filterCol} = '${safe}' AND ${excludeCol} IS DISTINCT FROM '${safe}'
   `);
   return result.toArray().map(r => r.toJSON());
 }
@@ -250,21 +384,52 @@ export async function queryReachFlows(area, areaType, direction) {
 /**
  * Cross-state neighbor flows for the selected Utah area.
  *
- * areaType    — 'city' | 'county'  (subject area type, controls filter column)
+ * areaType    — any subject type: 'city' | 'county' | Planning level
+ *               (small/medium/large/super) | 'house' | 'senate' |
+ *               'workshop' | 'mag_workshop' (controls the filter column)
  * direction   — 'outflow' | 'inflow'
- * aggregation — 'city' | 'county'  (destination granularity, controls group column)
+ * aggregation — destination granularity: 'county' groups to neighbor_county,
+ *               anything else groups to neighbor_zone — but every non-city
+ *               subject is forced to neighbor_county (see destCol below)
  *
  * Mirrors the queryFlows() areaType/aggregation split so the neighbor layer
  * follows the same map zone setting as the main Utah choropleth.
  */
+const _NEIGHBOR_SUBJECT_COL = {
+  city:         'utah_zone',
+  county:       'utah_county',
+  small:        'utah_small',
+  medium:       'utah_medium',
+  large:        'utah_large',
+  super:        'utah_super',
+  house:        'utah_house',
+  senate:       'utah_senate',
+  workshop:     'utah_workshop',
+  mag_workshop: 'utah_mag_workshop',
+};
+
 export async function queryNeighborFlows(area, areaType, direction, aggregation) {
   if (!_conn || !_hasNeighborFlows) return [];
+  // Filter on the subject's own column. A Planning District display name can
+  // collide with a real city name (e.g. Small District "Salt Lake City"), so
+  // an unmapped areaType must bail rather than fall through to utah_zone.
+  const filterCol = _NEIGHBOR_SUBJECT_COL[areaType];
+  if (!filterCol) return [];
+  // The non-city/county subject columns were added to neighbor_flows.parquet
+  // in later regenerations; older years lack them, so there are simply no
+  // cross-state flows to report for those subject types / years.
+  if (!_neighborCols.has(filterCol)) return [];
   const safe = area.replace(/'/g, "''");
 
-  // Filter column: city → utah_zone, county → utah_county
-  const filterCol = (areaType === 'county') ? 'utah_county' : 'utah_zone';
-  // Destination column: city → neighbor_zone, county → neighbor_county
-  const destCol   = (aggregation === 'county') ? 'neighbor_county' : 'neighbor_zone';
+  // Destination column: neighbor_zone (city) only for a city subject on a
+  // city-level map zone; every other case — a county subject, a county-level
+  // zone, or ANY non-city subject (Planning / House / Senate / Workshop) —
+  // keys to neighbor_county. neighbor_meta.json (which the frontend joins
+  // dest_name against for lat/lon) is border-filtered: every neighbor COUNTY
+  // is present, but ~half the neighbor CITY names (unincorporated CDPs, far
+  // Las Vegas suburbs) are not, and city-keyed rows for those would be
+  // silently dropped, undercounting cross-state distance vs the Civic county.
+  const destCol   = (areaType !== 'city' || aggregation === 'county') ? 'neighbor_county' : 'neighbor_zone';
   const dirFilter = direction === 'outflow' ? "AND direction = 'out'" : "AND direction = 'in'";
 
   const sql = `

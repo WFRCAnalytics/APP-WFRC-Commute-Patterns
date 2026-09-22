@@ -18,10 +18,27 @@ let _lastReachIn   = [];
 let _demoDimension  = 'age';      // 'age' | 'earnings' | 'industry'
 let _industryDir    = 'outflow';  // 'outflow' | 'inflow'
 let _balanceSort    = 'inflow';   // 'inflow'  | 'outflow'
-let _reachOutVisible = true;
-let _reachInVisible  = true;
+let _reachOutVisible  = true;
+let _reachInVisible   = true;
+let _reachSelfVisible = true;
+let _lastSelfBands    = null;
+
+// Historical trend data — { years: [...], types: { [areaType]: { [areaName]: {out,in,self} } } }.
+// Set once at boot (src/main.js fetches data/trends.json), independent of
+// the current year/direction/aggregation — see setTrendsData().
+let _trendsData = null;
 
 // ── Public API ────────────────────────────────────────────────────────────────
+
+/**
+ * Provide the precomputed historical trend dataset (data/trends.json, built
+ * offline by scripts/build_trends.py). Value-only for now — out/in/self raw
+ * totals per (areaType, area, year) — a percent-of-total view can be added
+ * later without a schema change; see _renderFlowTrend()'s `mode` param.
+ */
+export function setTrendsData(data) {
+  _trendsData = data;
+}
 
 export function initCharts(onAreaSelect) {
   _onAreaSelect = onAreaSelect;
@@ -93,8 +110,10 @@ export function initCharts(onAreaSelect) {
       const tab = flowTabBtn.dataset.tab;
       const overviewPanel = document.getElementById('flow-overview-panel');
       const vennPanel     = document.getElementById('flow-venn-panel');
+      const trendPanel    = document.getElementById('flow-trend-panel');
       if (overviewPanel) overviewPanel.style.display = tab === 'overview' ? '' : 'none';
       if (vennPanel)     vennPanel.style.display     = tab === 'venn'     ? '' : 'none';
+      if (trendPanel)    trendPanel.style.display    = tab === 'trend'    ? '' : 'none';
       return;
     }
 
@@ -102,9 +121,10 @@ export function initCharts(onAreaSelect) {
     const reachBtn = e.target.closest('.reach-dir-btn');
     if (reachBtn) {
       const dir = reachBtn.dataset.dir;
-      if (dir === 'outflow') _reachOutVisible = !_reachOutVisible;
-      if (dir === 'inflow')  _reachInVisible  = !_reachInVisible;
-      if (_lastState) _renderReach(_lastReachOut, _lastReachIn, _lastState);
+      if (dir === 'outflow')  _reachOutVisible  = !_reachOutVisible;
+      if (dir === 'inflow')   _reachInVisible   = !_reachInVisible;
+      if (dir === 'internal') _reachSelfVisible = !_reachSelfVisible;
+      if (_lastState) _renderReach(_lastReachOut, _lastReachIn, _lastSelfBands, _lastState);
       return;
     }
 
@@ -132,23 +152,25 @@ export function initCharts(onAreaSelect) {
   });
 }
 
-export function updateCharts(outflows, inflows, totalOut, totalIn, selfFlow, appState, acsEntry, reachOut, reachIn) {
-  _lastOutflows = outflows;
-  _lastInflows  = inflows;
-  _lastTotalOut = totalOut;
-  _lastTotalIn  = totalIn;
-  _lastSelfFlow = selfFlow ?? 0;
-  _lastState    = appState;
-  _lastAcsEntry = acsEntry ?? null;
-  _lastReachOut = reachOut ?? outflows;
-  _lastReachIn  = reachIn  ?? inflows;
+export function updateCharts(outflows, inflows, totalOut, totalIn, selfFlow, appState, acsEntry, reachOut, reachIn, selfBands) {
+  _lastOutflows  = outflows;
+  _lastInflows   = inflows;
+  _lastTotalOut  = totalOut;
+  _lastTotalIn   = totalIn;
+  _lastSelfFlow  = selfFlow ?? 0;
+  _lastState     = appState;
+  _lastAcsEntry  = acsEntry ?? null;
+  _lastReachOut  = reachOut ?? outflows;
+  _lastReachIn   = reachIn  ?? inflows;
+  _lastSelfBands = selfBands ?? null;
 
   _renderBar(outflows, inflows, totalOut, totalIn, appState);
   _renderSankey(outflows, inflows, appState);
   _renderFlowWheel(totalIn, totalOut, selfFlow ?? 0, appState);
   _renderFlowSummary(totalIn, totalOut, selfFlow ?? 0, appState);
+  _renderFlowTrend(appState);
   _renderDemographics(outflows, inflows, appState);
-  _renderReach(_lastReachOut, _lastReachIn, appState);
+  _renderReach(_lastReachOut, _lastReachIn, _lastSelfBands, appState);
   _renderIndustry(outflows, inflows, appState);
   _renderTransport(acsEntry, appState);
   _renderTravelTime(acsEntry, appState);
@@ -166,10 +188,12 @@ function _svgToPng(svgEl, filename, inlineStyle) {
     '--ink-3':     dk ? '#92929a' : '#5b6071',
     '--ink-4':     dk ? '#696a73' : '#898d9c',
     '--rule':      dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)',
-    '--inflow':    dk ? '#5aa6a7' : '#1e6f6f',
-    '--inflow-2':  dk ? '#408687' : '#155656',
-    '--outflow':   dk ? '#e4895a' : '#cc683a',
-    '--outflow-2': dk ? '#c5703f' : '#b35828',
+    '--inflow':       dk ? '#5aa6a7' : '#1e6f6f',
+    '--inflow-2':     dk ? '#408687' : '#155656',
+    '--outflow':      dk ? '#e4895a' : '#cc683a',
+    '--outflow-2':    dk ? '#c5703f' : '#b35828',
+    '--internal':     dk ? '#9a9a9e' : '#8f8f8f',
+    '--internal-2':   dk ? '#7c7c80' : '#6f6f6f',
   };
   const vb    = svgEl.getAttribute('viewBox')?.split(' ');
   const vbW   = vb ? parseFloat(vb[2]) : 460;
@@ -350,7 +374,11 @@ export function exportSankeyPng() {
   const area      = _lastState.selectedArea ?? 'chart';
   const year      = _lastState.year ?? '';
   const activeTab = document.querySelector('#flow-tab-toggle .mini-toggle-btn.active')?.dataset.tab;
-  const svgEl     = activeTab === 'overview'
+  if (activeTab === 'trend') {
+    _svgToPng(document.getElementById('flow-trend-chart')?.querySelector('svg'), `commute-trend-${area}.png`);
+    return;
+  }
+  const svgEl = activeTab === 'overview'
     ? document.getElementById('flow-wheel')?.querySelector('svg')
     : document.getElementById('flow-summary')?.querySelector('svg');
   _svgToPng(svgEl, `commute-flow-${area}-${year}.png`);
@@ -360,17 +388,26 @@ export function exportDemoPng() {
 }
 export function exportReachPng() {
   if (!_lastState) return;
-  const outB = _bucketFlows(_lastReachOut);
-  const inB  = _bucketFlows(_lastReachIn);
-  const outT = outB.reduce((s, v) => s + v, 0) || 1;
-  const inT  = inB.reduce((s, v) => s + v, 0) || 1;
-  const dk   = _lastState.theme === 'dark';
+  const outB  = _bucketFlows(_lastReachOut);
+  const inB   = _bucketFlows(_lastReachIn);
+  const selfB = _lastSelfBands ?? [0, 0, 0, 0, 0, 0];
+  const dk    = _lastState.theme === 'dark';
 
-  const outColor = dk ? '#e4895a' : '#cc683a';
-  const inColor  = dk ? '#5aa6a7' : '#1e6f6f';
-  const bg       = dk ? '#0a0e17' : '#f6f3eb';
-  const ink4     = dk ? '#696a73' : '#898d9c';
-  const axisLine = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+  const outColor  = dk ? '#e4895a' : '#cc683a';
+  const inColor   = dk ? '#5aa6a7' : '#1e6f6f';
+  const selfColor = dk ? '#9a9a9e' : '#8f8f8f';
+  const bg        = dk ? '#0a0e17' : '#f6f3eb';
+  const ink4      = dk ? '#696a73' : '#898d9c';
+  const axisLine  = dk ? 'rgba(232,229,220,0.09)' : 'rgba(18,23,38,0.10)';
+
+  // Mirror the on-screen chart: same series, same show/hide state.
+  const series = [
+    { label: 'Inflow',     color: inColor,   bars: inB,   visible: _reachInVisible },
+    { label: 'Live & Work', color: selfColor, bars: selfB, visible: _reachSelfVisible },
+    { label: 'Outflow',    color: outColor,  bars: outB,   visible: _reachOutVisible },
+  ].filter(s => s.visible);
+  const shown = series.length ? series : [{ label: 'Inflow', color: inColor, bars: inB }];
+  shown.forEach(s => { s.total = s.bars.reduce((a, v) => a + v, 0) || 1; });
 
   const W = 560, H = 260;
   const ml = 48, mr = 16, mt = 24, mb = 44, lgdH = 22;
@@ -385,7 +422,7 @@ export function exportReachPng() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
 
-  const maxCount = Math.max(...outB, ...inB) || 1;
+  const maxCount = Math.max(1, ...shown.flatMap(s => s.bars)) || 1;
   const step = _niceStep(maxCount);
   const yMax = Math.ceil(maxCount / step) * step || 1;
   const yFmt = v => v >= 1_000_000 ? (v / 1_000_000).toFixed(1) + 'M'
@@ -408,39 +445,30 @@ export function exportReachPng() {
   ctx.strokeStyle = axisLine; ctx.lineWidth = 1.5;
   ctx.beginPath(); ctx.moveTo(ml, bly); ctx.lineTo(W - mr, bly); ctx.stroke();
 
-  const groupW  = cw / 6;
-  const barW    = Math.min(22, groupW * 0.28);
-  const barGap  = 4;
-  const pairOff = (groupW - barW * 2 - barGap) / 2;
+  const groupW = cw / 6;
+  const barGap = shown.length > 2 ? 3 : 4;
+  const barW   = Math.min(22, (groupW * 0.82 - (shown.length - 1) * barGap) / shown.length);
+  const rowOff = (groupW - barW * shown.length - barGap * (shown.length - 1)) / 2;
 
   REACH_LABELS.forEach((lbl, i) => {
-    const ov = outB[i], iv = inB[i];
-    const opct = Math.round((ov / outT) * 100);
-    const ipct = Math.round((iv / inT) * 100);
-
     const gx = ml + i * groupW;
-    const ox = gx + pairOff;
-    const ix = ox + barW + barGap;
-    const oh = (ov / yMax) * ch;
-    const ih = (iv / yMax) * ch;
-    const oy = mt + ch - oh;
-    const iy = mt + ch - ih;
 
-    ctx.fillStyle = outColor;
-    ctx.fillRect(Math.round(ox), Math.round(oy), barW, Math.round(oh));
-    ctx.fillStyle = inColor;
-    ctx.fillRect(Math.round(ix), Math.round(iy), barW, Math.round(ih));
-
-    ctx.font = '500 9px Inter, system-ui, sans-serif';
-    ctx.textBaseline = 'bottom';
-    if (oh > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${opct}%`, ox + barW / 2, oy - 2);
-    }
-    if (ih > 12) {
-      ctx.fillStyle = ink4; ctx.textAlign = 'center';
-      ctx.fillText(`${ipct}%`, ix + barW / 2, iy - 2);
-    }
+    shown.forEach((s, si) => {
+      const v  = s.bars[i];
+      const bx = gx + rowOff + si * (barW + barGap);
+      const bh = (v / yMax) * ch;
+      const by = mt + ch - bh;
+      ctx.fillStyle = s.color;
+      ctx.fillRect(Math.round(bx), Math.round(by), Math.round(barW), Math.round(bh));
+      // Match the on-screen chart: label every non-zero band, not just tall bars.
+      const pct = Math.round((v / s.total) * 100);
+      if (pct > 0) {
+        ctx.fillStyle = ink4;
+        ctx.font = '500 9px Inter, system-ui, sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+        ctx.fillText(`${pct}%`, bx + barW / 2, by - 2);
+      }
+    });
 
     ctx.fillStyle = ink4;
     ctx.font = '500 9.5px Inter, system-ui, sans-serif';
@@ -452,7 +480,7 @@ export function exportReachPng() {
   const lgdY = H - lgdH + 4;
   const SW = 10;
   let lx = ml;
-  [['Outflow', outColor], ['Inflow', inColor]].forEach(([label, color]) => {
+  shown.forEach(({ label, color }) => {
     ctx.fillStyle = color;
     ctx.fillRect(lx, lgdY, SW, SW);
     ctx.fillStyle = ink4;
@@ -467,9 +495,11 @@ export function exportReachPng() {
 
 export function exportBarCsv() {
   if (!_lastState) return;
-  const { rows: allRows } = _mergeFlows(_lastOutflows, _lastInflows, 15);
-  const rows = allRows
-    .filter(r => !r.isOthers)
+  // CSV lists every city (the chart itself is capped at 15 via _mergeFlows);
+  // _mergeFlows returns the full uncapped, sorted list as `all`.
+  const { all } = _mergeFlows(_lastOutflows, _lastInflows, 15);
+  const rows = all
+    .slice()
     .sort((a, b) => (_balanceSort === 'outflow' ? b.out - a.out : b.in - a.in));
   const header = ['Area', 'Inflow (Workers In)', 'Inflow %', 'Outflow (Residents Out)', 'Outflow %'];
   const data = rows.map(d => [
@@ -484,7 +514,22 @@ export function exportBarCsv() {
 
 export function exportSankeyCsv() {
   if (!_lastState) return;
-  const area = _lastState.selectedArea;
+  const area      = _lastState.selectedArea;
+  const activeTab = document.querySelector('#flow-tab-toggle .mini-toggle-btn.active')?.dataset.tab;
+  if (activeTab === 'trend') {
+    const years  = _trendsData?.years ?? [];
+    const series = _trendsData?.types?.[_lastState.selectedAreaType]?.[area];
+    const net    = series ? _netTrendSeries(series) : null;
+    const header = ['Year', 'Inflow (Workers In)', 'Outflow (Residents Out)', 'Live & Work'];
+    const rows = years.map((y, i) => [
+      y,
+      net?.in[i]   ?? '',
+      net?.out[i]  ?? '',
+      net?.self[i] ?? '',
+    ]);
+    _csvDownload([header, ...rows], `commute-trend-${area}`);
+    return;
+  }
   const header = ['Direction', 'From', 'To', 'Commuters'];
   const rows = [
     ..._lastInflows.slice(0, 5).map(f  => ['Inflow',  f.dest_name, area,        Number(f.S000)]),
@@ -514,13 +559,14 @@ export function exportDemoCsv() {
 
 export function exportReachCsv() {
   if (!_lastState) return;
-  const labels = ['< 10 mi', '10–25 mi', '25–50 mi', '50+ mi'];
-  const outB = _bucketFlows(_lastReachOut);
-  const inB  = _bucketFlows(_lastReachIn);
-  const header = ['Direction', ...labels, 'Total'];
+  const outB  = _bucketFlows(_lastReachOut);
+  const inB   = _bucketFlows(_lastReachIn);
+  const selfB = _lastSelfBands ?? [0, 0, 0, 0, 0, 0];
+  const header = ['Direction', ...REACH_LABELS, 'Total'];
   const rows = [
-    ['Outflow', ...outB, outB.reduce((s, v) => s + v, 0)],
-    ['Inflow',  ...inB,  inB.reduce((s, v) => s + v, 0)],
+    ['Inflow',   ...inB,   inB.reduce((s, v) => s + v, 0)],
+    ['Live & Work', ...selfB, selfB.reduce((s, v) => s + v, 0)],
+    ['Outflow',  ...outB,  outB.reduce((s, v) => s + v, 0)],
   ];
   _csvDownload([header, ...rows], `commute-reach-${_lastState.selectedArea}-${_lastState.year}`);
 }
@@ -1032,7 +1078,7 @@ function _renderFlowWheel(totalIn, totalOut, selfFlow, state) {
     ? Math.round(selfFlow / (totalOut + selfFlow) * 100) : 0;
 
   // Same overlap color as the Venn diagram's LIVE & WORK lens
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
 
   // Rotation arc geometry — two CW 150° arcs, 30° gaps at top/bottom
   const topY = cy - R;
@@ -1215,7 +1261,7 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
   const legendY = H - 28;
   const dotR = 5, textOff = dotR * 2 + 6;
   const hasSelf = selfFlow > 0;
-  const overlapColor = state.theme === 'dark' ? '#b78564' : '#ac7453';
+  const overlapColor = state.theme === 'dark' ? '#9a9a9e' : '#8f8f8f';
   // Distribute legend items: 2 or 3 items centered in W
   const leg1X = hasSelf ? 38  : 110;
   const leg2X = 175;
@@ -1223,8 +1269,13 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
 
   el.innerHTML = `
     <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible">
+      ${hasSelf ? `<defs><clipPath id="venn-lens-clip">
+        <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}"/>
+      </clipPath></defs>` : ''}
       <circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"  fill="var(--inflow)"  opacity="0.72"/>
       <circle cx="${cx2.toFixed(1)}" cy="${cy}" r="${r_out.toFixed(1)}" fill="var(--outflow)" opacity="0.72"/>
+      ${hasSelf ? `<circle cx="${cx1.toFixed(1)}" cy="${cy}" r="${r_in.toFixed(1)}"
+        fill="${overlapColor}" clip-path="url(#venn-lens-clip)"/>` : ''}
 
       <text x="${numInX.toFixed(1)}" y="${cy + 6}" text-anchor="middle"
             font-size="18" font-weight="700" font-family="${font}" fill="white" opacity="0.95">${fmt(totalIn)}</text>
@@ -1251,6 +1302,159 @@ function _renderFlowSummary(totalIn, totalOut, selfFlow, state) {
       <text x="${leg3X + textOff}" y="${legendY + 10}" font-size="12" font-family="${font}"
             fill="var(--ink-3)" letter-spacing="0.03em">RESIDENTS OUT</text>
     </svg>`;
+}
+
+// ── 2c. Flow Trend — historical line chart ────────────────────────────────────
+//
+// Three lines (out / in / self) across every year in data/trends.json, for
+// whichever Area of Interest is currently selected — independent of the
+// Direction/Aggregation toggles and the year scrubber, same as the
+// Overview/Venn tabs it sits beside. `mode` is a placeholder seam for a
+// future percent-of-total view (each line has its own natural denominator —
+// residents for out, jobs for in — so it isn't a simple flag flip; left as
+// 'value' only for now).
+
+/**
+ * data/trends.json stores raw totals (workers who live/work in the area at
+ * all -- self-contained workers included in both `out` and `in`). Derive
+ * the same net in/out the rest of the app already shows (dataline,
+ * flow-wheel, Venn -- see _applyFilter()'s netOut/netIn in src/main.js) by
+ * subtracting self, so this chart/export agrees with those panels for the
+ * same year instead of double-counting self-contained workers into both
+ * the out and in lines.
+ */
+function _netTrendSeries(series) {
+  return {
+    out:  series.out.map((v, i) => (v == null || series.self[i] == null) ? null : v - series.self[i]),
+    in:   series.in.map((v, i)  => (v == null || series.self[i] == null) ? null : v - series.self[i]),
+    self: series.self,
+  };
+}
+
+function _renderFlowTrend(state, mode = 'value') {
+  const el = document.getElementById('flow-trend-chart');
+  if (!el) return;
+
+  const years  = _trendsData?.years ?? [];
+  const series = _trendsData?.types?.[state.selectedAreaType]?.[state.selectedArea];
+  // A real but effectively empty geography (e.g. a TAZ district with zero
+  // recorded commuters in every year) still has a `series` entry -- all
+  // three arrays are just null throughout -- so check for any actual value,
+  // not just presence of the entry.
+  const hasAnyValue = series && [...series.out, ...series.in, ...series.self].some(v => v != null);
+
+  if (!years.length || !hasAnyValue) {
+    el.innerHTML = `<div style="padding:24px 4px;text-align:center;font-size:12px;color:var(--ink-4);">
+      No historical data for this area.
+    </div>`;
+    return;
+  }
+
+  const netSeries = _netTrendSeries(series);
+
+  function fmt(n) {
+    if (n == null) return '—';
+    if (n >= 10000) return `${Math.round(n / 1000)}k`;
+    if (n >= 1000)  return `${parseFloat((n / 1000).toFixed(1))}k`;
+    return n.toLocaleString();
+  }
+
+  const W = 460, H = 220;
+  const ml = 40, mr = 10, mt = 12, mb = 24;
+  const cw = W - ml - mr, ch = H - mt - mb;
+
+  const allVals = [...netSeries.out, ...netSeries.in, ...netSeries.self].filter(v => v != null);
+  const maxVal  = Math.max(...allVals, 1);
+  const step    = _niceStep(maxVal);
+  const yMax    = Math.ceil(maxVal / step) * step || 1;
+
+  const xAt = i => ml + (years.length > 1 ? (i / (years.length - 1)) * cw : cw / 2);
+  const yAt = v => mt + ch - (v / yMax) * ch;
+
+  // Break each line into separate M..L.. segments at null gaps, so a year
+  // an area didn't yet exist in (e.g. a newly incorporated city) renders as
+  // a gap rather than a false dip to zero.
+  function pathFor(arr) {
+    let d = '', open = false;
+    arr.forEach((v, i) => {
+      if (v == null) { open = false; return; }
+      const x = xAt(i).toFixed(1), y = yAt(v).toFixed(1);
+      d += (open ? ' L ' : (d ? ' M ' : 'M ')) + `${x} ${y}`;
+      open = true;
+    });
+    return d;
+  }
+
+  // Axis label sizing matches the Commute Length chart's live SVG axes
+  // (_renderReach below) — 12px / weight 500 / --ink-4, not the smaller
+  // sizes used only in canvas PNG-export renders elsewhere in this file.
+  let gridSvg = '';
+  for (let i = 0; i <= 2; i++) {
+    const val = (yMax / 2) * i;
+    const y = yAt(val).toFixed(1);
+    gridSvg += `<line x1="${ml}" y1="${y}" x2="${W - mr}" y2="${y}" stroke="var(--rule)" stroke-width="1"/>`;
+    gridSvg += `<text x="${ml - 6}" y="${y}" text-anchor="end" dominant-baseline="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${fmt(val)}</text>`;
+  }
+
+  // Sparse X labels — first/last year plus every 5th, mirroring the year
+  // scrubber's own major-tick convention (src/main.js _buildScrubberTicks).
+  let xLabels = '';
+  years.forEach((y, i) => {
+    if (i === 0 || i === years.length - 1 || y % 5 === 0) {
+      xLabels += `<text x="${xAt(i).toFixed(1)}" y="${H - 6}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${y}</text>`;
+    }
+  });
+
+  // Guide marking the year currently shown on the map — ties this
+  // always-full-history chart back to the single-year scrubber above it.
+  const curIdx = years.indexOf(state.year);
+  let guideSvg = '';
+  if (curIdx >= 0) {
+    const x = xAt(curIdx).toFixed(1);
+    guideSvg = `<line x1="${x}" y1="${mt}" x2="${x}" y2="${mt + ch}" stroke="var(--ink-4)" stroke-width="1" stroke-dasharray="2,3" opacity="0.6"/>`;
+    [['out', 'var(--outflow)'], ['in', 'var(--inflow)'], ['self', 'var(--internal)']].forEach(([key, color]) => {
+      const v = netSeries[key][curIdx];
+      if (v == null) return;
+      guideSvg += `<circle cx="${x}" cy="${yAt(v).toFixed(1)}" r="3" fill="${color}" stroke="var(--paper)" stroke-width="1.5"/>`;
+    });
+  }
+
+  // Invisible per-year hover columns for the tooltip
+  let hoverSvg = '';
+  years.forEach((y, i) => {
+    const x0 = i === 0 ? ml : (xAt(i - 1) + xAt(i)) / 2;
+    const x1 = i === years.length - 1 ? W - mr : (xAt(i) + xAt(i + 1)) / 2;
+    hoverSvg += `<rect class="trend-hover-col" data-idx="${i}" x="${x0.toFixed(1)}" y="${mt}" width="${Math.max(x1 - x0, 0).toFixed(1)}" height="${ch}" fill="transparent"/>`;
+  });
+
+  el.innerHTML = `
+    <svg viewBox="0 0 ${W} ${H}" style="width:100%;display:block;overflow:visible;font-family:inherit;">
+      ${gridSvg}
+      <path d="${pathFor(netSeries.out)}"  fill="none" stroke="var(--outflow)"  stroke-width="2"/>
+      <path d="${pathFor(netSeries.in)}"   fill="none" stroke="var(--inflow)"   stroke-width="2"/>
+      <path d="${pathFor(netSeries.self)}" fill="none" stroke="var(--internal)" stroke-width="2"/>
+      ${guideSvg}
+      ${xLabels}
+      ${hoverSvg}
+    </svg>`;
+
+  el.querySelectorAll('.trend-hover-col').forEach(rect => {
+    rect.addEventListener('mousemove', e => {
+      const idx = Number(rect.dataset.idx);
+      const y   = years[idx];
+      const tt  = _ensureSankeyTooltip();
+      tt.innerHTML = `<strong>${y}</strong><br>`
+        + `<span style="color:var(--inflow)">Workers In</span> ${fmt(netSeries.in[idx])}<br>`
+        + `<span style="color:var(--outflow)">Residents Out</span> ${fmt(netSeries.out[idx])}<br>`
+        + `<span style="color:var(--internal)">Live &amp; Work</span> ${fmt(netSeries.self[idx])}`;
+      tt.style.display = 'block';
+      tt.style.left    = `${e.clientX + 14}px`;
+      tt.style.top     = `${e.clientY - 32}px`;
+    });
+    rect.addEventListener('mouseleave', () => {
+      if (_sankeyTooltip) _sankeyTooltip.style.display = 'none';
+    });
+  });
 }
 
 // ── 3. Worker Demographics — diverging grouped bar ────────────────────────────
@@ -1337,20 +1541,22 @@ function _renderDemographics(outflows, inflows, state) {
 
 // ── 4. Commute Length — frequency-distribution column chart ──────────────────
 
-function _renderReach(outflows, inflows, state) {
+function _renderReach(outflows, inflows, selfBands, state) {
   const bandsEl  = document.getElementById('reach-bands');
   const legendEl = document.getElementById('reach-legend');
   if (!bandsEl) return;
 
-  const outB = _bucketFlows(outflows);
-  const inB  = _bucketFlows(inflows);
-  const outT = outB.reduce((s, v) => s + v, 0) || 1;
-  const inT  = inB.reduce((s, v) => s + v, 0) || 1;
+  const outB  = _bucketFlows(outflows);
+  const inB   = _bucketFlows(inflows);
+  const selfB = selfBands ?? [0, 0, 0, 0, 0, 0];
+  const outT  = outB.reduce((s, v) => s + v, 0) || 1;
+  const inT   = inB.reduce((s, v) => s + v, 0) || 1;
+  const selfT = selfB.reduce((s, v) => s + v, 0) || 1;
 
-  // Scale to visible directions only
   const visibleCounts = [
-    ...(_reachOutVisible ? outB : []),
-    ...(_reachInVisible  ? inB  : []),
+    ...(_reachSelfVisible ? selfB : []),
+    ...(_reachInVisible   ? inB   : []),
+    ...(_reachOutVisible  ? outB  : []),
   ];
   const maxCount = Math.max(...visibleCounts, 1);
   const step = _niceStep(maxCount);
@@ -1359,20 +1565,18 @@ function _renderReach(outflows, inflows, state) {
   const yFmt = v => v >= 1_000_000 ? (v / 1_000_000).toFixed(1) + 'M'
     : v >= 1000 ? Math.round(v / 1000) + 'k' : v.toString();
 
-  // SVG with CSS-variable colours + font-family:inherit so it renders
-  // identically to the rest of the panel.
   const W = 460, H = 190;
   const ml = 38, mr = 4, mt = 20, mb = 34;
   const cw = W - ml - mr;
   const ch = H - mt - mb;
 
-  const groupW = cw / REACH_LABELS.length;
-  const barSep = 1;
-  const barW   = (groupW - barSep) / 2;
+  const groupW  = cw / REACH_LABELS.length;
+  const barSep  = 1;
+  const nVis    = (_reachInVisible ? 1 : 0) + (_reachSelfVisible ? 1 : 0) + (_reachOutVisible ? 1 : 0);
+  const barW    = nVis > 0 ? (groupW - (nVis - 1) * barSep) / nVis : groupW;
 
   let svg = '';
 
-  // Gridlines + Y labels — all colours via CSS vars
   for (let i = 0; i <= 4; i++) {
     const val = (yMax / 4) * i;
     const y   = (mt + yPx(val)).toFixed(1);
@@ -1380,44 +1584,38 @@ function _renderReach(outflows, inflows, state) {
     svg += `<text x="${ml - 5}" y="${(parseFloat(y) + 4).toFixed(1)}" text-anchor="end" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${yFmt(val)}</text>`;
   }
 
-  // Baseline
   svg += `<line x1="${ml}" x2="${W - mr}" y1="${(mt + ch).toFixed(1)}" y2="${(mt + ch).toFixed(1)}" style="stroke:var(--rule-strong);stroke-width:1.5"/>`;
 
-  // Bars — inflow first (left), outflow second (right)
+  // Bars — inflow / internal / outflow; only visible groups rendered, filling available width
   REACH_LABELS.forEach((lbl, i) => {
-    const ov   = outB[i], iv = inB[i];
-    const opct = Math.round((ov / outT) * 100);
-    const ipct = Math.round((iv / inT) * 100);
-    const gx   = ml + i * groupW;
-    const inX  = gx;
-    const outX = gx + barW + barSep;
+    const gx = ml + i * groupW;
+    let slot = 0;
 
-    if (_reachInVisible) {
-      const ih = ((iv / yMax) * ch).toFixed(1);
-      const iy = (mt + ch - parseFloat(ih)).toFixed(1);
-      svg += `<rect x="${inX.toFixed(1)}" y="${iy}" width="${barW.toFixed(1)}" height="${ih}" style="fill:var(--inflow)"/>`;
-      if (ipct > 0)
-        svg += `<text x="${(inX + barW / 2).toFixed(1)}" y="${(parseFloat(iy) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${ipct}%</text>`;
-    }
+    const drawBar = (val, total, cssVar) => {
+      const pct = Math.round((val / total) * 100);
+      const bx  = gx + slot * (barW + barSep);
+      const bh  = ((val / yMax) * ch).toFixed(1);
+      const by  = (mt + ch - parseFloat(bh)).toFixed(1);
+      svg += `<rect x="${bx.toFixed(1)}" y="${by}" width="${barW.toFixed(1)}" height="${bh}" style="fill:var(${cssVar})"/>`;
+      if (pct > 0)
+        svg += `<text x="${(bx + barW / 2).toFixed(1)}" y="${(parseFloat(by) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${pct}%</text>`;
+      slot++;
+    };
 
-    if (_reachOutVisible) {
-      const oh = ((ov / yMax) * ch).toFixed(1);
-      const oy = (mt + ch - parseFloat(oh)).toFixed(1);
-      svg += `<rect x="${outX.toFixed(1)}" y="${oy}" width="${barW.toFixed(1)}" height="${oh}" style="fill:var(--outflow)"/>`;
-      if (opct > 0)
-        svg += `<text x="${(outX + barW / 2).toFixed(1)}" y="${(parseFloat(oy) - 3).toFixed(1)}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:600;">${opct}%</text>`;
-    }
+    if (_reachInVisible)   drawBar(inB[i],   inT,   '--inflow');
+    if (_reachSelfVisible) drawBar(selfB[i],  selfT, '--internal');
+    if (_reachOutVisible)  drawBar(outB[i],   outT,  '--outflow');
 
     svg += `<text x="${(gx + groupW / 2).toFixed(1)}" y="${H - mb + 14}" text-anchor="middle" style="font-size:12px;fill:var(--ink-4);font-weight:500;">${lbl}</text>`;
   });
 
   bandsEl.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;overflow:visible;font-family:inherit;">${svg}</svg>`;
 
-  // Legend — inflow first to match bar order
   if (legendEl) {
     legendEl.innerHTML =
-      `<button class="balance-sort-btn reach-dir-btn${_reachInVisible  ? ' active' : ''}" data-dir="inflow"><span class="pip in"></span>Inflow</button>` +
-      `<button class="balance-sort-btn reach-dir-btn${_reachOutVisible ? ' active' : ''}" data-dir="outflow"><span class="pip out"></span>Outflow</button>`;
+      `<button class="balance-sort-btn reach-dir-btn${_reachInVisible   ? ' active' : ''}" data-dir="inflow"><span class="pip in"></span>Inflow</button>` +
+      `<button class="balance-sort-btn reach-dir-btn${_reachSelfVisible ? ' active' : ''}" data-dir="internal"><span class="pip self"></span>Live &amp; Work</button>` +
+      `<button class="balance-sort-btn reach-dir-btn${_reachOutVisible  ? ' active' : ''}" data-dir="outflow"><span class="pip out"></span>Outflow</button>`;
   }
 }
 
@@ -1713,8 +1911,10 @@ function _pngDownload(chart, filename) {
 }
 
 function _csvDownload(rows, filename) {
-  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const csv  = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+  // Lead with a UTF-8 BOM so Excel / Windows decodes the file as UTF-8
+  // instead of the system ANSI codepage, which mangles en-dashes and the like.
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
   const url  = URL.createObjectURL(blob);
   _dlUrl(url, `${filename}.csv`);
   setTimeout(() => URL.revokeObjectURL(url), 1000);

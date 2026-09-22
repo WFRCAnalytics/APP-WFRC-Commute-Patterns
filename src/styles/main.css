@@ -25,9 +25,12 @@
   --outflow:      #cc683a;
   --outflow-2:    #b35828;
   --outflow-tint: rgba(204, 104, 58, 0.14);
-  --inflow:       #1e6f6f;
-  --inflow-2:     #155656;
-  --inflow-tint:  rgba(30, 111, 111, 0.14);
+  --inflow:          #1e6f6f;
+  --inflow-2:        #155656;
+  --inflow-tint:     rgba(30, 111, 111, 0.14);
+  --internal:        #8f8f8f;
+  --internal-2:      #6f6f6f;
+  --internal-tint:   rgba(143, 143, 143, 0.14);
 
   --highlight:    #f4ecd9;
   --highlight-2:  #eadeba;
@@ -62,9 +65,12 @@
   --outflow:      #e4895a;
   --outflow-2:    #c5703f;
   --outflow-tint: rgba(228, 137, 90, 0.16);
-  --inflow:       #5aa6a7;
-  --inflow-2:     #408687;
-  --inflow-tint:  rgba(90, 166, 167, 0.16);
+  --inflow:          #5aa6a7;
+  --inflow-2:        #408687;
+  --inflow-tint:     rgba(90, 166, 167, 0.16);
+  --internal:        #9a9a9e;
+  --internal-2:      #7c7c80;
+  --internal-tint:   rgba(154, 154, 158, 0.16);
 
   --highlight:    #1a1f30;
   --highlight-2:  #232a3d;
