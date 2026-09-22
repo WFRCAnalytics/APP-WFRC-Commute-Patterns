@@ -9,7 +9,7 @@ import { initCharts, updateCharts, exportBarPng, exportBarCsv, exportSankeyPng, 
 
 // ── Global app state ─────────────────────────────────────────────────────────
 const state = {
-  theme:            document.documentElement.getAttribute('data-theme') || 'light',
+  theme:            document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light',
   geoMode:          'census',   // 'census' (Civic) | 'planning' (Planning Boundaries) | 'workshop' (hidden)
   wsUnlocked:       false,      // hidden Workshop Areas mode — see _checkWsUnlock()
   aggregation:      'city',
