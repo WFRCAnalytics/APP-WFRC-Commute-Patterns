@@ -41,7 +41,7 @@ import neighbor_zones
 import taz_districts
 import workshop_areas
 import mag_workshop_areas
-from geo_utils import topo_simplify
+from geo_utils import topo_simplify, tiger_file, TIGER_YEAR
 
 # ── Output directories ────────────────────────────────────────────────────────
 DATA_DIR  = Path(__file__).parent.parent / "data"
@@ -63,6 +63,13 @@ def download_cached(url, filename):
     with open(tmp, "wb") as f:
         for chunk in r.iter_content(chunk_size=65536):
             f.write(chunk)
+    # Census's WAF can answer "200 OK" with an HTML "Request Rejected" page;
+    # never cache that as data.
+    with open(tmp, "rb") as f:
+        head = f.read(64).lstrip().lower()
+    if head.startswith((b"<html", b"<!doctype")):
+        tmp.unlink()
+        raise RuntimeError(f"{url} returned an HTML page (request rejected?), not data")
     tmp.rename(cache_path)
     size_mb = cache_path.stat().st_size / 1024 / 1024
     print(f"  Saved {filename} ({size_mb:.1f} MB)")
@@ -109,12 +116,11 @@ OD_TEMPLATE  = LODES_BASE + "/od/ut_od_main_JT00_{year}.csv.gz"
 AUX_TEMPLATE = LODES_BASE + "/od/ut_od_aux_JT00_{year}.csv.gz"
 XWALK_URL = LODES_BASE + "/ut_xwalk.csv.gz"
 
-# ── Census TIGER 2024 URLs (Utah state FIPS = 49) ────────────────────────────
-TIGER_BASE = "https://www2.census.gov/geo/tiger/TIGER2024"
-PLACES_URL   = f"{TIGER_BASE}/PLACE/tl_2024_49_place.zip"
-COUNTIES_URL = f"{TIGER_BASE}/COUNTY/tl_2024_us_county.zip"  # counties file is national
-SLDL_URL     = f"{TIGER_BASE}/SLDL/tl_2024_49_sldl.zip"    # state house districts
-SLDU_URL     = f"{TIGER_BASE}/SLDU/tl_2024_49_sldu.zip"    # state senate districts
+# ── Census TIGER URLs (Utah state FIPS = 49; vintage set in geo_utils.TIGER_YEAR) ──
+PLACES_URL,   PLACES_FILE   = tiger_file("PLACE",  "49_place")
+COUNTIES_URL, COUNTIES_FILE = tiger_file("COUNTY", "us_county")  # counties file is national
+SLDL_URL,     SLDL_FILE     = tiger_file("SLDL",   "49_sldl")    # state house districts
+SLDU_URL,     SLDU_FILE     = tiger_file("SLDU",   "49_sldu")    # state senate districts
 
 # ── LEHD OD columns to aggregate ─────────────────────────────────────────────
 AGG_COLS  = ["S000", "SA01", "SA02", "SA03", "SE01", "SE02", "SE03", "SI01", "SI02", "SI03"]
@@ -524,7 +530,7 @@ def aggregate_planning_flows(od):
 
 
 def load_tiger_places():
-    local = download_cached(PLACES_URL, "tl_2024_49_place.zip")
+    local = download_cached(PLACES_URL, PLACES_FILE)
     places = gpd.read_file(local)
     places = places.to_crs(epsg=4326)
     # Use Census internal point (hand-designated, always inside the place boundary)
@@ -537,7 +543,7 @@ def load_tiger_places():
 
 
 def load_tiger_counties():
-    local = download_cached(COUNTIES_URL, "tl_2024_us_county.zip")
+    local = download_cached(COUNTIES_URL, COUNTIES_FILE)
     counties = gpd.read_file(local)
     # Filter to Utah (STATEFP = 49) before extracting centroids
     counties = counties[counties["STATEFP"] == "49"].copy()
@@ -574,7 +580,7 @@ CENTROID_OVERRIDES = {
 
 def load_tiger_sldl():
     """Download (cached) Utah State House (Lower) district TIGER shapefile."""
-    local = download_cached(SLDL_URL, "tl_2024_49_sldl.zip")
+    local = download_cached(SLDL_URL, SLDL_FILE)
     sldl = gpd.read_file(local).to_crs(epsg=4326)
     sldl["lat"] = sldl["INTPTLAT"].astype(float)
     sldl["lon"] = sldl["INTPTLON"].astype(float)
@@ -585,7 +591,7 @@ def load_tiger_sldl():
 
 def load_tiger_sldu():
     """Download (cached) Utah State Senate (Upper) district TIGER shapefile."""
-    local = download_cached(SLDU_URL, "tl_2024_49_sldu.zip")
+    local = download_cached(SLDU_URL, SLDU_FILE)
     sldu = gpd.read_file(local).to_crs(epsg=4326)
     sldu["lat"] = sldu["INTPTLAT"].astype(float)
     sldu["lon"] = sldu["INTPTLON"].astype(float)
@@ -732,13 +738,29 @@ def export_parquet(df, path, int_cols):
     print(f"  Wrote {path.name} ({len(df):,} rows, {size_kb:.1f} KB)")
 
 
+def build_place_names(xw, disambig=None):
+    """Return {place_fips: display_name} using the exact names the flows carry.
+
+    build_lookup() names every block from the crosswalk's stplcname, so city
+    boundaries must be named from the same source. TIGER's NAMELSAD can differ
+    across vintages (e.g. 2026 relabeled "Magna metro township" -> "Magna city"),
+    which would otherwise leave boundary names that match no flow row.
+    """
+    disambig = disambig or {}
+    valid = xw[xw["stplcname"].notna() & xw["stplc"].notna()].drop_duplicates("stplc")
+    return {r.stplc: disambig.get(r.stplc) or _clean_stplcname(r.stplcname)
+            for r in valid.itertuples(index=False)}
+
+
 def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
-                        force=False, disambig=None):
+                        force=False, disambig=None, place_names=None):
     """Generate static boundary GeoJSON files for county, city, house, and senate districts.
 
     Writes to data/{county,city,house,senate}_boundaries.geojson.
     Skips if all four files already exist unless force=True.
     disambig: optional {place_fips: disambiguated_name} from _detect_name_collisions.
+    place_names: optional {place_fips: name} from build_place_names(); takes
+        precedence so boundary names always equal the flow/meta names.
     """
     county_out = DATA_DIR / "county_boundaries.geojson"
     city_out   = DATA_DIR / "city_boundaries.geojson"
@@ -774,13 +796,19 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
 
     # ── City/place boundaries ─────────────────────────────────────────────────
     places_in = places.copy()
-    if disambig:
-        places_in["name"] = places_in.apply(
-            lambda r: disambig.get(r["FULL_PLACEFP"]) or _clean_stplcname(r["NAMELSAD"]),
-            axis=1,
-        )
-    else:
-        places_in["name"] = places_in["NAMELSAD"].apply(_clean_stplcname)
+    place_names = place_names or {}
+    disambig = disambig or {}
+
+    def _boundary_name(r):
+        fips = r["FULL_PLACEFP"]
+        return place_names.get(fips) or disambig.get(fips) or _clean_stplcname(r["NAMELSAD"])
+
+    places_in["name"] = places_in.apply(_boundary_name, axis=1)
+    renamed = {r["NAMELSAD"]: r["name"] for _, r in places_in.iterrows()
+               if r["FULL_PLACEFP"] in place_names
+               and r["name"] != (disambig.get(r["FULL_PLACEFP"]) or _clean_stplcname(r["NAMELSAD"]))}
+    if renamed:
+        print(f"  Boundary names taken from crosswalk (differ from TIGER NAMELSAD): {renamed}")
     city_gdf = places_in[["name", "geometry"]].copy()
     city_gdf = city_gdf.to_crs(epsg=26912)
     city_gdf = topo_simplify(city_gdf, tolerance=80)
@@ -924,7 +952,8 @@ def main():
         disambig = _detect_name_collisions(xw)
         sldl = load_tiger_sldl()
         sldu = load_tiger_sldu()
-        generate_boundaries(sldl=sldl, sldu=sldu, force=True, disambig=disambig)
+        generate_boundaries(sldl=sldl, sldu=sldu, force=True, disambig=disambig,
+                            place_names=build_place_names(xw, disambig))
         taz_districts.generate_planning_boundaries(force=True)
         workshop_areas.generate_workshop_boundaries(force=True)
         mag_workshop_areas.generate_mag_workshop_boundaries(force=True)
@@ -1029,7 +1058,8 @@ def main():
 
     # 10. Generate boundary GeoJSON files if needed (uses already-loaded TIGER data)
     print("\n10. Generating boundary files (if needed)...")
-    generate_boundaries(places, counties, sldl, sldu, disambig=disambig)
+    generate_boundaries(places, counties, sldl, sldu, disambig=disambig,
+                        place_names=build_place_names(xw, disambig))
     taz_districts.generate_planning_boundaries()
     workshop_areas.generate_workshop_boundaries()
     mag_workshop_areas.generate_mag_workshop_boundaries()

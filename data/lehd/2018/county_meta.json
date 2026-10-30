@@ -14,8 +14,8 @@
   {
     "name": "Cache County",
     "county_fips": "49005",
-    "lat": 41.7341179,
-    "lon": -111.7453936
+    "lat": 41.7341225,
+    "lon": -111.7453993
   },
   {
     "name": "Carbon County",
@@ -32,7 +32,7 @@
   {
     "name": "Davis County",
     "county_fips": "49011",
-    "lat": 41.0375594,
+    "lat": 41.0377478,
     "lon": -112.2019434
   },
   {
@@ -80,8 +80,8 @@
   {
     "name": "Millard County",
     "county_fips": "49027",
-    "lat": 38.9567436,
-    "lon": -113.133092
+    "lat": 38.9356113,
+    "lon": -113.1550145
   },
   {
     "name": "Morgan County",
@@ -104,8 +104,8 @@
   {
     "name": "Salt Lake County",
     "county_fips": "49035",
-    "lat": 40.6678828,
-    "lon": -111.9242397
+    "lat": 40.6672051,
+    "lon": -111.921602
   },
   {
     "name": "San Juan County",
@@ -171,6 +171,6 @@
     "name": "Weber County",
     "county_fips": "49057",
     "lat": 41.2703252,
-    "lon": -111.876883
+    "lon": -111.8768815
   }
 ]

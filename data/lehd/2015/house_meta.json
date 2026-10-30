@@ -8,20 +8,20 @@
   {
     "name": "House District 10",
     "house_fips": "49010",
-    "lat": 41.1754608,
-    "lon": -111.9352007
+    "lat": 41.1757042,
+    "lon": -111.9364781
   },
   {
     "name": "House District 11",
     "house_fips": "49011",
-    "lat": 41.1289971,
-    "lon": -111.9602116
+    "lat": 41.1431659,
+    "lon": -111.9821341
   },
   {
     "name": "House District 12",
     "house_fips": "49012",
-    "lat": 41.1690552,
-    "lon": -112.2534849
+    "lat": 41.1670531,
+    "lon": -112.2810519
   },
   {
     "name": "House District 13",
@@ -38,32 +38,32 @@
   {
     "name": "House District 15",
     "house_fips": "49015",
-    "lat": 40.9581019,
-    "lon": -112.2134044
+    "lat": 40.9560707,
+    "lon": -112.2109378
   },
   {
     "name": "House District 16",
     "house_fips": "49016",
-    "lat": 41.1034228,
-    "lon": -111.9140258
+    "lat": 41.103348,
+    "lon": -111.914154
   },
   {
     "name": "House District 17",
     "house_fips": "49017",
-    "lat": 41.0433121,
-    "lon": -111.8895052
+    "lat": 41.0451912,
+    "lon": -111.8716386
   },
   {
     "name": "House District 18",
     "house_fips": "49018",
-    "lat": 40.9570159,
-    "lon": -111.8972863
+    "lat": 40.9570023,
+    "lon": -111.8973341
   },
   {
     "name": "House District 19",
     "house_fips": "49019",
-    "lat": 40.8790876,
-    "lon": -111.8339636
+    "lat": 40.87956,
+    "lon": -111.8343355
   },
   {
     "name": "House District 2",
@@ -80,8 +80,8 @@
   {
     "name": "House District 21",
     "house_fips": "49021",
-    "lat": 40.8113279,
-    "lon": -112.084936
+    "lat": 40.8122345,
+    "lon": -112.0695684
   },
   {
     "name": "House District 22",
@@ -92,8 +92,8 @@
   {
     "name": "House District 23",
     "house_fips": "49023",
-    "lat": 40.7437715,
-    "lon": -111.7538183
+    "lat": 40.7452604,
+    "lon": -111.7517797
   },
   {
     "name": "House District 24",
@@ -116,8 +116,8 @@
   {
     "name": "House District 27",
     "house_fips": "49027",
-    "lat": 40.670634,
-    "lon": -112.1558372
+    "lat": 40.67409,
+    "lon": -112.1553086
   },
   {
     "name": "House District 28",
@@ -158,8 +158,8 @@
   {
     "name": "House District 33",
     "house_fips": "49033",
-    "lat": 40.6788724,
-    "lon": -111.7071684
+    "lat": 40.6791627,
+    "lon": -111.7122678
   },
   {
     "name": "House District 34",
@@ -212,8 +212,8 @@
   {
     "name": "House District 41",
     "house_fips": "49041",
-    "lat": 40.6169806,
-    "lon": -111.6868121
+    "lat": 40.6171169,
+    "lon": -111.6865582
   },
   {
     "name": "House District 42",
@@ -266,8 +266,8 @@
   {
     "name": "House District 5",
     "house_fips": "49005",
-    "lat": 41.5635105,
-    "lon": -111.7585877
+    "lat": 41.5635284,
+    "lon": -111.7586448
   },
   {
     "name": "House District 50",
@@ -314,8 +314,8 @@
   {
     "name": "House District 57",
     "house_fips": "49057",
-    "lat": 40.2861775,
-    "lon": -111.727883
+    "lat": 40.2865918,
+    "lon": -111.7272204
   },
   {
     "name": "House District 58",
@@ -326,14 +326,14 @@
   {
     "name": "House District 59",
     "house_fips": "49059",
-    "lat": 40.2957416,
-    "lon": -111.1912731
+    "lat": 40.2957262,
+    "lon": -111.1912816
   },
   {
     "name": "House District 6",
     "house_fips": "49006",
-    "lat": 41.3429538,
-    "lon": -112.0893619
+    "lat": 41.3437984,
+    "lon": -112.0780829
   },
   {
     "name": "House District 60",
@@ -344,8 +344,8 @@
   {
     "name": "House District 61",
     "house_fips": "49061",
-    "lat": 40.3374063,
-    "lon": -111.779718
+    "lat": 40.2370796,
+    "lon": -111.7452261
   },
   {
     "name": "House District 62",
@@ -368,8 +368,8 @@
   {
     "name": "House District 65",
     "house_fips": "49065",
-    "lat": 39.9954412,
-    "lon": -111.7367281
+    "lat": 39.9926786,
+    "lon": -111.7466119
   },
   {
     "name": "House District 66",
@@ -422,8 +422,8 @@
   {
     "name": "House District 73",
     "house_fips": "49073",
-    "lat": 37.2499482,
-    "lon": -113.4201092
+    "lat": 37.2499477,
+    "lon": -113.4201095
   },
   {
     "name": "House District 74",
@@ -440,8 +440,8 @@
   {
     "name": "House District 8",
     "house_fips": "49008",
-    "lat": 41.2879841,
-    "lon": -111.7031752
+    "lat": 41.2879833,
+    "lon": -111.7031621
   },
   {
     "name": "House District 9",

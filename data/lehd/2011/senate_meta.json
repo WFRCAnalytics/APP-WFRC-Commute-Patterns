@@ -8,8 +8,8 @@
   {
     "name": "Senate District 10",
     "senate_fips": "49010",
-    "lat": 40.7960872,
-    "lon": -112.0660607
+    "lat": 40.7908373,
+    "lon": -112.0598298
   },
   {
     "name": "Senate District 11",
@@ -32,20 +32,20 @@
   {
     "name": "Senate District 14",
     "senate_fips": "49014",
-    "lat": 40.6758273,
-    "lon": -111.8292716
+    "lat": 40.6757527,
+    "lon": -111.8283747
   },
   {
     "name": "Senate District 15",
     "senate_fips": "49015",
-    "lat": 40.6459489,
-    "lon": -111.7195039
+    "lat": 40.645945,
+    "lon": -111.719515
   },
   {
     "name": "Senate District 16",
     "senate_fips": "49016",
     "lat": 40.6193455,
-    "lon": -111.9721071
+    "lon": -111.972107
   },
   {
     "name": "Senate District 17",
@@ -56,8 +56,8 @@
   {
     "name": "Senate District 18",
     "senate_fips": "49018",
-    "lat": 40.4694336,
-    "lon": -111.9630956
+    "lat": 40.4731495,
+    "lon": -111.9656227
   },
   {
     "name": "Senate District 19",
@@ -80,8 +80,8 @@
   {
     "name": "Senate District 21",
     "senate_fips": "49021",
-    "lat": 40.4716536,
-    "lon": -111.6805903
+    "lat": 40.4717307,
+    "lon": -111.680436
   },
   {
     "name": "Senate District 22",
@@ -92,14 +92,14 @@
   {
     "name": "Senate District 23",
     "senate_fips": "49023",
-    "lat": 40.3009942,
-    "lon": -111.7295489
+    "lat": 40.3009994,
+    "lon": -111.7295544
   },
   {
     "name": "Senate District 24",
     "senate_fips": "49024",
-    "lat": 40.3186636,
-    "lon": -111.576954
+    "lat": 40.3187932,
+    "lon": -111.5771977
   },
   {
     "name": "Senate District 25",
@@ -122,8 +122,8 @@
   {
     "name": "Senate District 28",
     "senate_fips": "49028",
-    "lat": 38.6880776,
-    "lon": -113.2786199
+    "lat": 38.6363647,
+    "lon": -113.3213523
   },
   {
     "name": "Senate District 29",
@@ -146,31 +146,31 @@
   {
     "name": "Senate District 5",
     "senate_fips": "49005",
-    "lat": 41.1698335,
-    "lon": -111.8420535
+    "lat": 41.1899243,
+    "lon": -111.824781
   },
   {
     "name": "Senate District 6",
     "senate_fips": "49006",
-    "lat": 40.9581019,
-    "lon": -112.2134044
+    "lat": 40.9560707,
+    "lon": -112.2109378
   },
   {
     "name": "Senate District 7",
     "senate_fips": "49007",
-    "lat": 41.0172999,
-    "lon": -111.852937
+    "lat": 41.017461,
+    "lon": -111.8536002
   },
   {
     "name": "Senate District 8",
     "senate_fips": "49008",
-    "lat": 40.852027,
-    "lon": -111.8574157
+    "lat": 40.8519981,
+    "lon": -111.8574333
   },
   {
     "name": "Senate District 9",
     "senate_fips": "49009",
-    "lat": 40.7596055,
-    "lon": -111.7639971
+    "lat": 40.7617131,
+    "lon": -111.7593863
   }
 ]
