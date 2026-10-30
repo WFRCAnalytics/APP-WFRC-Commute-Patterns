@@ -188,7 +188,10 @@ def load_xwalk():
     xw["stsldl"] = xw["stsldl"].str.zfill(5)
     xw["stsldu"] = xw["stsldu"].str.zfill(5)
     print(f"  Crosswalk rows: {len(xw):,}")
-    return xw
+    # Apply custom_places_config.json "remove"/"add" to the block -> place columns.
+    # This is the only place the Utah crosswalk is read, so every consumer
+    # (names, FIPS, collisions, metadata) sees the same patched geography.
+    return custom_places.patch_xwalk(xw)
 
 
 def _get_type_label(stplcname):
@@ -706,6 +709,45 @@ def build_city_meta(city_flows, xw, places):
     return meta
 
 
+def validate_city_outputs(city_flows, city_meta):
+    """Stop the run if flow names, metadata and boundary polygons disagree.
+
+    The app joins these by name, so a mismatch (e.g. a place Census relabeled
+    upstream) silently drops a polygon or a place. Checks:
+      1. every flow name has a metadata entry;
+      2. every metadata entry with a centroid has a boundary polygon;
+      3. places listed under "remove" in custom_places_config.json are gone
+         from both boundaries and metadata (a stale city_boundaries.geojson
+         means `process_data.py --boundaries` needs re-running).
+    """
+    boundary_file = DATA_DIR / "city_boundaries.geojson"
+    boundaries = json.loads(boundary_file.read_text(encoding="utf-8"))
+    boundary_names = {f["properties"]["name"] for f in boundaries["features"]}
+    meta_names = {m["name"] for m in city_meta}
+    flow_names = (set(city_flows["home_name"]) | set(city_flows["work_name"])) - {"Out of State"}
+
+    problems = []
+    no_meta = sorted(flow_names - meta_names)
+    if no_meta:
+        problems.append(f"flow names with no metadata entry: {no_meta[:10]}")
+    no_poly = sorted(m["name"] for m in city_meta
+                     if m.get("lat") is not None and m["name"] not in boundary_names)
+    if no_poly:
+        problems.append(f"places with a centroid but no boundary polygon: {no_poly[:10]}")
+    for r in custom_places._REMOVE:
+        short = r["name"]
+        stale = sorted(n for n in boundary_names | meta_names
+                       if n == short or n.startswith(short + " ("))
+        if stale:
+            problems.append(f"removed place still present: {stale} "
+                            f"(re-run `process_data.py --boundaries`?)")
+    if problems:
+        sys.exit("ERROR: city outputs are inconsistent:\n  - " + "\n  - ".join(problems))
+    extra = len(boundary_names - meta_names)
+    print(f"  Consistency check passed ({len(meta_names)} metadata entries, "
+          f"{len(boundary_names)} boundary polygons; {extra} polygons have no flows this year).")
+
+
 def build_county_meta(counties):
     """Build county metadata for all 29 Utah counties."""
     counties_idx = counties.set_index("COUNTYFP_full")
@@ -795,7 +837,7 @@ def generate_boundaries(places=None, counties=None, sldl=None, sldu=None,
     print(f"  Wrote {county_out.name} ({len(county_gdf)} county polygons)")
 
     # ── City/place boundaries ─────────────────────────────────────────────────
-    places_in = places.copy()
+    places_in = custom_places.remove_census_places(places).copy()
     place_names = place_names or {}
     disambig = disambig or {}
 
@@ -888,8 +930,6 @@ def regenerate_neighbor_flows(year_str):
 
     disambig = _detect_name_collisions(xw)
     lookup = build_lookup(xw, disambig)  # carries house_name / senate_name
-    block_map = custom_places.get_custom_block_map(xw)
-    lookup = custom_places.apply_custom_places(lookup, block_map)
     lookup = merge_taz_lookup(lookup, taz_districts.build_taz_lookup(xw))
     lookup = merge_workshop_lookup(lookup, workshop_areas.build_workshop_lookup(xw))
     lookup = merge_mag_workshop_lookup(lookup, mag_workshop_areas.build_mag_workshop_lookup(xw))
@@ -997,8 +1037,6 @@ def main():
     print("\n3. Building block -> city/county lookup...")
     disambig = _detect_name_collisions(xw)
     lookup = build_lookup(xw, disambig)
-    block_map = custom_places.get_custom_block_map(xw)
-    lookup = custom_places.apply_custom_places(lookup, block_map)
     print(f"  Lookup entries: {len(lookup):,}")
 
     # 4b. Merge TAZ planning-district fields (small/medium/large/super) onto lookup
@@ -1076,6 +1114,7 @@ def main():
     planning_meta = {level: taz_districts.build_planning_meta(level) for level in taz_districts.LEVELS}
     workshop_meta = workshop_areas.build_workshop_meta()
     mag_workshop_meta = mag_workshop_areas.build_mag_workshop_meta()
+    validate_city_outputs(city_flows, city_meta)
     print(f"  City metadata entries: {len(city_meta)}")
     print(f"  County metadata entries: {len(county_meta)}")
     print(f"  House district entries: {len(house_meta)}")

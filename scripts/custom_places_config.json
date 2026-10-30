@@ -1,9 +1,24 @@
 {
-  "Hill Air Force Base": {
-    "county": "Davis County",
-    "county_fips": "49011",
-    "employees_approx": "~27,000 (est. 2024)",
-    "enable": false,
-    "note": "Federal civilian and military positions are excluded from LEHD wage records (not UI-covered employment). Only private contractor jobs appear in this dataset, significantly underrepresenting actual commute volumes to this site."
+  "remove": [
+    {"fips": "4921990", "name": "Eden",       "reason": "Merged into Ogden Valley City upon incorporation"},
+    {"fips": "4944870", "name": "Liberty",    "reason": "Merged into Ogden Valley City upon incorporation"},
+    {"fips": "4984950", "name": "Wolf Creek", "reason": "Merged into Ogden Valley City upon incorporation"}
+  ],
+  "add": {
+    "Hill Air Force Base": {
+      "county": "Davis County",
+      "county_fips": "49011",
+      "employees_approx": "~27,000 (est. 2024)",
+      "enable": false,
+      "note": "Federal civilian and military positions are excluded from LEHD wage records (not UI-covered employment). Only private contractor jobs appear in this dataset, significantly underrepresenting actual commute volumes to this site."
+    },
+    "Ogden Valley City": {
+      "county": "Weber County",
+      "county_fips": "49057",
+      "place_fips": "4956320",
+      "enable": true,
+      "source": {"type": "ugrc_municipal", "name": "Ogden Valley City"},
+      "note": "Incorporated in 2025, after the Census place geography used by LEHD. Boundary is UGRC's municipal boundary and is applied to all years; it covers the former Eden, Liberty and Wolf Creek CDPs plus adjacent unincorporated Weber County."
+    }
   }
 }

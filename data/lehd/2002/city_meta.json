@@ -711,15 +711,6 @@
     "place_type": "cdp"
   },
   {
-    "name": "Eden",
-    "county": "Weber County",
-    "county_fips": "49057",
-    "lat": 41.3061599,
-    "lon": -111.8037822,
-    "place_fips": "4921990",
-    "place_type": "cdp"
-  },
-  {
     "name": "Elberta",
     "county": "Utah County",
     "county_fips": "49049",
@@ -1593,15 +1584,6 @@
     "place_type": "city"
   },
   {
-    "name": "Liberty",
-    "county": "Weber County",
-    "county_fips": "49057",
-    "lat": 41.3425357,
-    "lon": -111.8648802,
-    "place_fips": "4944870",
-    "place_type": "cdp"
-  },
-  {
     "name": "Lindon",
     "county": "Utah County",
     "county_fips": "49049",
@@ -2076,6 +2058,15 @@
     "lat": 41.2283911,
     "lon": -111.9681469,
     "place_fips": "4955980",
+    "place_type": "city"
+  },
+  {
+    "name": "Ogden Valley City",
+    "county": "Weber County",
+    "county_fips": "49057",
+    "lat": 41.295039,
+    "lon": -111.815824,
+    "place_fips": "4956320",
     "place_type": "city"
   },
   {
@@ -3229,15 +3220,6 @@
     "lon": -112.0427416,
     "place_fips": "4984710",
     "place_type": "city"
-  },
-  {
-    "name": "Wolf Creek",
-    "county": "Weber County",
-    "county_fips": "49057",
-    "lat": 41.3253005,
-    "lon": -111.8287561,
-    "place_fips": "4984950",
-    "place_type": "cdp"
   },
   {
     "name": "Woodland",
