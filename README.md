@@ -40,7 +40,7 @@ An interactive WebAssembly-powered map for exploring commute flow patterns acros
 
 **Coverage:** Statewide Utah — all cities (Census-designated places), all 29 counties, all 75 Utah House districts, and all 29 Utah Senate districts.
 
-**Geography:** Block-level OD pairs are aggregated to city, county, and legislative district level using the LEHD geographic crosswalk and Census TIGER/Line 2024 block-to-district overlays. Distance columns (`dist_wsum`, `dist_n`) are pre-aggregated at block level using haversine distances, enabling exact weighted mean commute distances at any geography level. Centroids are derived from Census TIGER/Line 2024 polygon shapefiles.
+**Geography:** Block-level OD pairs are aggregated to city, county, and legislative district level using the LEHD geographic crosswalk and Census TIGER/Line 2026 block-to-district overlays. Distance columns (`dist_wsum`, `dist_n`) are pre-aggregated at block level using haversine distances, enabling exact weighted mean commute distances at any geography level. Centroids are derived from Census TIGER/Line 2026 polygon shapefiles.
 
 Pre-processed data files are committed to the repo under `data/` so the app runs with no server-side processing:
 
@@ -180,6 +180,7 @@ To enable GitHub Pages on a new repository fork:
 │           └── senate_meta.json
 │
 ├── scripts/
+│   ├── fetch_sources.py        # Downloads/validates TIGER + LEHD crosswalk sources into data/cache/
 │   ├── process_data.py         # Offline data pipeline (LEHD + TIGER + ACS)
 │   ├── fetch_acs.py            # Fetches ACS 5-Year Estimates via Census API
 │   ├── custom_places.py        # Modular extension for non-Census employment sites
@@ -204,6 +205,8 @@ To enable GitHub Pages on a new repository fork:
 
 ## Data pipeline details
 
+Run `uv run scripts/fetch_sources.py` first to download and validate the TIGER and crosswalk inputs (safe to re-run; the TIGER vintage is the single `TIGER_YEAR` in `scripts/geo_utils.py`).
+
 `scripts/process_data.py` runs entirely offline and produces the committed `data/` files:
 
 1. Downloads `ut_od_main_JT00_<year>.csv.gz` from LEHD (block-level OD records for all of Utah)
@@ -211,7 +214,7 @@ To enable GitHub Pages on a new repository fork:
 3. Labels unincorporated blocks as `"[County] Unincorporated"`
 4. Computes block-level haversine distances and pre-aggregates `dist_wsum` (sum of `workers × miles`) and `dist_n` (worker count with valid coordinates) for exact weighted mean commute distances at any geography level
 5. Aggregates to city→city, county→county, and legislative district OD pairs, summing all job-count and distance columns
-6. Downloads Census TIGER 2024 Place, County, and State Legislative District shapefiles for Utah; overlays block centroids to assign house/senate districts
+6. Downloads Census TIGER 2026 Place, County, and State Legislative District shapefiles for Utah; overlays block centroids to assign house/senate districts
 7. Computes polygon centroids in Utah State Plane (EPSG:26912) and projects to WGS84
 8. Exports Parquet files (Snappy-compressed), JSON metadata, and GeoJSON boundaries for all four geography levels
 9. Fetches ACS 5-Year Estimates via the Census API (tables B08301/B08601 for means of transportation, B08303/B08603 for travel time to work) for cities, counties, House districts, and Senate districts; writes `data/acs/<year>/acs_{city,county,house,senate}.json`; skip with `--skip-acs` if a Census API key is unavailable

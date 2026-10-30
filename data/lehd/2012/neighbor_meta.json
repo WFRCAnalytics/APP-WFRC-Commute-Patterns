@@ -1,157 +1,14 @@
 [
   {
-    "display_name": "Lincoln County, WY",
-    "name": "Lincoln County",
-    "type": "county",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 42.2299932,
-    "lon": -110.6829614
-  },
-  {
-    "display_name": "Uinta County, WY",
-    "name": "Uinta County",
-    "type": "county",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Uinta County",
-    "county_fips": "56041",
-    "lat": 41.2847255,
-    "lon": -110.5589468
-  },
-  {
-    "display_name": "Clark County, NV",
-    "name": "Clark County",
-    "type": "county",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Clark County",
-    "county_fips": "32003",
-    "lat": 36.2141295,
-    "lon": -115.0143977
-  },
-  {
-    "display_name": "La Plata County, CO",
-    "name": "La Plata County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "La Plata County",
-    "county_fips": "08067",
-    "lat": 37.2873673,
-    "lon": -107.8397178
-  },
-  {
-    "display_name": "Franklin County, ID",
-    "name": "Franklin County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Franklin County",
-    "county_fips": "16041",
-    "lat": 42.1736093,
-    "lon": -111.8229653
-  },
-  {
-    "display_name": "Jerome County, ID",
-    "name": "Jerome County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Jerome County",
-    "county_fips": "16053",
-    "lat": 42.6913953,
-    "lon": -114.2620858
-  },
-  {
-    "display_name": "Moffat County, CO",
-    "name": "Moffat County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Moffat County",
-    "county_fips": "08081",
-    "lat": 40.6108644,
-    "lon": -108.2171545
-  },
-  {
-    "display_name": "Navajo County, AZ",
-    "name": "Navajo County",
+    "display_name": "Mohave County, AZ",
+    "name": "Mohave County",
     "type": "county",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 35.3907852,
-    "lon": -110.3210248
-  },
-  {
-    "display_name": "Power County, ID",
-    "name": "Power County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Power County",
-    "county_fips": "16077",
-    "lat": 42.694126,
-    "lon": -112.844407
-  },
-  {
-    "display_name": "Blaine County, ID",
-    "name": "Blaine County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.394192,
-    "lon": -113.9553713
-  },
-  {
-    "display_name": "Montrose County, CO",
-    "name": "Montrose County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montrose County",
-    "county_fips": "08085",
-    "lat": 38.4075069,
-    "lon": -108.2662815
-  },
-  {
-    "display_name": "San Miguel County, CO",
-    "name": "San Miguel County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "San Miguel County",
-    "county_fips": "08113",
-    "lat": 38.009319,
-    "lon": -108.4272635
-  },
-  {
-    "display_name": "Delta County, CO",
-    "name": "Delta County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.8614231,
-    "lon": -107.8650433
-  },
-  {
-    "display_name": "Garfield County, CO",
-    "name": "Garfield County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.5993517,
-    "lon": -107.9097802
+    "county": "Mohave County",
+    "county_fips": "04015",
+    "lat": 35.717705,
+    "lon": -113.7496891
   },
   {
     "display_name": "Sweetwater County, WY",
@@ -165,81 +22,37 @@
     "lon": -108.8756774
   },
   {
-    "display_name": "White Pine County, NV",
-    "name": "White Pine County",
-    "type": "county",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "White Pine County",
-    "county_fips": "32033",
-    "lat": 39.4181759,
-    "lon": -114.9005649
-  },
-  {
-    "display_name": "Rio Blanco County, CO",
-    "name": "Rio Blanco County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Rio Blanco County",
-    "county_fips": "08103",
-    "lat": 39.9726223,
-    "lon": -108.2007155
-  },
-  {
-    "display_name": "Montezuma County, CO",
-    "name": "Montezuma County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montezuma County",
-    "county_fips": "08083",
-    "lat": 37.3380247,
-    "lon": -108.5957864
-  },
-  {
-    "display_name": "Minidoka County, ID",
-    "name": "Minidoka County",
+    "display_name": "Jerome County, ID",
+    "name": "Jerome County",
     "type": "county",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.8572114,
-    "lon": -113.6398404
+    "county": "Jerome County",
+    "county_fips": "16053",
+    "lat": 42.6913953,
+    "lon": -114.2620858
   },
   {
-    "display_name": "Coconino County, AZ",
-    "name": "Coconino County",
-    "type": "county",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Coconino County",
-    "county_fips": "04005",
-    "lat": 35.8296919,
-    "lon": -111.7737277
-  },
-  {
-    "display_name": "Elko County, NV",
-    "name": "Elko County",
-    "type": "county",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Elko County",
-    "county_fips": "32007",
-    "lat": 41.1411327,
-    "lon": -115.3514239
-  },
-  {
-    "display_name": "Cassia County, ID",
-    "name": "Cassia County",
+    "display_name": "Twin Falls County, ID",
+    "name": "Twin Falls County",
     "type": "county",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Cassia County",
-    "county_fips": "16031",
-    "lat": 42.282313,
-    "lon": -113.6263276
+    "county": "Twin Falls County",
+    "county_fips": "16083",
+    "lat": 42.352309,
+    "lon": -114.6656386
+  },
+  {
+    "display_name": "Uinta County, WY",
+    "name": "Uinta County",
+    "type": "county",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Uinta County",
+    "county_fips": "56041",
+    "lat": 41.2847255,
+    "lon": -110.5589468
   },
   {
     "display_name": "Oneida County, ID",
@@ -260,19 +73,129 @@
     "state_abbr": "NM",
     "county": "San Juan County",
     "county_fips": "35045",
-    "lat": 36.5116245,
-    "lon": -108.3245778
+    "lat": 36.5407744,
+    "lon": -108.3433074
   },
   {
-    "display_name": "Mohave County, AZ",
-    "name": "Mohave County",
+    "display_name": "Coconino County, AZ",
+    "name": "Coconino County",
     "type": "county",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Mohave County",
-    "county_fips": "04015",
-    "lat": 35.717705,
-    "lon": -113.7496891
+    "county": "Coconino County",
+    "county_fips": "04005",
+    "lat": 35.8296919,
+    "lon": -111.7737277
+  },
+  {
+    "display_name": "Garfield County, CO",
+    "name": "Garfield County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.5993517,
+    "lon": -107.9097802
+  },
+  {
+    "display_name": "Cassia County, ID",
+    "name": "Cassia County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Cassia County",
+    "county_fips": "16031",
+    "lat": 42.2822917,
+    "lon": -113.626327
+  },
+  {
+    "display_name": "Minidoka County, ID",
+    "name": "Minidoka County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.8572114,
+    "lon": -113.6398404
+  },
+  {
+    "display_name": "Blaine County, ID",
+    "name": "Blaine County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.3941794,
+    "lon": -113.9553871
+  },
+  {
+    "display_name": "Franklin County, ID",
+    "name": "Franklin County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Franklin County",
+    "county_fips": "16041",
+    "lat": 42.1736093,
+    "lon": -111.8229653
+  },
+  {
+    "display_name": "Moffat County, CO",
+    "name": "Moffat County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Moffat County",
+    "county_fips": "08081",
+    "lat": 40.6108644,
+    "lon": -108.2171545
+  },
+  {
+    "display_name": "La Plata County, CO",
+    "name": "La Plata County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "La Plata County",
+    "county_fips": "08067",
+    "lat": 37.2799656,
+    "lon": -107.8499482
+  },
+  {
+    "display_name": "Elko County, NV",
+    "name": "Elko County",
+    "type": "county",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Elko County",
+    "county_fips": "32007",
+    "lat": 41.1411327,
+    "lon": -115.3514239
+  },
+  {
+    "display_name": "Mesa County, CO",
+    "name": "Mesa County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Mesa County",
+    "county_fips": "08077",
+    "lat": 39.022251,
+    "lon": -108.4381748
+  },
+  {
+    "display_name": "Clark County, NV",
+    "name": "Clark County",
+    "type": "county",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Clark County",
+    "county_fips": "32003",
+    "lat": 36.2120986,
+    "lon": -115.0152388
   },
   {
     "display_name": "Bannock County, ID",
@@ -286,48 +209,26 @@
     "lon": -112.2289819
   },
   {
-    "display_name": "Lincoln County, NV",
-    "name": "Lincoln County",
+    "display_name": "Montrose County, CO",
+    "name": "Montrose County",
     "type": "county",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Lincoln County",
-    "county_fips": "32017",
-    "lat": 37.634605,
-    "lon": -114.8630367
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montrose County",
+    "county_fips": "08085",
+    "lat": 38.4075069,
+    "lon": -108.2662815
   },
   {
-    "display_name": "Twin Falls County, ID",
-    "name": "Twin Falls County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Twin Falls County",
-    "county_fips": "16083",
-    "lat": 42.352309,
-    "lon": -114.6656386
-  },
-  {
-    "display_name": "Apache County, AZ",
-    "name": "Apache County",
+    "display_name": "Navajo County, AZ",
+    "name": "Navajo County",
     "type": "county",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Apache County",
-    "county_fips": "04001",
-    "lat": 35.385084,
-    "lon": -109.4901722
-  },
-  {
-    "display_name": "Caribou County, ID",
-    "name": "Caribou County",
-    "type": "county",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Caribou County",
-    "county_fips": "16029",
-    "lat": 42.7860724,
-    "lon": -111.5442734
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 35.3907852,
+    "lon": -110.3210248
   },
   {
     "display_name": "Bear Lake County, ID",
@@ -341,17 +242,6 @@
     "lon": -111.3275168
   },
   {
-    "display_name": "Mesa County, CO",
-    "name": "Mesa County",
-    "type": "county",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Mesa County",
-    "county_fips": "08077",
-    "lat": 39.019524,
-    "lon": -108.4605707
-  },
-  {
     "display_name": "Dolores County, CO",
     "name": "Dolores County",
     "type": "county",
@@ -361,6 +251,105 @@
     "county_fips": "08033",
     "lat": 37.7338227,
     "lon": -108.5062192
+  },
+  {
+    "display_name": "Apache County, AZ",
+    "name": "Apache County",
+    "type": "county",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Apache County",
+    "county_fips": "04001",
+    "lat": 35.385084,
+    "lon": -109.4901722
+  },
+  {
+    "display_name": "Montezuma County, CO",
+    "name": "Montezuma County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montezuma County",
+    "county_fips": "08083",
+    "lat": 37.3380247,
+    "lon": -108.5957864
+  },
+  {
+    "display_name": "White Pine County, NV",
+    "name": "White Pine County",
+    "type": "county",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "White Pine County",
+    "county_fips": "32033",
+    "lat": 39.418594,
+    "lon": -114.9010949
+  },
+  {
+    "display_name": "Lincoln County, NV",
+    "name": "Lincoln County",
+    "type": "county",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Lincoln County",
+    "county_fips": "32017",
+    "lat": 37.634605,
+    "lon": -114.8630367
+  },
+  {
+    "display_name": "Rio Blanco County, CO",
+    "name": "Rio Blanco County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Rio Blanco County",
+    "county_fips": "08103",
+    "lat": 39.9726223,
+    "lon": -108.2007155
+  },
+  {
+    "display_name": "Caribou County, ID",
+    "name": "Caribou County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Caribou County",
+    "county_fips": "16029",
+    "lat": 42.7832218,
+    "lon": -111.5455165
+  },
+  {
+    "display_name": "San Miguel County, CO",
+    "name": "San Miguel County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "San Miguel County",
+    "county_fips": "08113",
+    "lat": 38.009319,
+    "lon": -108.427262
+  },
+  {
+    "display_name": "Delta County, CO",
+    "name": "Delta County",
+    "type": "county",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.8614231,
+    "lon": -107.8650433
+  },
+  {
+    "display_name": "Lincoln County, WY",
+    "name": "Lincoln County",
+    "type": "county",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 42.2299932,
+    "lon": -110.6829614
   },
   {
     "display_name": "Sublette County, WY",
@@ -374,6 +363,105 @@
     "lon": -109.9161701
   },
   {
+    "display_name": "Power County, ID",
+    "name": "Power County",
+    "type": "county",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Power County",
+    "county_fips": "16077",
+    "lat": 42.694126,
+    "lon": -112.844407
+  },
+  {
+    "display_name": "Downey, ID",
+    "name": "Downey",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.4289173,
+    "lon": -112.1233201
+  },
+  {
+    "display_name": "Inkom, ID",
+    "name": "Inkom",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.7965467,
+    "lon": -112.2543272
+  },
+  {
+    "display_name": "Lava Hot Springs, ID",
+    "name": "Lava Hot Springs",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.6201065,
+    "lon": -112.0099021
+  },
+  {
+    "display_name": "McCammon, ID",
+    "name": "McCammon",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.6482362,
+    "lon": -112.1893942
+  },
+  {
+    "display_name": "Acequia, ID",
+    "name": "Acequia",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.6683428,
+    "lon": -113.5972812
+  },
+  {
+    "display_name": "Minidoka, ID",
+    "name": "Minidoka",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.7551466,
+    "lon": -113.4901973
+  },
+  {
+    "display_name": "Paul, ID",
+    "name": "Paul",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.6045188,
+    "lon": -113.784681
+  },
+  {
+    "display_name": "Burley, ID",
+    "name": "Burley",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Cassia County",
+    "county_fips": "16031",
+    "lat": 42.5374387,
+    "lon": -113.7912879
+  },
+  {
     "display_name": "Twin Falls, ID",
     "name": "Twin Falls",
     "type": "city",
@@ -381,8 +469,96 @@
     "state_abbr": "ID",
     "county": "Twin Falls County",
     "county_fips": "16083",
-    "lat": 42.563807,
-    "lon": -114.4605969
+    "lat": 42.5640935,
+    "lon": -114.4608989
+  },
+  {
+    "display_name": "Bellevue, ID",
+    "name": "Bellevue",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.4689012,
+    "lon": -114.2553975
+  },
+  {
+    "display_name": "Hailey, ID",
+    "name": "Hailey",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.5126736,
+    "lon": -114.2994991
+  },
+  {
+    "display_name": "Sun Valley, ID",
+    "name": "Sun Valley",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.6838517,
+    "lon": -114.3342027
+  },
+  {
+    "display_name": "Carey, ID",
+    "name": "Carey",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.3120846,
+    "lon": -113.9408093
+  },
+  {
+    "display_name": "Montpelier, ID",
+    "name": "Montpelier",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bear Lake County",
+    "county_fips": "16007",
+    "lat": 42.3259919,
+    "lon": -111.2988263
+  },
+  {
+    "display_name": "Paris, ID",
+    "name": "Paris",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bear Lake County",
+    "county_fips": "16007",
+    "lat": 42.2279785,
+    "lon": -111.4024236
+  },
+  {
+    "display_name": "St. Charles, ID",
+    "name": "St. Charles",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bear Lake County",
+    "county_fips": "16007",
+    "lat": 42.111826,
+    "lon": -111.390316
+  },
+  {
+    "display_name": "Arimo, ID",
+    "name": "Arimo",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.5598607,
+    "lon": -112.1720211
   },
   {
     "display_name": "Franklin, ID",
@@ -392,8 +568,19 @@
     "state_abbr": "ID",
     "county": "Franklin County",
     "county_fips": "16041",
-    "lat": 42.009503,
-    "lon": -111.8021833
+    "lat": 42.0046352,
+    "lon": -111.8046556
+  },
+  {
+    "display_name": "Ketchum, ID",
+    "name": "Ketchum",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Blaine County",
+    "county_fips": "16013",
+    "lat": 43.6842444,
+    "lon": -114.374499
   },
   {
     "display_name": "Oxford, ID",
@@ -407,37 +594,37 @@
     "lon": -112.0178695
   },
   {
-    "display_name": "Chubbuck, ID",
-    "name": "Chubbuck",
+    "display_name": "Bloomington, ID",
+    "name": "Bloomington",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.9271734,
-    "lon": -112.4583094
+    "county": "Bear Lake County",
+    "county_fips": "16007",
+    "lat": 42.1909898,
+    "lon": -111.4027556
   },
   {
-    "display_name": "Pocatello, ID",
-    "name": "Pocatello",
+    "display_name": "Georgetown, ID",
+    "name": "Georgetown",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.8727475,
-    "lon": -112.4638364
+    "county": "Bear Lake County",
+    "county_fips": "16007",
+    "lat": 42.479083,
+    "lon": -111.3634973
   },
   {
-    "display_name": "Jerome, ID",
-    "name": "Jerome",
+    "display_name": "Malta, ID",
+    "name": "Malta",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Jerome County",
-    "county_fips": "16053",
-    "lat": 42.7180948,
-    "lon": -114.5157915
+    "county": "Cassia County",
+    "county_fips": "16031",
+    "lat": 42.3075322,
+    "lon": -113.3697368
   },
   {
     "display_name": "Albion, ID",
@@ -484,59 +671,103 @@
     "lon": -112.8542111
   },
   {
-    "display_name": "Rockland, ID",
-    "name": "Rockland",
+    "display_name": "Jerome, ID",
+    "name": "Jerome",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Power County",
-    "county_fips": "16077",
-    "lat": 42.5732761,
-    "lon": -112.8745068
+    "county": "Jerome County",
+    "county_fips": "16053",
+    "lat": 42.7178537,
+    "lon": -114.5157897
   },
   {
-    "display_name": "Grace, ID",
-    "name": "Grace",
+    "display_name": "Clifton, ID",
+    "name": "Clifton",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Caribou County",
-    "county_fips": "16029",
-    "lat": 42.5751821,
-    "lon": -111.7297712
+    "county": "Franklin County",
+    "county_fips": "16041",
+    "lat": 42.1872862,
+    "lon": -112.0045959
   },
   {
-    "display_name": "Soda Springs, ID",
-    "name": "Soda Springs",
+    "display_name": "Dayton, ID",
+    "name": "Dayton",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Caribou County",
-    "county_fips": "16029",
-    "lat": 42.6578736,
-    "lon": -111.5860805
+    "county": "Franklin County",
+    "county_fips": "16041",
+    "lat": 42.1111621,
+    "lon": -111.9847922
   },
   {
-    "display_name": "Heyburn, ID",
-    "name": "Heyburn",
+    "display_name": "Preston, ID",
+    "name": "Preston",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.5599818,
-    "lon": -113.7620669
+    "county": "Franklin County",
+    "county_fips": "16041",
+    "lat": 42.0994142,
+    "lon": -111.8807376
   },
   {
-    "display_name": "Rupert, ID",
-    "name": "Rupert",
+    "display_name": "Weston, ID",
+    "name": "Weston",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.6189355,
-    "lon": -113.6739675
+    "county": "Franklin County",
+    "county_fips": "16041",
+    "lat": 42.0362085,
+    "lon": -111.9777986
+  },
+  {
+    "display_name": "Eden, ID",
+    "name": "Eden",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Jerome County",
+    "county_fips": "16053",
+    "lat": 42.6053086,
+    "lon": -114.2090867
+  },
+  {
+    "display_name": "Hazelton, ID",
+    "name": "Hazelton",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Jerome County",
+    "county_fips": "16053",
+    "lat": 42.5947117,
+    "lon": -114.1366107
+  },
+  {
+    "display_name": "Castleford, ID",
+    "name": "Castleford",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Twin Falls County",
+    "county_fips": "16083",
+    "lat": 42.5205687,
+    "lon": -114.8718056
+  },
+  {
+    "display_name": "Murtaugh, ID",
+    "name": "Murtaugh",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Twin Falls County",
+    "county_fips": "16083",
+    "lat": 42.4916852,
+    "lon": -114.1623115
   },
   {
     "display_name": "Buhl, ID",
@@ -590,173 +821,8 @@
     "state_abbr": "ID",
     "county": "Twin Falls County",
     "county_fips": "16083",
-    "lat": 42.5348943,
-    "lon": -114.3706889
-  },
-  {
-    "display_name": "Ketchum, ID",
-    "name": "Ketchum",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.6872208,
-    "lon": -114.3724755
-  },
-  {
-    "display_name": "Bellevue, ID",
-    "name": "Bellevue",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.4688329,
-    "lon": -114.2556851
-  },
-  {
-    "display_name": "Hailey, ID",
-    "name": "Hailey",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.5126736,
-    "lon": -114.2994991
-  },
-  {
-    "display_name": "Sun Valley, ID",
-    "name": "Sun Valley",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.6838517,
-    "lon": -114.3342027
-  },
-  {
-    "display_name": "Carey, ID",
-    "name": "Carey",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Blaine County",
-    "county_fips": "16013",
-    "lat": 43.3120113,
-    "lon": -113.9410079
-  },
-  {
-    "display_name": "Acequia, ID",
-    "name": "Acequia",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.6683428,
-    "lon": -113.5972812
-  },
-  {
-    "display_name": "Minidoka, ID",
-    "name": "Minidoka",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.7539701,
-    "lon": -113.4899549
-  },
-  {
-    "display_name": "Paul, ID",
-    "name": "Paul",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Minidoka County",
-    "county_fips": "16067",
-    "lat": 42.6042692,
-    "lon": -113.7847902
-  },
-  {
-    "display_name": "Burley, ID",
-    "name": "Burley",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Cassia County",
-    "county_fips": "16031",
-    "lat": 42.5374387,
-    "lon": -113.7912879
-  },
-  {
-    "display_name": "Clifton, ID",
-    "name": "Clifton",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Franklin County",
-    "county_fips": "16041",
-    "lat": 42.1872862,
-    "lon": -112.0045959
-  },
-  {
-    "display_name": "Dayton, ID",
-    "name": "Dayton",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Franklin County",
-    "county_fips": "16041",
-    "lat": 42.1112464,
-    "lon": -111.9846148
-  },
-  {
-    "display_name": "Preston, ID",
-    "name": "Preston",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Franklin County",
-    "county_fips": "16041",
-    "lat": 42.0994142,
-    "lon": -111.8807376
-  },
-  {
-    "display_name": "Weston, ID",
-    "name": "Weston",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Franklin County",
-    "county_fips": "16041",
-    "lat": 42.0362085,
-    "lon": -111.9777986
-  },
-  {
-    "display_name": "Eden, ID",
-    "name": "Eden",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Jerome County",
-    "county_fips": "16053",
-    "lat": 42.6053086,
-    "lon": -114.2090867
-  },
-  {
-    "display_name": "Hazelton, ID",
-    "name": "Hazelton",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Jerome County",
-    "county_fips": "16053",
-    "lat": 42.594953,
-    "lon": -114.1366109
+    "lat": 42.5349242,
+    "lon": -114.370678
   },
   {
     "display_name": "Bancroft, ID",
@@ -766,74 +832,85 @@
     "state_abbr": "ID",
     "county": "Caribou County",
     "county_fips": "16029",
-    "lat": 42.7202407,
-    "lon": -111.8830101
+    "lat": 42.7194157,
+    "lon": -111.8822807
   },
   {
-    "display_name": "Malta, ID",
-    "name": "Malta",
+    "display_name": "Heyburn, ID",
+    "name": "Heyburn",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Cassia County",
-    "county_fips": "16031",
-    "lat": 42.3075322,
-    "lon": -113.3697368
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.5599782,
+    "lon": -113.7617293
   },
   {
-    "display_name": "Bloomington, ID",
-    "name": "Bloomington",
+    "display_name": "Rupert, ID",
+    "name": "Rupert",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bear Lake County",
-    "county_fips": "16007",
-    "lat": 42.1909898,
-    "lon": -111.4027556
+    "county": "Minidoka County",
+    "county_fips": "16067",
+    "lat": 42.6189355,
+    "lon": -113.6739675
   },
   {
-    "display_name": "Georgetown, ID",
-    "name": "Georgetown",
+    "display_name": "Chubbuck, ID",
+    "name": "Chubbuck",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bear Lake County",
-    "county_fips": "16007",
-    "lat": 42.479083,
-    "lon": -111.3634973
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.9271952,
+    "lon": -112.4583008
   },
   {
-    "display_name": "Montpelier, ID",
-    "name": "Montpelier",
+    "display_name": "Pocatello, ID",
+    "name": "Pocatello",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bear Lake County",
-    "county_fips": "16007",
-    "lat": 42.3259919,
-    "lon": -111.2988263
+    "county": "Bannock County",
+    "county_fips": "16005",
+    "lat": 42.8712096,
+    "lon": -112.462027
   },
   {
-    "display_name": "Paris, ID",
-    "name": "Paris",
+    "display_name": "Rockland, ID",
+    "name": "Rockland",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bear Lake County",
-    "county_fips": "16007",
-    "lat": 42.2279785,
-    "lon": -111.4024236
+    "county": "Power County",
+    "county_fips": "16077",
+    "lat": 42.5731849,
+    "lon": -112.874354
   },
   {
-    "display_name": "St. Charles, ID",
-    "name": "St. Charles",
+    "display_name": "Grace, ID",
+    "name": "Grace",
     "type": "city",
     "state": "Idaho",
     "state_abbr": "ID",
-    "county": "Bear Lake County",
-    "county_fips": "16007",
-    "lat": 42.111826,
-    "lon": -111.390316
+    "county": "Caribou County",
+    "county_fips": "16029",
+    "lat": 42.5751815,
+    "lon": -111.7310239
+  },
+  {
+    "display_name": "Soda Springs, ID",
+    "name": "Soda Springs",
+    "type": "city",
+    "state": "Idaho",
+    "state_abbr": "ID",
+    "county": "Caribou County",
+    "county_fips": "16029",
+    "lat": 42.6575839,
+    "lon": -111.5891246
   },
   {
     "display_name": "Malad City, ID",
@@ -847,237 +924,6 @@
     "lon": -112.2496883
   },
   {
-    "display_name": "Murtaugh, ID",
-    "name": "Murtaugh",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Twin Falls County",
-    "county_fips": "16083",
-    "lat": 42.4916852,
-    "lon": -114.1623115
-  },
-  {
-    "display_name": "Downey, ID",
-    "name": "Downey",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.4289173,
-    "lon": -112.1233201
-  },
-  {
-    "display_name": "Inkom, ID",
-    "name": "Inkom",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.796548,
-    "lon": -112.2546253
-  },
-  {
-    "display_name": "Lava Hot Springs, ID",
-    "name": "Lava Hot Springs",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.6201065,
-    "lon": -112.0099021
-  },
-  {
-    "display_name": "McCammon, ID",
-    "name": "McCammon",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.6482362,
-    "lon": -112.1893942
-  },
-  {
-    "display_name": "Arimo, ID",
-    "name": "Arimo",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Bannock County",
-    "county_fips": "16005",
-    "lat": 42.5598607,
-    "lon": -112.1720211
-  },
-  {
-    "display_name": "Castleford, ID",
-    "name": "Castleford",
-    "type": "city",
-    "state": "Idaho",
-    "state_abbr": "ID",
-    "county": "Twin Falls County",
-    "county_fips": "16083",
-    "lat": 42.5205687,
-    "lon": -114.8718056
-  },
-  {
-    "display_name": "Diamondville, WY",
-    "name": "Diamondville",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 41.777816,
-    "lon": -110.5365067
-  },
-  {
-    "display_name": "Pinedale, WY",
-    "name": "Pinedale",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Sublette County",
-    "county_fips": "56035",
-    "lat": 42.8675848,
-    "lon": -109.8705267
-  },
-  {
-    "display_name": "Evanston, WY",
-    "name": "Evanston",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Uinta County",
-    "county_fips": "56041",
-    "lat": 41.2600882,
-    "lon": -110.963739
-  },
-  {
-    "display_name": "Lyman, WY",
-    "name": "Lyman",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Uinta County",
-    "county_fips": "56041",
-    "lat": 41.3275398,
-    "lon": -110.2974492
-  },
-  {
-    "display_name": "Bear River, WY",
-    "name": "Bear River",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Uinta County",
-    "county_fips": "56041",
-    "lat": 41.3855111,
-    "lon": -111.0282018
-  },
-  {
-    "display_name": "Mountain View, WY",
-    "name": "Mountain View",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Uinta County",
-    "county_fips": "56041",
-    "lat": 41.2723507,
-    "lon": -110.3340725
-  },
-  {
-    "display_name": "La Barge, WY",
-    "name": "La Barge",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 42.2607794,
-    "lon": -110.1972028
-  },
-  {
-    "display_name": "Cokeville, WY",
-    "name": "Cokeville",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 42.079237,
-    "lon": -110.9518978
-  },
-  {
-    "display_name": "Marbleton, WY",
-    "name": "Marbleton",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Sublette County",
-    "county_fips": "56035",
-    "lat": 42.557414,
-    "lon": -110.1004588
-  },
-  {
-    "display_name": "Afton, WY",
-    "name": "Afton",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 42.72634,
-    "lon": -110.932032
-  },
-  {
-    "display_name": "Alpine, WY",
-    "name": "Alpine",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 43.1603932,
-    "lon": -111.014752
-  },
-  {
-    "display_name": "Kemmerer, WY",
-    "name": "Kemmerer",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 41.7784836,
-    "lon": -110.5528175
-  },
-  {
-    "display_name": "Opal, WY",
-    "name": "Opal",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 41.7679194,
-    "lon": -110.324385
-  },
-  {
-    "display_name": "Thayne, WY",
-    "name": "Thayne",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Lincoln County",
-    "county_fips": "56023",
-    "lat": 42.9198864,
-    "lon": -110.9952548
-  },
-  {
     "display_name": "Star Valley Ranch, WY",
     "name": "Star Valley Ranch",
     "type": "city",
@@ -1089,26 +935,15 @@
     "lon": -110.9635214
   },
   {
-    "display_name": "Big Piney, WY",
-    "name": "Big Piney",
+    "display_name": "Pinedale, WY",
+    "name": "Pinedale",
     "type": "city",
     "state": "Wyoming",
     "state_abbr": "WY",
     "county": "Sublette County",
     "county_fips": "56035",
-    "lat": 42.5401676,
-    "lon": -110.1193425
-  },
-  {
-    "display_name": "Bairoil, WY",
-    "name": "Bairoil",
-    "type": "city",
-    "state": "Wyoming",
-    "state_abbr": "WY",
-    "county": "Sweetwater County",
-    "county_fips": "56037",
-    "lat": 42.2372018,
-    "lon": -107.5610479
+    "lat": 42.8675848,
+    "lon": -109.8705267
   },
   {
     "display_name": "Granger, WY",
@@ -1129,8 +964,8 @@
     "state_abbr": "WY",
     "county": "Sweetwater County",
     "county_fips": "56037",
-    "lat": 41.5129221,
-    "lon": -109.4707963
+    "lat": 41.5130097,
+    "lon": -109.4706445
   },
   {
     "display_name": "Rock Springs, WY",
@@ -1166,136 +1001,213 @@
     "lon": -107.9791419
   },
   {
-    "display_name": "Durango, CO",
-    "name": "Durango",
+    "display_name": "Bear River, WY",
+    "name": "Bear River",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "La Plata County",
-    "county_fips": "08067",
-    "lat": 37.2645342,
-    "lon": -107.8741239
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Uinta County",
+    "county_fips": "56041",
+    "lat": 41.3855111,
+    "lon": -111.0282018
   },
   {
-    "display_name": "Rico, CO",
-    "name": "Rico",
+    "display_name": "Mountain View, WY",
+    "name": "Mountain View",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Dolores County",
-    "county_fips": "08033",
-    "lat": 37.6890861,
-    "lon": -108.0316773
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Uinta County",
+    "county_fips": "56041",
+    "lat": 41.2723507,
+    "lon": -110.3340725
   },
   {
-    "display_name": "Naturita, CO",
-    "name": "Naturita",
+    "display_name": "Kemmerer, WY",
+    "name": "Kemmerer",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montrose County",
-    "county_fips": "08085",
-    "lat": 38.2183441,
-    "lon": -108.5666329
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 41.7784836,
+    "lon": -110.5528175
   },
   {
-    "display_name": "Nucla, CO",
-    "name": "Nucla",
+    "display_name": "Opal, WY",
+    "name": "Opal",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montrose County",
-    "county_fips": "08085",
-    "lat": 38.2666869,
-    "lon": -108.5486946
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 41.7679194,
+    "lon": -110.324385
   },
   {
-    "display_name": "Olathe, CO",
-    "name": "Olathe",
+    "display_name": "Thayne, WY",
+    "name": "Thayne",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montrose County",
-    "county_fips": "08085",
-    "lat": 38.6085312,
-    "lon": -107.9832784
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 42.9198864,
+    "lon": -110.9952548
   },
   {
-    "display_name": "Cortez, CO",
-    "name": "Cortez",
+    "display_name": "Evanston, WY",
+    "name": "Evanston",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montezuma County",
-    "county_fips": "08083",
-    "lat": 37.3497833,
-    "lon": -108.576687
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Uinta County",
+    "county_fips": "56041",
+    "lat": 41.2593653,
+    "lon": -110.964288
   },
   {
-    "display_name": "Meeker, CO",
-    "name": "Meeker",
+    "display_name": "Lyman, WY",
+    "name": "Lyman",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Rio Blanco County",
-    "county_fips": "08103",
-    "lat": 40.0499535,
-    "lon": -107.8945842
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Uinta County",
+    "county_fips": "56041",
+    "lat": 41.3275398,
+    "lon": -110.2974492
   },
   {
-    "display_name": "Rangely, CO",
-    "name": "Rangely",
+    "display_name": "Bairoil, WY",
+    "name": "Bairoil",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Rio Blanco County",
-    "county_fips": "08103",
-    "lat": 40.087011,
-    "lon": -108.78326
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Sweetwater County",
+    "county_fips": "56037",
+    "lat": 42.2372018,
+    "lon": -107.5610479
   },
   {
-    "display_name": "Craig, CO",
-    "name": "Craig",
+    "display_name": "Marbleton, WY",
+    "name": "Marbleton",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Moffat County",
-    "county_fips": "08081",
-    "lat": 40.5170604,
-    "lon": -107.5553956
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Sublette County",
+    "county_fips": "56035",
+    "lat": 42.557414,
+    "lon": -110.1004588
   },
   {
-    "display_name": "Dinosaur, CO",
-    "name": "Dinosaur",
+    "display_name": "La Barge, WY",
+    "name": "La Barge",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Moffat County",
-    "county_fips": "08081",
-    "lat": 40.239861,
-    "lon": -109.0067951
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 42.2607794,
+    "lon": -110.1972028
   },
   {
-    "display_name": "Sawpit, CO",
-    "name": "Sawpit",
+    "display_name": "Diamondville, WY",
+    "name": "Diamondville",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "San Miguel County",
-    "county_fips": "08113",
-    "lat": 37.9947175,
-    "lon": -108.0021356
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 41.777816,
+    "lon": -110.5365067
   },
   {
-    "display_name": "De Beque, CO",
-    "name": "De Beque",
+    "display_name": "Cokeville, WY",
+    "name": "Cokeville",
+    "type": "city",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 42.079237,
+    "lon": -110.9518978
+  },
+  {
+    "display_name": "Big Piney, WY",
+    "name": "Big Piney",
+    "type": "city",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Sublette County",
+    "county_fips": "56035",
+    "lat": 42.5401676,
+    "lon": -110.1193425
+  },
+  {
+    "display_name": "Afton, WY",
+    "name": "Afton",
+    "type": "city",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 42.72634,
+    "lon": -110.932032
+  },
+  {
+    "display_name": "Alpine, WY",
+    "name": "Alpine",
+    "type": "city",
+    "state": "Wyoming",
+    "state_abbr": "WY",
+    "county": "Lincoln County",
+    "county_fips": "56023",
+    "lat": 43.1728565,
+    "lon": -111.0208745
+  },
+  {
+    "display_name": "Grand Junction, CO",
+    "name": "Grand Junction",
     "type": "city",
     "state": "Colorado",
     "state_abbr": "CO",
     "county": "Mesa County",
     "county_fips": "08077",
-    "lat": 39.3099885,
-    "lon": -108.2049994
+    "lat": 39.0890618,
+    "lon": -108.567452
+  },
+  {
+    "display_name": "Carbondale, CO",
+    "name": "Carbondale",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.3955593,
+    "lon": -107.2150201
+  },
+  {
+    "display_name": "New Castle, CO",
+    "name": "New Castle",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.5817109,
+    "lon": -107.5288521
+  },
+  {
+    "display_name": "Rifle, CO",
+    "name": "Rifle",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.5375645,
+    "lon": -107.7703439
   },
   {
     "display_name": "Delta, CO",
@@ -1305,85 +1217,19 @@
     "state_abbr": "CO",
     "county": "Delta County",
     "county_fips": "08029",
-    "lat": 38.7573707,
-    "lon": -108.0879857
+    "lat": 38.7573794,
+    "lon": -108.0879891
   },
   {
-    "display_name": "Montrose, CO",
-    "name": "Montrose",
+    "display_name": "Telluride, CO",
+    "name": "Telluride",
     "type": "city",
     "state": "Colorado",
     "state_abbr": "CO",
-    "county": "Montrose County",
-    "county_fips": "08085",
-    "lat": 38.4688934,
-    "lon": -107.8589834
-  },
-  {
-    "display_name": "Parachute, CO",
-    "name": "Parachute",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.446788,
-    "lon": -108.052083
-  },
-  {
-    "display_name": "Mancos, CO",
-    "name": "Mancos",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Montezuma County",
-    "county_fips": "08083",
-    "lat": 37.3466411,
-    "lon": -108.2938407
-  },
-  {
-    "display_name": "Orchard City, CO",
-    "name": "Orchard City",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.818125,
-    "lon": -107.9672696
-  },
-  {
-    "display_name": "Cedaredge, CO",
-    "name": "Cedaredge",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.8940974,
-    "lon": -107.9254853
-  },
-  {
-    "display_name": "Crawford, CO",
-    "name": "Crawford",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.7050441,
-    "lon": -107.609596
-  },
-  {
-    "display_name": "Paonia, CO",
-    "name": "Paonia",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.8697973,
-    "lon": -107.5920841
+    "county": "San Miguel County",
+    "county_fips": "08113",
+    "lat": 37.9402333,
+    "lon": -107.8181523
   },
   {
     "display_name": "Collbran, CO",
@@ -1419,6 +1265,138 @@
     "lon": -108.3573295
   },
   {
+    "display_name": "Dove Creek, CO",
+    "name": "Dove Creek",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Dolores County",
+    "county_fips": "08033",
+    "lat": 37.7668418,
+    "lon": -108.9071733
+  },
+  {
+    "display_name": "Dolores, CO",
+    "name": "Dolores",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montezuma County",
+    "county_fips": "08083",
+    "lat": 37.4745838,
+    "lon": -108.499503
+  },
+  {
+    "display_name": "Parachute, CO",
+    "name": "Parachute",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.4466327,
+    "lon": -108.0549221
+  },
+  {
+    "display_name": "Hotchkiss, CO",
+    "name": "Hotchkiss",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.7989943,
+    "lon": -107.7133849
+  },
+  {
+    "display_name": "De Beque, CO",
+    "name": "De Beque",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Mesa County",
+    "county_fips": "08077",
+    "lat": 39.3099885,
+    "lon": -108.2049994
+  },
+  {
+    "display_name": "Orchard City, CO",
+    "name": "Orchard City",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.8181466,
+    "lon": -107.9672484
+  },
+  {
+    "display_name": "Carbonate, CO",
+    "name": "Carbonate",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Garfield County",
+    "county_fips": "08045",
+    "lat": 39.7464619,
+    "lon": -107.3401267
+  },
+  {
+    "display_name": "Sawpit, CO",
+    "name": "Sawpit",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "San Miguel County",
+    "county_fips": "08113",
+    "lat": 37.9947175,
+    "lon": -108.0021356
+  },
+  {
+    "display_name": "Cortez, CO",
+    "name": "Cortez",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montezuma County",
+    "county_fips": "08083",
+    "lat": 37.349795,
+    "lon": -108.5760996
+  },
+  {
+    "display_name": "Cedaredge, CO",
+    "name": "Cedaredge",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.8940974,
+    "lon": -107.9254853
+  },
+  {
+    "display_name": "Crawford, CO",
+    "name": "Crawford",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.7050441,
+    "lon": -107.609596
+  },
+  {
+    "display_name": "Paonia, CO",
+    "name": "Paonia",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Delta County",
+    "county_fips": "08029",
+    "lat": 38.8697973,
+    "lon": -107.5920843
+  },
+  {
     "display_name": "Bayfield, CO",
     "name": "Bayfield",
     "type": "city",
@@ -1437,8 +1415,74 @@
     "state_abbr": "CO",
     "county": "La Plata County",
     "county_fips": "08067",
-    "lat": 37.1180042,
-    "lon": -107.637557
+    "lat": 37.1177841,
+    "lon": -107.6375347
+  },
+  {
+    "display_name": "Naturita, CO",
+    "name": "Naturita",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montrose County",
+    "county_fips": "08085",
+    "lat": 38.2182996,
+    "lon": -108.5663902
+  },
+  {
+    "display_name": "Nucla, CO",
+    "name": "Nucla",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montrose County",
+    "county_fips": "08085",
+    "lat": 38.2666747,
+    "lon": -108.5486981
+  },
+  {
+    "display_name": "Olathe, CO",
+    "name": "Olathe",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montrose County",
+    "county_fips": "08085",
+    "lat": 38.6084158,
+    "lon": -107.9832376
+  },
+  {
+    "display_name": "Durango, CO",
+    "name": "Durango",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "La Plata County",
+    "county_fips": "08067",
+    "lat": 37.2645342,
+    "lon": -107.8741239
+  },
+  {
+    "display_name": "Montrose, CO",
+    "name": "Montrose",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Montrose County",
+    "county_fips": "08085",
+    "lat": 38.4687826,
+    "lon": -107.8589592
+  },
+  {
+    "display_name": "Meeker, CO",
+    "name": "Meeker",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Rio Blanco County",
+    "county_fips": "08103",
+    "lat": 40.0499535,
+    "lon": -107.8945842
   },
   {
     "display_name": "Glenwood Springs, CO",
@@ -1448,8 +1492,8 @@
     "state_abbr": "CO",
     "county": "Garfield County",
     "county_fips": "08045",
-    "lat": 39.547132,
-    "lon": -107.3425555
+    "lat": 39.5463955,
+    "lon": -107.343287
   },
   {
     "display_name": "Silt, CO",
@@ -1463,26 +1507,59 @@
     "lon": -107.6527362
   },
   {
-    "display_name": "Dolores, CO",
-    "name": "Dolores",
+    "display_name": "Rangely, CO",
+    "name": "Rangely",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Rio Blanco County",
+    "county_fips": "08103",
+    "lat": 40.087011,
+    "lon": -108.78326
+  },
+  {
+    "display_name": "Mancos, CO",
+    "name": "Mancos",
     "type": "city",
     "state": "Colorado",
     "state_abbr": "CO",
     "county": "Montezuma County",
     "county_fips": "08083",
-    "lat": 37.4745838,
-    "lon": -108.499503
+    "lat": 37.3466411,
+    "lon": -108.2938407
   },
   {
-    "display_name": "Dove Creek, CO",
-    "name": "Dove Creek",
+    "display_name": "Rico, CO",
+    "name": "Rico",
     "type": "city",
     "state": "Colorado",
     "state_abbr": "CO",
     "county": "Dolores County",
     "county_fips": "08033",
-    "lat": 37.7668418,
-    "lon": -108.9071733
+    "lat": 37.6890861,
+    "lon": -108.0316773
+  },
+  {
+    "display_name": "Craig, CO",
+    "name": "Craig",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Moffat County",
+    "county_fips": "08081",
+    "lat": 40.5170604,
+    "lon": -107.5553955
+  },
+  {
+    "display_name": "Dinosaur, CO",
+    "name": "Dinosaur",
+    "type": "city",
+    "state": "Colorado",
+    "state_abbr": "CO",
+    "county": "Moffat County",
+    "county_fips": "08081",
+    "lat": 40.239861,
+    "lon": -109.0067951
   },
   {
     "display_name": "Ophir, CO",
@@ -1494,72 +1571,6 @@
     "county_fips": "08113",
     "lat": 37.8568103,
     "lon": -107.8312422
-  },
-  {
-    "display_name": "Hotchkiss, CO",
-    "name": "Hotchkiss",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Delta County",
-    "county_fips": "08029",
-    "lat": 38.7989943,
-    "lon": -107.7133855
-  },
-  {
-    "display_name": "Carbondale, CO",
-    "name": "Carbondale",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.3955593,
-    "lon": -107.2150201
-  },
-  {
-    "display_name": "New Castle, CO",
-    "name": "New Castle",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.5776452,
-    "lon": -107.5264527
-  },
-  {
-    "display_name": "Rifle, CO",
-    "name": "Rifle",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.5375645,
-    "lon": -107.7703439
-  },
-  {
-    "display_name": "Grand Junction, CO",
-    "name": "Grand Junction",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Mesa County",
-    "county_fips": "08077",
-    "lat": 39.0890618,
-    "lon": -108.567452
-  },
-  {
-    "display_name": "Telluride, CO",
-    "name": "Telluride",
-    "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "San Miguel County",
-    "county_fips": "08113",
-    "lat": 37.9402333,
-    "lon": -107.8181523
   },
   {
     "display_name": "Mountain Village, CO",
@@ -1584,15 +1595,15 @@
     "lon": -108.2922503
   },
   {
-    "display_name": "Carbonate, CO",
-    "name": "Carbonate",
+    "display_name": "Farmington, NM",
+    "name": "Farmington",
     "type": "city",
-    "state": "Colorado",
-    "state_abbr": "CO",
-    "county": "Garfield County",
-    "county_fips": "08045",
-    "lat": 39.7464619,
-    "lon": -107.3401267
+    "state": "New Mexico",
+    "state_abbr": "NM",
+    "county": "San Juan County",
+    "county_fips": "35045",
+    "lat": 36.7538325,
+    "lon": -108.1805302
   },
   {
     "display_name": "Bloomfield, NM",
@@ -1602,8 +1613,8 @@
     "state_abbr": "NM",
     "county": "San Juan County",
     "county_fips": "35045",
-    "lat": 36.7433056,
-    "lon": -107.9739366
+    "lat": 36.7429463,
+    "lon": -107.9733414
   },
   {
     "display_name": "Aztec, NM",
@@ -1613,8 +1624,8 @@
     "state_abbr": "NM",
     "county": "San Juan County",
     "county_fips": "35045",
-    "lat": 36.8158979,
-    "lon": -107.9703118
+    "lat": 36.8159933,
+    "lon": -107.9702656
   },
   {
     "display_name": "Kirtland, NM",
@@ -1628,37 +1639,92 @@
     "lon": -108.3674564
   },
   {
-    "display_name": "Farmington, NM",
-    "name": "Farmington",
+    "display_name": "Lake Havasu City, AZ",
+    "name": "Lake Havasu City",
     "type": "city",
-    "state": "New Mexico",
-    "state_abbr": "NM",
-    "county": "San Juan County",
-    "county_fips": "35045",
-    "lat": 36.7538325,
-    "lon": -108.1805302
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Mohave County",
+    "county_fips": "04015",
+    "lat": 34.4998087,
+    "lon": -114.3109427
   },
   {
-    "display_name": "Flagstaff, AZ",
-    "name": "Flagstaff",
+    "display_name": "Taylor, AZ",
+    "name": "Taylor",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 34.4427562,
+    "lon": -110.0985283
+  },
+  {
+    "display_name": "Pinetop-Lakeside, AZ",
+    "name": "Pinetop-Lakeside",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 34.1514799,
+    "lon": -109.9675067
+  },
+  {
+    "display_name": "Show Low, AZ",
+    "name": "Show Low",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 34.2650757,
+    "lon": -110.0382861
+  },
+  {
+    "display_name": "Snowflake, AZ",
+    "name": "Snowflake",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 34.5214552,
+    "lon": -110.0911844
+  },
+  {
+    "display_name": "Holbrook, AZ",
+    "name": "Holbrook",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 34.9046242,
+    "lon": -110.1672096
+  },
+  {
+    "display_name": "Winslow, AZ",
+    "name": "Winslow",
+    "type": "city",
+    "state": "Arizona",
+    "state_abbr": "AZ",
+    "county": "Navajo County",
+    "county_fips": "04017",
+    "lat": 35.0244838,
+    "lon": -110.7095481
+  },
+  {
+    "display_name": "Tusayan, AZ",
+    "name": "Tusayan",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
     "county": "Coconino County",
     "county_fips": "04005",
-    "lat": 35.1852121,
-    "lon": -111.6206977
-  },
-  {
-    "display_name": "Fredonia, AZ",
-    "name": "Fredonia",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Coconino County",
-    "county_fips": "04005",
-    "lat": 36.9616259,
-    "lon": -112.5163625
+    "lat": 35.954961,
+    "lon": -112.1201953
   },
   {
     "display_name": "Eagar, AZ",
@@ -1683,61 +1749,6 @@
     "lon": -109.3769096
   },
   {
-    "display_name": "Springerville, AZ",
-    "name": "Springerville",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Apache County",
-    "county_fips": "04001",
-    "lat": 34.1719209,
-    "lon": -109.3068921
-  },
-  {
-    "display_name": "Tusayan, AZ",
-    "name": "Tusayan",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Coconino County",
-    "county_fips": "04005",
-    "lat": 35.954961,
-    "lon": -112.1201953
-  },
-  {
-    "display_name": "Bullhead City, AZ",
-    "name": "Bullhead City",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Mohave County",
-    "county_fips": "04015",
-    "lat": 35.1273714,
-    "lon": -114.5559901
-  },
-  {
-    "display_name": "Colorado City, AZ",
-    "name": "Colorado City",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Mohave County",
-    "county_fips": "04015",
-    "lat": 36.9701089,
-    "lon": -112.9853115
-  },
-  {
-    "display_name": "Kingman, AZ",
-    "name": "Kingman",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Mohave County",
-    "county_fips": "04015",
-    "lat": 35.2169924,
-    "lon": -114.0105293
-  },
-  {
     "display_name": "Page, AZ",
     "name": "Page",
     "type": "city",
@@ -1760,147 +1771,70 @@
     "lon": -112.1832957
   },
   {
-    "display_name": "Taylor, AZ",
-    "name": "Taylor",
+    "display_name": "Springerville, AZ",
+    "name": "Springerville",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 34.4427484,
-    "lon": -110.0985336
+    "county": "Apache County",
+    "county_fips": "04001",
+    "lat": 34.1717583,
+    "lon": -109.3068264
   },
   {
-    "display_name": "Pinetop-Lakeside, AZ",
-    "name": "Pinetop-Lakeside",
+    "display_name": "Flagstaff, AZ",
+    "name": "Flagstaff",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 34.148424,
-    "lon": -109.9659981
+    "county": "Coconino County",
+    "county_fips": "04005",
+    "lat": 35.186367,
+    "lon": -111.6203666
   },
   {
-    "display_name": "Show Low, AZ",
-    "name": "Show Low",
+    "display_name": "Fredonia, AZ",
+    "name": "Fredonia",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 34.2650528,
-    "lon": -110.0383214
+    "county": "Coconino County",
+    "county_fips": "04005",
+    "lat": 36.9616842,
+    "lon": -112.5161601
   },
   {
-    "display_name": "Winslow, AZ",
-    "name": "Winslow",
-    "type": "city",
-    "state": "Arizona",
-    "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 35.0242363,
-    "lon": -110.7093313
-  },
-  {
-    "display_name": "Lake Havasu City, AZ",
-    "name": "Lake Havasu City",
+    "display_name": "Bullhead City, AZ",
+    "name": "Bullhead City",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
     "county": "Mohave County",
     "county_fips": "04015",
-    "lat": 34.4998087,
-    "lon": -114.3109427
+    "lat": 35.1273714,
+    "lon": -114.5559901
   },
   {
-    "display_name": "Snowflake, AZ",
-    "name": "Snowflake",
+    "display_name": "Colorado City, AZ",
+    "name": "Colorado City",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 34.5214586,
-    "lon": -110.0911816
+    "county": "Mohave County",
+    "county_fips": "04015",
+    "lat": 36.9701066,
+    "lon": -112.9852948
   },
   {
-    "display_name": "Holbrook, AZ",
-    "name": "Holbrook",
+    "display_name": "Kingman, AZ",
+    "name": "Kingman",
     "type": "city",
     "state": "Arizona",
     "state_abbr": "AZ",
-    "county": "Navajo County",
-    "county_fips": "04017",
-    "lat": 34.9046242,
-    "lon": -110.1672096
-  },
-  {
-    "display_name": "Elko, NV",
-    "name": "Elko",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Elko County",
-    "county_fips": "32007",
-    "lat": 40.8381106,
-    "lon": -115.7678092
-  },
-  {
-    "display_name": "Caliente, NV",
-    "name": "Caliente",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Lincoln County",
-    "county_fips": "32017",
-    "lat": 37.6457547,
-    "lon": -114.4929262
-  },
-  {
-    "display_name": "Mesquite, NV",
-    "name": "Mesquite",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Clark County",
-    "county_fips": "32003",
-    "lat": 36.8111196,
-    "lon": -114.1256516
-  },
-  {
-    "display_name": "Henderson, NV",
-    "name": "Henderson",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Clark County",
-    "county_fips": "32003",
-    "lat": 36.0089583,
-    "lon": -115.0267996
-  },
-  {
-    "display_name": "Las Vegas, NV",
-    "name": "Las Vegas",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Clark County",
-    "county_fips": "32003",
-    "lat": 36.2334989,
-    "lon": -115.2640367
-  },
-  {
-    "display_name": "Carlin, NV",
-    "name": "Carlin",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "Elko County",
-    "county_fips": "32007",
-    "lat": 40.719013,
-    "lon": -116.1080447
+    "county": "Mohave County",
+    "county_fips": "04015",
+    "lat": 35.2169924,
+    "lon": -114.0105293
   },
   {
     "display_name": "Wells, NV",
@@ -1914,6 +1848,50 @@
     "lon": -114.9535375
   },
   {
+    "display_name": "Henderson, NV",
+    "name": "Henderson",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Clark County",
+    "county_fips": "32003",
+    "lat": 36.0056003,
+    "lon": -115.0228116
+  },
+  {
+    "display_name": "Las Vegas, NV",
+    "name": "Las Vegas",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Clark County",
+    "county_fips": "32003",
+    "lat": 36.2334989,
+    "lon": -115.2640367
+  },
+  {
+    "display_name": "Caliente, NV",
+    "name": "Caliente",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Lincoln County",
+    "county_fips": "32017",
+    "lat": 37.6457553,
+    "lon": -114.4929256
+  },
+  {
+    "display_name": "Ely, NV",
+    "name": "Ely",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "White Pine County",
+    "county_fips": "32033",
+    "lat": 39.2649236,
+    "lon": -114.870839
+  },
+  {
     "display_name": "Boulder City, NV",
     "name": "Boulder City",
     "type": "city",
@@ -1921,8 +1899,8 @@
     "state_abbr": "NV",
     "county": "Clark County",
     "county_fips": "32003",
-    "lat": 35.84376,
-    "lon": -114.9115526
+    "lat": 35.8538747,
+    "lon": -114.9133412
   },
   {
     "display_name": "North Las Vegas, NV",
@@ -1936,6 +1914,39 @@
     "lon": -115.0891808
   },
   {
+    "display_name": "Elko, NV",
+    "name": "Elko",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Elko County",
+    "county_fips": "32007",
+    "lat": 40.8381107,
+    "lon": -115.7678092
+  },
+  {
+    "display_name": "Mesquite, NV",
+    "name": "Mesquite",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Clark County",
+    "county_fips": "32003",
+    "lat": 36.8111196,
+    "lon": -114.1256516
+  },
+  {
+    "display_name": "Carlin, NV",
+    "name": "Carlin",
+    "type": "city",
+    "state": "Nevada",
+    "state_abbr": "NV",
+    "county": "Elko County",
+    "county_fips": "32007",
+    "lat": 40.7192401,
+    "lon": -116.1082782
+  },
+  {
     "display_name": "West Wendover, NV",
     "name": "West Wendover",
     "type": "city",
@@ -1945,16 +1956,5 @@
     "county_fips": "32007",
     "lat": 40.7402534,
     "lon": -114.0786326
-  },
-  {
-    "display_name": "Ely, NV",
-    "name": "Ely",
-    "type": "city",
-    "state": "Nevada",
-    "state_abbr": "NV",
-    "county": "White Pine County",
-    "county_fips": "32033",
-    "lat": 39.2649284,
-    "lon": -114.8708681
   }
 ]

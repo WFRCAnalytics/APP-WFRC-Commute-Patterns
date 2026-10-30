@@ -45,6 +45,8 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import requests
 
+from geo_utils import tiger_file, TIGER_YEAR
+
 # ── Configuration ──────────────────────────────────────────────────────────────
 NEIGHBOR_DISPLAY_FILTER = "border"  # 'border' | 'all'
 
@@ -57,9 +59,8 @@ NEIGHBOR_STATES = {
     "32": ("Nevada",     "NV"),
 }
 
-TIGER_BASE = "https://www2.census.gov/geo/tiger/TIGER2024"
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8"
-COUNTIES_URL = f"{TIGER_BASE}/COUNTY/tl_2024_us_county.zip"
+COUNTIES_URL, COUNTIES_FILE = tiger_file("COUNTY", "us_county")
 
 # Place LSAD codes representing standard incorporated places and CDPs
 # 25=city, 43=town(civil), 44=town, 45=town, 47=CDP, 53=independent city
@@ -256,18 +257,18 @@ def build_neighbor_zones(cache_dir: Path, download_fn) -> list:
     Returns: list of zone dicts, each with keys:
       display_name, name, type, state, state_abbr, county, county_fips, lat, lon
 
-    Cached at cache_dir/neighbor_zones.json; re-runs only if cache is absent.
+    Cached at cache_dir/neighbor_zones_<TIGER_YEAR>.json; re-runs only if cache is absent.
     """
-    cache_path = cache_dir / "neighbor_zones.json"
+    cache_path = cache_dir / f"neighbor_zones_{TIGER_YEAR}.json"
     if cache_path.exists() and cache_path.stat().st_size > 0:
-        print("  Using cached neighbor_zones.json")
+        print(f"  Using cached neighbor_zones_{TIGER_YEAR}.json")
         return json.loads(cache_path.read_text())
 
     print("  Building neighbor zone database (one-time download)...")
     zones = []
 
     # ── Counties ──────────────────────────────────────────────────────────────
-    counties_local = download_fn(COUNTIES_URL, "tl_2024_us_county.zip")
+    counties_local = download_fn(COUNTIES_URL, COUNTIES_FILE)
     all_counties = gpd.read_file(counties_local)
     neighbor_counties = all_counties[all_counties["STATEFP"].isin(NEIGHBOR_STATES)].copy()
     # Build county_fips -> name lookup for the city spatial join below
@@ -297,8 +298,7 @@ def build_neighbor_zones(cache_dir: Path, download_fn) -> list:
     # ── Cities (per-state TIGER place shapefiles) ─────────────────────────────
     for state_fips, (state_name, state_abbr) in NEIGHBOR_STATES.items():
         state_2 = state_fips.zfill(2)
-        url   = f"{TIGER_BASE}/PLACE/tl_2024_{state_2}_place.zip"
-        fname = f"tl_2024_{state_2}_place.zip"
+        url, fname = tiger_file("PLACE", f"{state_2}_place")
         # Use the robust (non-streaming) downloader; the shared download_fn uses
         # iter_content which Census TIGER servers sometimes cut off at 262 KB.
         try:
@@ -369,7 +369,7 @@ def build_neighbor_zones(cache_dir: Path, download_fn) -> list:
 
     cache_path.write_text(json.dumps(zones, indent=2))
     city_count = len(zones) - county_count
-    print(f"  Cached neighbor_zones.json ({county_count} counties + {city_count} cities = {len(zones)} total)")
+    print(f"  Cached neighbor_zones_{TIGER_YEAR}.json ({county_count} counties + {city_count} cities = {len(zones)} total)")
     return zones
 
 
@@ -384,9 +384,9 @@ def get_border_zone_set(cache_dir: Path, download_fn, all_zones: list) -> tuple:
     destinations (e.g. Clark County, NV) whose edge falls just outside strict
     adjacency.
 
-    Cached at cache_dir/border_county_fips.json.
+    Cached at cache_dir/border_county_fips_<TIGER_YEAR>.json.
     """
-    fips_cache = cache_dir / "border_county_fips.json"
+    fips_cache = cache_dir / f"border_county_fips_{TIGER_YEAR}.json"
     if fips_cache.exists() and fips_cache.stat().st_size > 0:
         border_fips = set(json.loads(fips_cache.read_text()))
         print(f"  Using cached border county list ({len(border_fips)} counties)")
@@ -394,7 +394,7 @@ def get_border_zone_set(cache_dir: Path, download_fn, all_zones: list) -> tuple:
         print(f"  Computing border counties "
               f"(Utah boundary + {BORDER_BUFFER_METERS/1000:.0f} km buffer)...")
 
-        counties_local = download_fn(COUNTIES_URL, "tl_2024_us_county.zip")
+        counties_local = download_fn(COUNTIES_URL, COUNTIES_FILE)
         all_counties = gpd.read_file(counties_local)
 
         # Project to Conus Albers (EPSG:5070) — metre-based, accurate for CONUS
@@ -411,7 +411,7 @@ def get_border_zone_set(cache_dir: Path, download_fn, all_zones: list) -> tuple:
 
         fips_cache.write_text(json.dumps(sorted(border_fips), indent=2))
         print(f"  Found {len(border_fips)} border counties "
-              f"-> cached border_county_fips.json")
+              f"-> cached border_county_fips_{TIGER_YEAR}.json")
 
     border_zone_names = {
         z["display_name"]
