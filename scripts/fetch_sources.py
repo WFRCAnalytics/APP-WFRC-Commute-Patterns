@@ -20,6 +20,8 @@ Sources (all plain HTTPS GETs, no credentials):
       Utah places, national counties, Utah State House / Senate districts,
       and the place files of the 6 neighboring states.
   - LEHD LODES8 geographic crosswalks (Utah + the 6 neighboring states).
+  - UGRC's statewide municipal boundaries (all features are cached; the
+    pipeline picks out only the places named in custom_places_config.json).
 
 Census's firewall occasionally answers a valid URL with an HTML "Request
 Rejected" page (HTTP 200). Such responses are detected, discarded and retried
@@ -28,14 +30,17 @@ the exact cache path so it can be saved by hand from a browser; re-running the
 script then picks it up.
 
     uv run scripts/fetch_sources.py               # fetch whatever is missing
-    uv run scripts/fetch_sources.py --only tiger  # tiger | xwalk
+    uv run scripts/fetch_sources.py --only tiger  # tiger | xwalk | ugrc
     uv run scripts/fetch_sources.py --refresh-xwalk  # re-download crosswalks if the
                                                      # server copy differs in size
+    uv run scripts/fetch_sources.py --refresh-ugrc   # re-pull UGRC boundaries (they change
+                                                     # with annexations / incorporations)
     uv run scripts/fetch_sources.py --force       # re-download everything
 """
 
 import argparse
 import gzip
+import json
 import sys
 import time
 import zipfile
@@ -43,11 +48,14 @@ from pathlib import Path
 
 import requests
 
+import custom_places
 import neighbor_zones
 from geo_utils import TIGER_YEAR, tiger_file
 
 CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8"
+UGRC_PAGE = 1000
+UGRC_MIN_FEATURES = 100  # Utah has ~250 municipalities; fewer means a bad response
 ATTEMPTS = 3
 BACKOFF_SECONDS = 10
 
@@ -80,11 +88,14 @@ def is_valid(path: Path) -> bool:
                 return False
             with zipfile.ZipFile(path) as z:
                 return z.testzip() is None
+        if path.suffix == ".geojson":
+            d = json.loads(path.read_text(encoding="utf-8"))
+            return d.get("type") == "FeatureCollection" and len(d.get("features", [])) >= UGRC_MIN_FEATURES
         if path.name.endswith(".gz"):
             with gzip.open(path, "rb") as f:
                 f.read(1024)
             return True
-    except (OSError, EOFError, zipfile.BadZipFile):
+    except (OSError, EOFError, ValueError, zipfile.BadZipFile):
         return False
     return True
 
@@ -126,12 +137,57 @@ def fetch(url: str, name: str, force: bool, refresh: bool) -> str:
     return "FAILED"
 
 
+def fetch_ugrc(force: bool) -> str:
+    """Download every UGRC municipal boundary (paged) into one cached GeoJSON.
+
+    Returns 'cached' | 'downloaded' | 'FAILED'. The whole layer is cached so a
+    new place only needs a config entry, not another download.
+    """
+    dest = custom_places.UGRC_CACHE
+    if dest.exists() and not force and is_valid(dest):
+        return "cached"
+    base = custom_places.UGRC_MUNICIPAL_URL
+    for attempt in range(1, ATTEMPTS + 1):
+        print(f"  {dest.name}: downloading (attempt {attempt}/{ATTEMPTS})")
+        try:
+            total = requests.get(f"{base}/query", timeout=60, params={
+                "where": "1=1", "returnCountOnly": "true", "f": "json"}).json()["count"]
+            features = []
+            while len(features) < total:
+                r = requests.get(f"{base}/query", timeout=120, params={
+                    "where": "1=1", "outFields": "*", "outSR": 4326, "f": "geojson",
+                    "orderByFields": "OBJECTID", "resultOffset": len(features),
+                    "resultRecordCount": UGRC_PAGE})
+                r.raise_for_status()
+                page = r.json()["features"]
+                if not page:
+                    raise RuntimeError(f"empty page at offset {len(features)} of {total}")
+                features += page
+            if len(features) != total:
+                raise RuntimeError(f"got {len(features)} features, expected {total}")
+            tmp = dest.with_suffix(".tmp")
+            tmp.write_text(json.dumps({"type": "FeatureCollection", "features": features}),
+                           encoding="utf-8")
+            tmp.replace(dest)
+            if is_valid(dest):
+                print(f"  Saved {dest.name} ({len(features)} municipalities)")
+                return "downloaded"
+            dest.unlink(missing_ok=True)
+        except Exception as exc:
+            print(f"    error: {exc}")
+        if attempt < ATTEMPTS:
+            time.sleep(BACKOFF_SECONDS * attempt)
+    return "FAILED"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--only", choices=["tiger", "xwalk"])
+    ap.add_argument("--only", choices=["tiger", "xwalk", "ugrc"])
     ap.add_argument("--force", action="store_true", help="re-download everything")
     ap.add_argument("--refresh-xwalk", action="store_true",
                     help="re-download a crosswalk if the server's size differs from the cache")
+    ap.add_argument("--refresh-ugrc", action="store_true",
+                    help="re-download the UGRC municipal boundaries")
     args = ap.parse_args()
 
     CACHE_DIR.mkdir(parents=True, exist_ok=True)
@@ -143,6 +199,10 @@ def main() -> int:
 
     print(f"Fetching into {CACHE_DIR} (TIGER {TIGER_YEAR})")
     results = {n: (u, fetch(u, n, args.force, refresh)) for u, n, refresh in jobs}
+    if args.only in (None, "ugrc"):
+        results[custom_places.UGRC_CACHE.name] = (
+            custom_places.UGRC_MUNICIPAL_URL,
+            fetch_ugrc(args.force or args.refresh_ugrc))
 
     failed = {n: u for n, (u, status) in results.items() if status == "FAILED"}
     counts = {s: sum(1 for _, st in results.values() if st == s)

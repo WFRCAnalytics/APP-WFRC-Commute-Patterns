@@ -7,7 +7,9 @@
 # ]
 # ///
 """
-Verify LEHD OD coverage for all custom places defined in data/custom_places.gpkg.
+Verify LEHD OD coverage for all custom places in custom_places_config.json ("add")
+and data/custom_places.gpkg. Reads the RAW crosswalk, so it also shows which Census
+places a polygon currently overlaps (useful when choosing a "remove" list).
 
 For each custom place, reports:
   - How many Census blocks fall within its boundary
@@ -28,6 +30,8 @@ import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
 
+import custom_places
+
 DATA_DIR  = Path(__file__).parent.parent / "data"
 CACHE_DIR = DATA_DIR / "cache"
 CUSTOM_FILE = DATA_DIR / "custom_places.gpkg"
@@ -38,13 +42,11 @@ def main():
     parser.add_argument("--year", type=int, default=2023)
     args = parser.parse_args()
 
-    if not CUSTOM_FILE.exists():
-        sys.exit(f"ERROR: {CUSTOM_FILE} not found.")
-
     print(f"=== Custom Place LEHD Coverage Verification (year={args.year}) ===\n")
 
     # Load custom boundaries
-    custom_gdf = gpd.read_file(CUSTOM_FILE, layer="custom_places").to_crs(epsg=4326)
+    # All places from custom_places_config.json "add" (incl. UGRC-sourced) plus gpkg-only ones.
+    custom_gdf = custom_places.load_places()
     print(f"Custom places found: {list(custom_gdf['name'])}\n")
 
     # Load crosswalk with lat/lon

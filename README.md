@@ -162,7 +162,7 @@ To enable GitHub Pages on a new repository fork:
 │   ├── county_boundaries.geojson
 │   ├── house_boundaries.geojson
 │   ├── senate_boundaries.geojson
-│   ├── custom_places.gpkg      # Custom place boundaries (e.g. Hill Air Force Base)
+│   ├── custom_places.gpkg      # Hand-drawn custom place boundaries (e.g. Hill Air Force Base)
 │   ├── acs/                        # ACS 5-Year Estimates (one directory per year)
 │   │   └── <year>/
 │   │       ├── acs_city.json
@@ -183,7 +183,8 @@ To enable GitHub Pages on a new repository fork:
 │   ├── fetch_sources.py        # Downloads/validates TIGER + LEHD crosswalk sources into data/cache/
 │   ├── process_data.py         # Offline data pipeline (LEHD + TIGER + ACS)
 │   ├── fetch_acs.py            # Fetches ACS 5-Year Estimates via Census API
-│   ├── custom_places.py        # Modular extension for non-Census employment sites
+│   ├── custom_places.py        # Config-driven add/remove of places on top of the Census geography
+│   ├── custom_places_config.json # "remove" (Census places) and "add" (custom/UGRC places) lists
 │   ├── verify_custom_places.py # LEHD coverage audit for custom places
 │   └── screenshot.cjs          # Playwright — boots the dev server, captures light/dark screenshots into docs/, tears it down (--port N to override 5174)
 │
@@ -218,6 +219,15 @@ Run `uv run scripts/fetch_sources.py` first to download and validate the TIGER a
 7. Computes polygon centroids in Utah State Plane (EPSG:26912) and projects to WGS84
 8. Exports Parquet files (Snappy-compressed), JSON metadata, and GeoJSON boundaries for all four geography levels
 9. Fetches ACS 5-Year Estimates via the Census API (tables B08301/B08601 for means of transportation, B08303/B08603 for travel time to work) for cities, counties, House districts, and Senate districts; writes `data/acs/<year>/acs_{city,county,house,senate}.json`; skip with `--skip-acs` if a Census API key is unavailable
+
+### Adding or removing a place
+
+Edit `scripts/custom_places_config.json`; no code changes are needed. The two lists are independent:
+
+- `remove`: Census places to drop, by FIPS (e.g. CDPs merged into a newly incorporated city). The polygon disappears and the blocks fall back to "<County> Unincorporated".
+- `add`: places Census/LEHD don't have. Give a `source` of `{"type": "ugrc_municipal", "name": "<UGRC NAME>"}` to use [UGRC's municipal boundaries](https://services1.arcgis.com/99lidPhWCzftIe9K/ArcGIS/rest/services/UtahMunicipalBoundaries/FeatureServer/0), or omit it to use a polygon of the same name in `data/custom_places.gpkg`. `enable: true` makes it a normal selectable city (needs a 7-digit `place_fips`); `enable: false` renders an info-only polygon.
+
+Then run `uv run scripts/fetch_sources.py` (caches the whole UGRC layer; `--refresh-ugrc` re-pulls it), `uv run scripts/process_data.py --boundaries`, `process_data.py --year N --skip-acs` for every year, and `uv run scripts/build_trends.py`. The edit is applied to the loaded crosswalk (`patch_xwalk`): no block is ever dropped, and the run fails if an added polygon would take blocks from a real place that isn't listed under `remove`, or if flow names, metadata and boundaries disagree. `uv run scripts/verify_custom_places.py` shows which Census places a polygon overlaps. Added places have no ACS data (ACS is keyed by Census place FIPS), and a boundary is applied to every year, including years before the place existed.
 
 ---
 

@@ -1,196 +1,259 @@
 # /// script
 # requires-python = ">=3.11"
 # dependencies = [
+#   "numpy>=1.26",
 #   "pandas>=2.0",
 #   "geopandas>=0.14",
 #   "shapely>=2.0",
 # ]
 # ///
 """
-Custom Places — modular extension for non-Census employment sites.
+Custom Places — config-driven edits to the Census place geography.
 
-Adds entities like Hill Air Force Base that are significant commute
-destinations but have no Census place designation (or whose LEHD
-coverage differs from their true footprint).
+Two independent operations, both configured in scripts/custom_places_config.json:
 
-To add a new place:
-  1. Draw a polygon in data/custom_places.gpkg and set its `name` field.
-  2. Add an entry to scripts/custom_places_config.json with at minimum
-     `enable` (true/false) and `note`.
+  "remove": [{"fips", "name", "reason"}, ...]
+      Drop a Census place from the app (e.g. a CDP that has since been
+      absorbed into a newly incorporated city). Its polygon is removed from
+      city_boundaries.geojson and its blocks lose the place assignment, so
+      they fall back to "<County> Unincorporated". Works on its own.
 
-Per-place `enable` controls pipeline inclusion:
-  - true  → blocks are reassigned, meta/boundaries injected, treated as a
-             normal selectable city in the app.
-  - false → info-only: polygon rendered on the map with a click popup;
-             sidebar and Credits modal show a data-limitation disclaimer.
+  "add": {"<display name>": {...}}
+      Add a place that Census/LEHD don't have: Hill Air Force Base, or a
+      city incorporated after the 2020 Census place geography. Blocks whose
+      centroid lies inside the polygon are assigned to it.
+        source       optional {"type": "ugrc_municipal", "name": "<UGRC NAME>"}.
+                     UGRC polygons come from the cache written by
+                     scripts/fetch_sources.py (the whole layer is cached; only
+                     the named feature is used). Without `source`, the polygon
+                     is read from data/custom_places.gpkg by name.
+        place_fips   7-char FIPS (state+place), required when enable is true.
+        enable       true  -> treated as a normal selectable city.
+                     false -> info-only: polygon rendered with a click popup,
+                              sidebar/Credits show a data-limitation note.
 
-Four merge-point functions are called by process_data.py:
+The two are deliberately not coupled. Removals run first, then additions; an
+added polygon that covers a removed place's blocks simply claims them.
 
-  get_custom_block_map(xwalk_df)   -> dict[name -> frozenset[block_fips]]
-  apply_custom_places(lookup)      -> mutated lookup dict
-  inject_custom_meta(meta_list)    -> extended list
+How it reaches the data: patch_xwalk() edits the *loaded* LEHD crosswalk
+(process_data.load_xwalk), the single place the Utah crosswalk is read. No
+block is ever dropped and the cached download is never modified; only the
+block -> place columns change, in the copy the pipeline uses. Everything
+downstream (names, FIPS, name-collision handling, metadata) then derives from
+that one patched crosswalk.
+
+Other merge points called by process_data.py:
+
+  remove_census_places(places_gdf) -> TIGER places minus removed FIPS
+  inject_custom_meta(meta_list)    -> extended list (centroid = representative point)
   append_custom_boundaries(gdf)    -> extended GeoDataFrame
+  export_for_app(data_dir)         -> data/custom_places.geojson (info-only places)
 """
 
 import json
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import geopandas as gpd
-from shapely.geometry import Point
+import shapely
 
 DATA_DIR    = Path(__file__).parent.parent / "data"
 CACHE_DIR   = DATA_DIR / "cache"
 CUSTOM_FILE = DATA_DIR / "custom_places.gpkg"
 CONFIG_FILE = Path(__file__).parent / "custom_places_config.json"
 
-# Load per-place config at module level.
-_CONFIG: dict = json.loads(CONFIG_FILE.read_text()) if CONFIG_FILE.exists() else {}
+UGRC_MUNICIPAL_URL = (
+    "https://services1.arcgis.com/99lidPhWCzftIe9K/ArcGIS/rest/services/"
+    "UtahMunicipalBoundaries/FeatureServer/0"
+)
+UGRC_CACHE = CACHE_DIR / "ugrc_municipal_boundaries.geojson"
 
-# Synthetic place FIPS base — high enough to never collide with real Utah FIPS.
-# Each custom place gets 49900XX where XX is its index in the layer.
-_SYNTH_FIPS_BASE = 4990000
+# stplc the LEHD crosswalk uses for blocks outside any Census place.
+UNINCORPORATED_FIPS = "9999999"
+
+_CONFIG: dict = json.loads(CONFIG_FILE.read_text(encoding="utf-8")) if CONFIG_FILE.exists() else {}
+_REMOVE: list = _CONFIG.get("remove", [])
+_ADD: dict = _CONFIG.get("add", {})
 
 
 def _place_cfg(name: str) -> dict:
-    return _CONFIG.get(name, {})
+    return _ADD.get(name, {})
 
 
 def _is_enabled(name: str) -> bool:
     return _place_cfg(name).get("enable", False)
 
 
-def _load_custom_layer() -> gpd.GeoDataFrame:
-    """Load all features from custom_places.gpkg in WGS-84."""
+def removed_fips() -> list[str]:
+    return [r["fips"] for r in _REMOVE]
+
+
+def _load_ugrc(name: str) -> gpd.GeoDataFrame:
+    if not UGRC_CACHE.exists():
+        raise FileNotFoundError(
+            f"{UGRC_CACHE} not found — run `uv run scripts/fetch_sources.py` first."
+        )
+    all_places = gpd.read_file(UGRC_CACHE).to_crs(epsg=4326)
+    match = all_places[all_places["NAME"] == name]
+    if len(match) != 1:
+        raise ValueError(
+            f"UGRC municipal layer has {len(match)} features named {name!r} (expected 1). "
+            f"Re-run fetch_sources.py --refresh-ugrc, or fix `source.name` in the config."
+        )
+    return match[["geometry"]]
+
+
+def _load_gpkg() -> gpd.GeoDataFrame:
     if not CUSTOM_FILE.exists():
-        return gpd.GeoDataFrame(columns=["name", "geometry"])
+        return gpd.GeoDataFrame(columns=["name", "geometry"], geometry="geometry", crs="EPSG:4326")
     gdf = gpd.read_file(CUSTOM_FILE, layer="custom_places")
     if "name" not in gdf.columns:
         raise ValueError(f"{CUSTOM_FILE} must have a 'name' column on each feature.")
     return gdf.to_crs(epsg=4326)
 
 
-def _cache_path() -> Path:
-    return CACHE_DIR / "custom_blocks.json"
+def load_places() -> gpd.GeoDataFrame:
+    """Every custom place as (name, geometry) in WGS-84.
 
-
-def _cache_valid() -> bool:
-    """Cache covers all place geometries; invalidate only when .gpkg changes."""
-    cache = _cache_path()
-    if not cache.exists():
-        return False
-    return CUSTOM_FILE.stat().st_mtime <= cache.stat().st_mtime
-
-
-def get_custom_block_map(xwalk_df: pd.DataFrame) -> dict:
-    """Return {place_name: frozenset(tabblk2020)} for every enabled custom place.
-
-    Uses blklat/blklon from the LEHD crosswalk for point-in-polygon.
-    The block map is cached for ALL places in the layer; only enabled
-    places are returned so callers never see disabled entries.
+    Places listed in the config's "add" section use their `source` (or the gpkg
+    polygon of the same name). gpkg features with no config entry are kept as
+    info-only places, matching the original behaviour.
     """
-    custom_gdf = _load_custom_layer()
-    if custom_gdf.empty:
-        return {}
+    gpkg = _load_gpkg().set_index("name")
+    rows = []
+    for name, cfg in _ADD.items():
+        src = cfg.get("source")
+        if src:
+            if src.get("type") != "ugrc_municipal":
+                raise ValueError(f"{name}: unknown source type {src.get('type')!r}")
+            geom = _load_ugrc(src["name"]).geometry.iloc[0]
+        elif name in gpkg.index:
+            geom = gpkg.loc[name, "geometry"]
+        else:
+            raise ValueError(f"{name}: no `source` in config and no feature of that name in {CUSTOM_FILE.name}")
+        rows.append({"name": name, "geometry": geom})
+    for name in gpkg.index.difference(list(_ADD)):
+        rows.append({"name": name, "geometry": gpkg.loc[name, "geometry"]})
+    gdf = gpd.GeoDataFrame(rows, geometry="geometry", crs="EPSG:4326")
+    bad = gdf[~gdf.geometry.is_valid | gdf.geometry.is_empty]
+    if len(bad):
+        raise ValueError(f"Invalid/empty custom place geometry: {list(bad['name'])}")
+    return gdf
 
-    if _cache_valid():
-        print("  Using cached custom block map.")
-        raw = json.loads(_cache_path().read_text())
-        return {k: frozenset(v) for k, v in raw.items() if _is_enabled(k)}
 
-    print("  Building custom place -> block map (spatial join)...")
+def _enabled_places() -> gpd.GeoDataFrame:
+    gdf = load_places()
+    return gdf[gdf["name"].apply(_is_enabled)].reset_index(drop=True)
 
-    if "blklatdd" not in xwalk_df.columns or "blklondd" not in xwalk_df.columns:
-        raise ValueError(
-            "LEHD crosswalk is missing blklatdd/blklondd columns — "
-            "cannot run spatial join for custom places."
-        )
 
-    blocks_gdf = gpd.GeoDataFrame(
-        xwalk_df[["tabblk2020"]].copy(),
-        geometry=[Point(lon, lat) for lat, lon in
-                  zip(xwalk_df["blklatdd"], xwalk_df["blklondd"])],
-        crs="EPSG:4326",
-    )
+def patch_xwalk(xw: pd.DataFrame) -> pd.DataFrame:
+    """Apply "remove" then "add" to the block -> place columns of the crosswalk.
 
-    block_map = {}
-    for _, place in custom_gdf.iterrows():
+    Returns a patched copy; raises if the config is inconsistent with the data.
+    Only stplc / stplcname are ever modified and no row is added or dropped.
+    """
+    enabled = _enabled_places()
+    if not _REMOVE and enabled.empty:
+        return xw
+
+    out = xw.copy()
+    before = xw[["tabblk2020", "stplc"]].copy()
+
+    # ── remove ───────────────────────────────────────────────────────────────
+    for r in _REMOVE:
+        fips, name = r["fips"], r["name"]
+        mask = out["stplc"] == fips
+        n = int(mask.sum())
+        if n == 0:
+            raise ValueError(f"remove: FIPS {fips} ({name}) has no blocks in the crosswalk — "
+                             f"stale config entry or typo.")
+        out.loc[mask, "stplc"] = UNINCORPORATED_FIPS
+        out.loc[mask, "stplcname"] = np.nan
+        print(f"  Removed Census place {name} ({fips}): {n} blocks -> unincorporated")
+
+    # ── add ──────────────────────────────────────────────────────────────────
+    lon = pd.to_numeric(out["blklondd"], errors="coerce").to_numpy()
+    lat = pd.to_numeric(out["blklatdd"], errors="coerce").to_numpy()
+    for _, place in enabled.iterrows():
         name = place["name"]
-        mask = blocks_gdf.within(place.geometry)
-        matched = frozenset(blocks_gdf.loc[mask, "tabblk2020"].tolist())
-        block_map[name] = matched
-        print(f"    {name}: {len(matched)} blocks matched")
+        fips = str(_place_cfg(name).get("place_fips", ""))
+        if len(fips) != 7 or not fips.isdigit():
+            raise ValueError(f"add: {name} needs a 7-digit `place_fips` in the config (got {fips!r}).")
+        if (out["stplc"] == fips).any():
+            raise ValueError(f"add: {name} place_fips {fips} already belongs to another place.")
 
-    CACHE_DIR.mkdir(exist_ok=True)
-    _cache_path().write_text(
-        json.dumps({k: list(v) for k, v in block_map.items()}, indent=2)
-    )
-    print(f"  Cached custom block map -> {_cache_path().name}")
+        inside = shapely.contains_xy(place.geometry, lon, lat)
+        n = int(inside.sum())
+        if n == 0:
+            raise ValueError(f"add: {name} polygon contains no crosswalk blocks.")
 
-    return {name: blocks for name, blocks in block_map.items() if _is_enabled(name)}
+        taken = out.loc[inside & (out["stplc"] != UNINCORPORATED_FIPS)]
+        if len(taken):
+            by_place = taken.groupby(["stplc", "stplcname"], dropna=False).size().to_dict()
+            raise ValueError(
+                f"add: {name} polygon would take blocks from places that are not in "
+                f"\"remove\": {by_place}. Add them to \"remove\" if the merge is intended, "
+                f"or fix the polygon."
+            )
+
+        out.loc[inside, "stplc"] = fips
+        # Census-style "<NAME> <type>, UT". The trailing type word is stripped by the
+        # pipeline's name cleaning, so a name that itself ends in "City" needs it.
+        out.loc[inside, "stplcname"] = f"{name} city, UT"
+        print(f"  Added {name} ({fips}): {n} blocks assigned")
+
+    # ── integrity: only the place columns of reassigned blocks may differ ────
+    if len(out) != len(xw) or not out["tabblk2020"].equals(xw["tabblk2020"]):
+        raise AssertionError("patch_xwalk changed the block set — this must never happen.")
+    changed = int((out["stplc"].to_numpy() != before["stplc"].to_numpy()).sum())
+    print(f"  Crosswalk patch: {changed:,} of {len(out):,} blocks reassigned; none dropped.")
+    return out
 
 
-def apply_custom_places(lookup: dict, block_map: dict) -> dict:
-    """Override city assignment for all blocks that fall inside a custom place.
-
-    Mutates and returns the lookup dict produced by build_lookup().
-    Called BEFORE fill_unincorporated() so custom names win over both
-    Census place names and the unincorporated fallback.
-    block_map already contains only enabled places (from get_custom_block_map).
-    """
-    if not block_map:
-        return lookup
-
-    custom_gdf = _load_custom_layer()
-    synth_fips = {
-        row["name"]: str(_SYNTH_FIPS_BASE + i).zfill(7)
-        for i, row in custom_gdf.reset_index().iterrows()
-    }
-
-    for name, blocks in block_map.items():
-        fips = synth_fips.get(name, "0000000")
-        for block in blocks:
-            if block in lookup:
-                lookup[block]["city_name"] = name
-                lookup[block]["place_fips"] = fips
-    return lookup
+def remove_census_places(places: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
+    """Drop removed places (by FIPS) from the TIGER places GeoDataFrame."""
+    fips = removed_fips()
+    if not fips:
+        return places
+    missing = set(fips) - set(places["FULL_PLACEFP"])
+    if missing:
+        print(f"  WARNING: removed FIPS not in TIGER places (already gone upstream?): {sorted(missing)}")
+    kept = places[~places["FULL_PLACEFP"].isin(fips)].copy()
+    print(f"  Removed {len(places) - len(kept)} Census place polygon(s) per config.")
+    return kept
 
 
 def inject_custom_meta(meta_list: list) -> list:
-    """Append a metadata entry for each enabled custom place.
+    """Complete the metadata entry of each enabled custom place.
 
-    Centroid is computed from the boundary polygon.
-    Called after build_city_meta() so it appends without affecting TIGER lookups.
+    The entry normally already exists (build_city_meta derives it from the
+    flows, which carry the patched crosswalk's name) but has no centroid because
+    the place is not in TIGER; fill it from the polygon's representative point,
+    which is guaranteed to lie inside the boundary (a centroid can fall outside
+    an irregular or multi-part polygon). Appends an entry if none exists.
     """
-    custom_gdf = _load_custom_layer()
-    custom_gdf = custom_gdf[custom_gdf["name"].apply(_is_enabled)]
+    custom_gdf = _enabled_places()
     if custom_gdf.empty:
         return meta_list
 
     name_to_idx = {m["name"]: i for i, m in enumerate(meta_list)}
 
-    for i, row in custom_gdf.iterrows():
+    for _, row in custom_gdf.iterrows():
         name = row["name"]
-        centroid = row.geometry.centroid
-        synth_fips = str(_SYNTH_FIPS_BASE + i).zfill(7)
-
-        if name in name_to_idx:
-            entry = meta_list[name_to_idx[name]]
-            if entry.get("lat") is None:
-                entry["lat"] = round(centroid.y, 6)
-                entry["lon"] = round(centroid.x, 6)
-                entry["place_fips"] = synth_fips
-                print(f"  Updated custom place centroid: {name} ({centroid.y:.4f}, {centroid.x:.4f})")
-        else:
-            meta_list.append({
-                "name": name,
-                "county": row.get("county", ""),
-                "county_fips": row.get("county_fips", ""),
-                "lat": round(centroid.y, 6),
-                "lon": round(centroid.x, 6),
-                "place_fips": synth_fips,
-            })
-            print(f"  Injected custom place metadata: {name} ({centroid.y:.4f}, {centroid.x:.4f})")
+        cfg = _place_cfg(name)
+        pt = row.geometry.representative_point()
+        entry = meta_list[name_to_idx[name]] if name in name_to_idx else None
+        if entry is None:
+            entry = {"name": name}
+            meta_list.append(entry)
+        entry.setdefault("county", cfg.get("county", ""))
+        entry.setdefault("county_fips", cfg.get("county_fips", ""))
+        entry["lat"] = round(pt.y, 6)
+        entry["lon"] = round(pt.x, 6)
+        entry["place_fips"] = cfg.get("place_fips", entry.get("place_fips", ""))
+        entry["place_type"] = "city"
+        print(f"  Custom place metadata: {name} ({pt.y:.4f}, {pt.x:.4f})")
 
     return meta_list
 
@@ -201,8 +264,7 @@ def append_custom_boundaries(city_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
     Reprojects and simplifies to match city_gdf (already in EPSG:26912, 100 m tolerance).
     Called after TIGER city boundary processing.
     """
-    custom_gdf = _load_custom_layer()
-    custom_gdf = custom_gdf[custom_gdf["name"].apply(_is_enabled)]
+    custom_gdf = _enabled_places()
     if custom_gdf.empty:
         return city_gdf
 
@@ -216,13 +278,14 @@ def append_custom_boundaries(city_gdf: gpd.GeoDataFrame) -> gpd.GeoDataFrame:
 
 
 def export_for_app(data_dir: Path) -> None:
-    """Export data/custom_places.geojson for the app — always runs for all places.
+    """Export data/custom_places.geojson: the info-only (enable=false) places.
 
-    When enable=false the app renders the polygon as an info-only marker
-    with a click popup and shows a data-limitation disclaimer.
-    When enable=true the app treats the place as a normal city.
+    Enabled places are normal cities served from city_boundaries.geojson, so
+    they are not duplicated here (the app also hides any polygon whose name is
+    already a city).
     """
-    custom_gdf = _load_custom_layer()
+    custom_gdf = load_places()
+    custom_gdf = custom_gdf[~custom_gdf["name"].apply(_is_enabled)]
     if custom_gdf.empty:
         return
 
