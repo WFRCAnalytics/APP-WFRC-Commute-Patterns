@@ -22,6 +22,10 @@ Sources (all plain HTTPS GETs, no credentials):
   - LEHD LODES8 geographic crosswalks (Utah + the 6 neighboring states).
   - UGRC's statewide municipal boundaries (all features are cached; the
     pipeline picks out only the places named in custom_places_config.json).
+  - LODES7 Utah crosswalk (2010 blocks) and LODES residence-area (RAC) files for
+    every ACS year. acs_derive.py uses them to build ACS estimates for areas the
+    Census doesn't publish (block groups / tracts -> custom areas); ACS 2010-2019
+    sits on 2010 geography, 2020+ on 2020 geography.
 
 Census's firewall occasionally answers a valid URL with an HTML "Request
 Rejected" page (HTTP 200). Such responses are detected, discarded and retried
@@ -30,7 +34,7 @@ the exact cache path so it can be saved by hand from a browser; re-running the
 script then picks it up.
 
     uv run scripts/fetch_sources.py               # fetch whatever is missing
-    uv run scripts/fetch_sources.py --only tiger  # tiger | xwalk | ugrc
+    uv run scripts/fetch_sources.py --only tiger  # tiger | xwalk | ugrc | rac
     uv run scripts/fetch_sources.py --refresh-xwalk  # re-download crosswalks if the
                                                      # server copy differs in size
     uv run scripts/fetch_sources.py --refresh-ugrc   # re-pull UGRC boundaries (they change
@@ -56,6 +60,8 @@ CACHE_DIR = Path(__file__).parent.parent / "data" / "cache"
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8"
 UGRC_PAGE = 1000
 UGRC_MIN_FEATURES = 100  # Utah has ~250 municipalities; fewer means a bad response
+ACS_FIRST_DERIVED_YEAR = 2010  # earliest ACS year on 2010 geography (see acs_derive.py)
+LAST_LODES7_YEAR = 2019
 ATTEMPTS = 3
 BACKOFF_SECONDS = 10
 
@@ -75,7 +81,35 @@ def tiger_sources() -> list[tuple[str, str]]:
 
 def xwalk_sources() -> list[tuple[str, str]]:
     states = ["ut"] + [a.lower() for _, a in neighbor_zones.NEIGHBOR_STATES.values()]
-    return [(f"{LODES_BASE}/{s}/{s}_xwalk.csv.gz", f"{s}_xwalk.csv.gz") for s in states]
+    files = [(f"{LODES_BASE}/{s}/{s}_xwalk.csv.gz", f"{s}_xwalk.csv.gz") for s in states]
+    files.append(("https://lehd.ces.census.gov/data/lodes/LODES7/ut/ut_xwalk.csv.gz", "ut_xwalk_lodes7.csv.gz"))
+    return files
+
+
+def rac_cache_name(version: str, year: int) -> str:
+    return f"ut_rac_{version}_S000_JT00_{year}.csv.gz"
+
+
+def rac_source(year: int) -> tuple[str, str]:
+    """(url, cache_filename) of the Utah residence-area (RAC) file for one year:
+    LODES7 (2010 blocks) through 2019, LODES8 (2020 blocks) from 2020."""
+    version = "LODES7" if year <= LAST_LODES7_YEAR else "LODES8"
+    return (f"https://lehd.ces.census.gov/data/lodes/{version}/ut/rac/ut_rac_S000_JT00_{year}.csv.gz",
+            rac_cache_name(version, year))
+
+
+def latest_data_year() -> int:
+    """Newest year the pipeline has produced (data/lehd/<year>/), so a new LODES
+    year is picked up without editing this file."""
+    years = [int(p.name) for p in (CACHE_DIR.parent / "lehd").glob("[0-9][0-9][0-9][0-9]") if p.is_dir()]
+    return max(years, default=2023)
+
+
+def rac_sources(last_year: int | None = None) -> list[tuple[str, str]]:
+    """RAC files for every ACS year from ACS_FIRST_DERIVED_YEAR on. Used as
+    allocation weights when deriving ACS estimates (see acs_derive.py)."""
+    last = last_year or latest_data_year()
+    return [rac_source(y) for y in range(ACS_FIRST_DERIVED_YEAR, last + 1)]
 
 
 def is_valid(path: Path) -> bool:
@@ -182,7 +216,7 @@ def fetch_ugrc(force: bool) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
-    ap.add_argument("--only", choices=["tiger", "xwalk", "ugrc"])
+    ap.add_argument("--only", choices=["tiger", "xwalk", "ugrc", "rac"])
     ap.add_argument("--force", action="store_true", help="re-download everything")
     ap.add_argument("--refresh-xwalk", action="store_true",
                     help="re-download a crosswalk if the server's size differs from the cache")
@@ -196,6 +230,9 @@ def main() -> int:
         jobs += [(u, n, False) for u, n in tiger_sources()]
     if args.only in (None, "xwalk"):
         jobs += [(u, n, args.refresh_xwalk) for u, n in xwalk_sources()]
+
+    if args.only in (None, "rac"):
+        jobs += [(u, n, False) for u, n in rac_sources()]
 
     print(f"Fetching into {CACHE_DIR} (TIGER {TIGER_YEAR})")
     results = {n: (u, fetch(u, n, args.force, refresh)) for u, n, refresh in jobs}
