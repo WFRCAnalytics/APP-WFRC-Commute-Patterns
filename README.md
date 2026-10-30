@@ -60,8 +60,9 @@ Pre-processed data files are committed to the repo under `data/` so the app runs
 | `data/senate_boundaries.geojson` | Utah Senate district polygon boundaries |
 | `data/acs/<year>/acs_city.json` | ACS 5-Year Estimates keyed by 7-digit place FIPS (~320 Utah places) — transportation mode and travel time distributions |
 | `data/acs/<year>/acs_county.json` | ACS 5-Year Estimates keyed by 5-digit county FIPS (29 Utah counties) |
-| `data/acs/<year>/acs_house.json` | ACS 5-Year Estimates keyed by 5-digit state-legislative-lower FIPS |
-| `data/acs/<year>/acs_senate.json` | ACS 5-Year Estimates keyed by 5-digit state-legislative-upper FIPS |
+| `data/acs/<year>/acs_house.json` | Estimates keyed by 5-digit state-legislative-lower FIPS (derived — see *ACS estimates and margins of error*) |
+| `data/acs/<year>/acs_senate.json` | Estimates keyed by 5-digit state-legislative-upper FIPS (derived) |
+| `data/acs/<year>/acs_area.json` | Derived estimates keyed by display type then area name: `city` ("<County> Unincorporated"), `small`/`medium`/`large`/`super` planning areas, `workshop`, `mag_workshop` |
 
 ## Tech stack
 
@@ -168,7 +169,8 @@ To enable GitHub Pages on a new repository fork:
 │   │       ├── acs_city.json
 │   │       ├── acs_county.json
 │   │       ├── acs_house.json
-│   │       └── acs_senate.json
+│   │       ├── acs_senate.json
+│   │       └── acs_area.json
 │   └── lehd/                       # LEHD LODES flow data (one directory per year)
 │       └── <year>/                 # 2002–2023
 │           ├── city_flows.parquet
@@ -182,7 +184,9 @@ To enable GitHub Pages on a new repository fork:
 ├── scripts/
 │   ├── fetch_sources.py        # Downloads/validates TIGER + LEHD crosswalk sources into data/cache/
 │   ├── process_data.py         # Offline data pipeline (LEHD + TIGER + ACS)
-│   ├── fetch_acs.py            # Fetches ACS 5-Year Estimates via Census API
+│   ├── fetch_acs.py            # Fetches ACS 5-Year Estimates via Census API (published values + margins of error)
+│   ├── acs_derive.py           # Builds ACS estimates for areas the Census doesn't publish, from block groups / tracts
+│   ├── verify_acs_derive.py    # Back-tests acs_derive against every published place (tier cutoffs come from this)
 │   ├── custom_places.py        # Config-driven add/remove of places on top of the Census geography
 │   ├── custom_places_config.json # "remove" (Census places) and "add" (custom/UGRC places) lists
 │   ├── verify_custom_places.py # LEHD coverage audit for custom places
@@ -218,7 +222,7 @@ Run `uv run scripts/fetch_sources.py` first to download and validate the TIGER a
 6. Downloads Census TIGER 2026 Place, County, and State Legislative District shapefiles for Utah; overlays block centroids to assign house/senate districts
 7. Computes polygon centroids in Utah State Plane (EPSG:26912) and projects to WGS84
 8. Exports Parquet files (Snappy-compressed), JSON metadata, and GeoJSON boundaries for all four geography levels
-9. Fetches ACS 5-Year Estimates via the Census API (tables B08301/B08601 for means of transportation, B08303/B08603 for travel time to work) for cities, counties, House districts, and Senate districts; writes `data/acs/<year>/acs_{city,county,house,senate}.json`; skip with `--skip-acs` if a Census API key is unavailable
+9. Fetches ACS 5-Year Estimates via the Census API (tables B08301/B08601 for means of transportation, B08303/B08603 for travel time to work) for cities and counties (published values, each with its margin of error) and, via `acs_derive.py`, for places missing from a year, Unincorporated areas, House/Senate districts, and the planning and workshop areas; writes `data/acs/<year>/acs_{city,county,house,senate,area}.json`; skip with `--skip-acs` if a Census API key is unavailable. Regenerate every year with `uv run scripts/fetch_acs.py --force`
 
 ### Adding or removing a place
 
@@ -227,7 +231,17 @@ Edit `scripts/custom_places_config.json`; no code changes are needed. The two li
 - `remove`: Census places to drop, by FIPS (e.g. CDPs merged into a newly incorporated city). The polygon disappears and the blocks fall back to "<County> Unincorporated".
 - `add`: places Census/LEHD don't have. Give a `source` of `{"type": "ugrc_municipal", "name": "<UGRC NAME>"}` to use [UGRC's municipal boundaries](https://services1.arcgis.com/99lidPhWCzftIe9K/ArcGIS/rest/services/UtahMunicipalBoundaries/FeatureServer/0), or omit it to use a polygon of the same name in `data/custom_places.gpkg`. `enable: true` makes it a normal selectable city (needs a 7-digit `place_fips`); `enable: false` renders an info-only polygon.
 
-Then run `uv run scripts/fetch_sources.py` (caches the whole UGRC layer; `--refresh-ugrc` re-pulls it), `uv run scripts/process_data.py --boundaries`, `process_data.py --year N --skip-acs` for every year, and `uv run scripts/build_trends.py`. The edit is applied to the loaded crosswalk (`patch_xwalk`): no block is ever dropped, and the run fails if an added polygon would take blocks from a real place that isn't listed under `remove`, or if flow names, metadata and boundaries disagree. `uv run scripts/verify_custom_places.py` shows which Census places a polygon overlaps. Added places have no ACS data (ACS is keyed by Census place FIPS), and a boundary is applied to every year, including years before the place existed.
+Then run `uv run scripts/fetch_sources.py` (caches the whole UGRC layer; `--refresh-ugrc` re-pulls it), `uv run scripts/process_data.py --boundaries`, `process_data.py --year N --skip-acs` for every year, `uv run scripts/fetch_acs.py --force` (derived ACS estimates follow the new geography), and `uv run scripts/build_trends.py`. The edit is applied to the loaded crosswalk (`patch_xwalk`): no block is ever dropped, and the run fails if an added polygon would take blocks from a real place that isn't listed under `remove`, or if flow names, metadata and boundaries disagree. `uv run scripts/verify_custom_places.py` shows which Census places a polygon overlaps. Added places get derived ACS estimates (see below), and a boundary is applied to every year, including years before the place existed.
+
+### ACS estimates and margins of error
+
+Every ACS value in `data/acs/` carries its 90% margin of error (`moe`), where it came from (`src`: `native` = published by the Census, `derived` = built by `acs_derive.py`) and a reliability flag (`q`: `ok` / `low`).
+
+The Census publishes commute tables for places and counties only. For everything else — places missing from a given year, "<County> Unincorporated", custom places such as Ogden Valley City, House/Senate districts, planning and workshop areas — `acs_derive.py` builds the estimate from the smallest published unit: block groups (ACS 2013+) or tracts (2010–2012), weighted by each unit's share of resident workers (LODES RAC, same year) living inside the area. Unit IDs must match the block vintage: ACS 2020+ uses 2020 block groups with the LODES8 crosswalk, ACS 2010–2019 uses 2010 geography with the LODES7 crosswalk (`ut_xwalk_lodes7.csv.gz`). ACS 2009 sits on 2000 tracts, so nothing is derived for it. Only residence-based tables can be derived: the Census publishes the workplace tables (B08601/B08603) for places and counties only (block-group and tract values are empty), so workplace views of derived areas stay blank.
+
+Derived margins combine the sampling error of the units with an allocation term for units that straddle the area boundary. Derived values are tiered on the margin of error as a fraction of the estimate (0.20 is also the Census's own ~12% CV): up to 0.20 shown as an estimate, up to 0.30 shown and flagged *low reliability*, above that suppressed (`{"suppressed": true}`). Tract years are coarser, so their cutoffs are halved (0.10 / 0.15). Published Census values are never hidden, only flagged. The cutoffs come from `uv run scripts/verify_acs_derive.py`, which re-derives every published place and compares: median error in the total is about 1–2% in the top tier, 3–5% in the second and 8–18% in the low-reliability tier, and the published value falls inside the derived margin 90–100%, 76–91% and 63–78% of the time respectively (the margin is optimistic for small places, which is why the lower tiers are flagged). Re-run it after changing the method.
+
+`uv run scripts/fetch_sources.py --only rac` pre-downloads the LODES residence files; `acs_derive.py` also fetches a missing one on first use.
 
 ---
 

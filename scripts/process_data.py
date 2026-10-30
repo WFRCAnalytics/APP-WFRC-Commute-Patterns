@@ -41,7 +41,7 @@ import neighbor_zones
 import taz_districts
 import workshop_areas
 import mag_workshop_areas
-from geo_utils import topo_simplify, tiger_file, TIGER_YEAR
+from geo_utils import topo_simplify, tiger_file, TIGER_YEAR, UTAH_COUNTIES
 
 # ── Output directories ────────────────────────────────────────────────────────
 DATA_DIR  = Path(__file__).parent.parent / "data"
@@ -74,39 +74,6 @@ def download_cached(url, filename):
     size_mb = cache_path.stat().st_size / 1024 / 1024
     print(f"  Saved {filename} ({size_mb:.1f} MB)")
     return cache_path
-
-# ── All Utah county FIPS codes ───────────────────────────────────────────────
-UTAH_COUNTIES = {
-    "49001": "Beaver County",
-    "49003": "Box Elder County",
-    "49005": "Cache County",
-    "49007": "Carbon County",
-    "49009": "Daggett County",
-    "49011": "Davis County",
-    "49013": "Duchesne County",
-    "49015": "Emery County",
-    "49017": "Garfield County",
-    "49019": "Grand County",
-    "49021": "Iron County",
-    "49023": "Juab County",
-    "49025": "Kane County",
-    "49027": "Millard County",
-    "49029": "Morgan County",
-    "49031": "Piute County",
-    "49033": "Rich County",
-    "49035": "Salt Lake County",
-    "49037": "San Juan County",
-    "49039": "Sanpete County",
-    "49041": "Sevier County",
-    "49043": "Summit County",
-    "49045": "Tooele County",
-    "49047": "Uintah County",
-    "49049": "Utah County",
-    "49051": "Wasatch County",
-    "49053": "Washington County",
-    "49055": "Wayne County",
-    "49057": "Weber County",
-}
 
 # ── LEHD LODES8 URLs ──────────────────────────────────────────────────────────
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8/ut"

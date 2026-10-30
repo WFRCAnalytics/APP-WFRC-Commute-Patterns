@@ -773,10 +773,10 @@ function _initCreditsModal() {
           </li>
           <li>
             <a href="https://www.census.gov/programs-surveys/acs/data.html" target="_blank" rel="noopener">US Census American Community Survey (ACS) 5-Year Estimates</a>
-            &mdash; Means of transportation and travel time to work, by place and county (2009&ndash;2023)
+            &mdash; Means of transportation and travel time to work (2009&ndash;2023), shown with 90% margins of error. Published by the Census for places and counties; for districts, planning areas, unincorporated areas and Ogden Valley City, estimated from block-group and tract data and labeled as estimates
           </li>
           <li>
-            <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html" target="_blank" rel="noopener">US Census TIGER/Line 2024</a>
+            <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html" target="_blank" rel="noopener">US Census TIGER/Line 2026</a>
             &mdash; Place, county, and legislative district boundary shapefiles
           </li>
         </ul>
