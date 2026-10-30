@@ -549,7 +549,7 @@
 
 .acs-row {
   display: grid;
-  grid-template-columns: 82px 1fr 36px 58px;
+  grid-template-columns: 82px 1fr 58px 58px;
   align-items: center;
   gap: 8px;
   min-height: 24px;
@@ -578,6 +578,40 @@
   border-radius: 1px;
   transition: width 0.35s ease;
 }
+
+/* 90% margin of error around the bar's end */
+.acs-bar-err {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  margin-top: -1px;
+  background: var(--ink);
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.acs-moe {
+  margin-left: 3px;
+  font-size: 9px;
+  font-weight: 400;
+  color: var(--ink-4);
+}
+
+/* margin of error larger than the estimate */
+.acs-row--unr .acs-bar-fill,
+.acs-row--unr .acs-pct,
+.acs-row--unr .acs-count { opacity: 0.45; }
+
+.acs-flag {
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--ink-3);
+  padding: 4px 7px;
+  margin-bottom: 6px;
+  border-left: 2px solid var(--ink-4);
+  background: var(--rule);
+}
+.acs-flag--low { border-left-color: var(--outflow); }
 
 .acs-pct {
   font-size: 11px;

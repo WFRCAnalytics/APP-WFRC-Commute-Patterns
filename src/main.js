@@ -122,6 +122,7 @@ let _acsCity   = {};
 let _acsCounty = {};
 let _acsHouse  = {};
 let _acsSenate = {};
+let _acsArea   = {};   // keyed by display type, then area name: Unincorporated, planning, workshop areas
 
 // Cached results for re-rendering without re-querying
 let _lastOutflows  = [];
@@ -183,11 +184,12 @@ async function _loadAcs(base, year) {
       return JSON.parse(text);
     } catch { return {}; }
   };
-  [_acsCity, _acsCounty, _acsHouse, _acsSenate] = await Promise.all([
+  [_acsCity, _acsCounty, _acsHouse, _acsSenate, _acsArea] = await Promise.all([
     load(`${base}data/acs/${year}/acs_city.json`),
     load(`${base}data/acs/${year}/acs_county.json`),
     load(`${base}data/acs/${year}/acs_house.json`),
     load(`${base}data/acs/${year}/acs_senate.json`),
+    load(`${base}data/acs/${year}/acs_area.json`),
   ]);
 }
 
@@ -823,7 +825,8 @@ function _applyFilter() {
   let acsEntry = null;
   if (state.selectedAreaType === 'city') {
     const fips = cityMeta[state.selectedArea]?.place_fips;
-    if (fips) acsEntry = _acsCity[fips] ?? null;
+    // Places with a FIPS code are keyed by it; "<County> Unincorporated" has none and is keyed by name
+    acsEntry = (fips ? _acsCity[fips] : _acsArea.city?.[state.selectedArea]) ?? null;
   } else if (state.selectedAreaType === 'county') {
     const fips = countyMeta[state.selectedArea]?.county_fips;
     if (fips) acsEntry = _acsCounty[fips] ?? null;
@@ -833,6 +836,9 @@ function _applyFilter() {
   } else if (state.selectedAreaType === 'senate') {
     const fips = senateMeta[state.selectedArea]?.senate_fips;
     if (fips) acsEntry = _acsSenate[fips] ?? null;
+  } else {
+    // planning (small/medium/large/super) and workshop areas: no Census equivalent, keyed by name
+    acsEntry = _acsArea[state.selectedAreaType]?.[state.selectedArea] ?? null;
   }
 
   // Build neighbor flow index for dot tooltips {display_name -> {in, out}}

@@ -1671,127 +1671,149 @@ const _TRANS_ROWS = [
   { keys: ['wfh'],            label: 'Work from home' },
 ];
 
-function _renderTransport(acsEntry, appState) {
-  const el = document.getElementById('transport-body');
-  if (!el) return;
+const _TIME_ROWS = [
+  { keys: ['lt10'],    label: '< 10 min' },
+  { keys: ['t10_19'],  label: '10–19 min' },
+  { keys: ['t20_29'],  label: '20–29 min' },
+  { keys: ['t30_44'],  label: '30–44 min' },
+  { keys: ['t45_59'],  label: '45–59 min' },
+  { keys: ['t60plus'], label: '60+ min' },
+];
 
-  if (!acsEntry) {
-    el.innerHTML = `<div class="acs-na">ACS data not available for ${appState?.year < 2009 ? 'years before 2009' : 'this area'}.</div>`;
-    return;
+// One chart row: its count, the count's margin of error (90% confidence), the
+// share of the table total and that share's margin of error. Grouped rows sum
+// their parts' margins in quadrature; the share's margin uses the Census
+// formula for a proportion whose numerator is part of its denominator (falling
+// back to the ratio formula when the radicand is negative).
+// Entries without `moe` get no margins.
+function _acsRowStats(data, keys) {
+  const val    = keys.reduce((s, k) => s + (data[k] ?? 0), 0);
+  const total  = data.total || 0;
+  const hasMoe = !!data.moe;
+  const moe    = hasMoe ? Math.sqrt(keys.reduce((s, k) => s + (data.moe[k] ?? 0) ** 2, 0)) : 0;
+  const tMoe   = hasMoe ? (data.moe.total ?? 0) : 0;
+  const p      = total > 0 ? val / total : 0;
+  let pMoe = 0;
+  if (hasMoe && total > 0) {
+    const rad = moe * moe - p * p * tMoe * tMoe;
+    pMoe = Math.sqrt(rad >= 0 ? rad : moe * moe + p * p * tMoe * tMoe) / total;
   }
+  return { val, moe, hasMoe, pct: p * 100, pctMoe: pMoe * 100, unreliable: hasMoe && val > 0 && moe >= val };
+}
+
+function _fmtMoePts(v) { return v < 0.5 ? '<1' : String(Math.round(v)); }
+
+// What to show when there is no chart: nothing published, too imprecise to
+// show, or a workplace view for an area the Census only publishes residence data for.
+function _acsMissingHtml(acsEntry, appState, isInflow, kind) {
+  const year = appState?.year ?? '';
+  const src  = `<div class="acs-source">ACS 5-Year Estimates · ${year} · Census Bureau</div>`;
+  if (!acsEntry) {
+    return `<div class="acs-na">ACS data not available for ${appState?.year < 2009 ? 'years before 2009' : 'this area'}.</div>`;
+  }
+  if (acsEntry.suppressed) {
+    return `<div class="acs-na">Too few survey responses to estimate this reliably for this area.</div>${src}`;
+  }
+  if (isInflow && acsEntry.res?.[kind]?.src === 'derived') {
+    return `<div class="acs-na">The Census publishes workplace-based commute data only for places and counties, so it can't be estimated for this area.</div>${src}`;
+  }
+  if (!isInflow && !acsEntry.res?.[kind]) {
+    return `<div class="acs-na">Too few survey responses to estimate this reliably for this area.</div>${src}`;
+  }
+  return `<div class="acs-na">Workplace geography data not available for this area.</div>${src}`;
+}
+
+function _renderAcsChart(elId, kind, rowDefs, acsEntry, appState) {
+  const el = document.getElementById(elId);
+  if (!el) return;
 
   // inflow → workers commuting IN → workplace geography (where they work)
   // outflow → residents commuting OUT → residence geography (where they live)
   const isInflow = appState?.direction === 'inflow';
-  const data  = isInflow ? (acsEntry.wrk?.trans ?? null) : (acsEntry.res?.trans ?? null);
-  const geoLabel = isInflow ? 'Workers at this location' : 'Residents of this area';
-
+  const data = acsEntry ? ((isInflow ? acsEntry.wrk?.[kind] : acsEntry.res?.[kind]) ?? null) : null;
   if (!data) {
-    el.innerHTML = `<div class="acs-na">Workplace geography data not available for this area.</div>
-      <div class="acs-source">ACS 5-Year Estimates · ${appState?.year ?? ''} · Census Bureau</div>`;
+    el.innerHTML = _acsMissingHtml(acsEntry, appState, isInflow, kind);
     return;
   }
+  const geoLabel = isInflow ? 'Workers at this location' : 'Residents of this area';
+  const year     = appState?.year ?? '';
 
-  const total = data.total || 1;
-  const rows = _TRANS_ROWS.map(({ keys, label }) => {
-    const val = keys.reduce((sum, k) => sum + (data[k] ?? 0), 0);
-    const pct = total > 0 ? (val / total) * 100 : 0;
-    return `<div class="acs-row">
+  let anyUnreliable = false;
+  const rows = rowDefs.map(({ keys, label }) => {
+    const r = _acsRowStats(data, keys);
+    anyUnreliable = anyUnreliable || r.unreliable;
+    const lo  = Math.max(0, r.pct - r.pctMoe);
+    const hi  = Math.min(100, r.pct + r.pctMoe);
+    const err = r.hasMoe
+      ? `<div class="acs-bar-err" style="left:${lo.toFixed(1)}%;width:${(hi - lo).toFixed(1)}%"></div>` : '';
+    const moeTxt = r.hasMoe ? `<span class="acs-moe">±${_fmtMoePts(r.pctMoe)}</span>` : '';
+    const tip = r.hasMoe
+      ? ` title="${label}: ${r.pct.toFixed(1)}% ±${r.pctMoe.toFixed(1)} pts · ${r.val.toLocaleString()} ±${Math.round(r.moe).toLocaleString()} workers (90% confidence)${r.unreliable ? ' — margin of error is larger than the estimate' : ''}"`
+      : '';
+    return `<div class="acs-row${r.unreliable ? ' acs-row--unr' : ''}"${tip}>
       <span class="acs-lbl">${label}</span>
-      <div class="acs-bar-track"><div class="acs-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
-      <span class="acs-pct">${pct.toFixed(0)}%</span>
-      <span class="acs-count">${val.toLocaleString()}</span>
+      <div class="acs-bar-track"><div class="acs-bar-fill" style="width:${r.pct.toFixed(1)}%"></div>${err}</div>
+      <span class="acs-pct">${r.pct.toFixed(0)}%${moeTxt}</span>
+      <span class="acs-count">${r.val.toLocaleString()}</span>
     </div>`;
   }).join('');
 
-  el.innerHTML = `<div class="acs-geo-label">${geoLabel}</div>${rows}
-    <div class="acs-source">ACS 5-Year Estimates · ${appState?.year ?? ''} · Census Bureau</div>`;
+  const flags = [];
+  if (data.src === 'derived') {
+    flags.push('<div class="acs-flag acs-flag--derived">Not published by the Census for this area — estimated from smaller Census areas.</div>');
+  }
+  if (data.q === 'low') {
+    flags.push('<div class="acs-flag acs-flag--low">Low reliability — wide margins of error.</div>');
+  }
+  const foot = [`ACS 5-Year Estimates · ${year} · Census Bureau`];
+  if (data.moe) foot.push('whiskers show the 90% margin of error');
+  if (anyUnreliable) foot.push('faded rows: margin of error exceeds the estimate');
+
+  el.innerHTML = `<div class="acs-geo-label">${geoLabel}</div>${flags.join('')}${rows}
+    <div class="acs-source">${foot.join(' · ')}</div>`;
+}
+
+function _renderTransport(acsEntry, appState) {
+  _renderAcsChart('transport-body', 'trans', _TRANS_ROWS, acsEntry, appState);
 }
 
 // ── 06 · Travel Time to Work (ACS) ───────────────────────────────────────────
 
-const _TIME_ROWS = [
-  { key: 'lt10',    label: '< 10 min' },
-  { key: 't10_19',  label: '10–19 min' },
-  { key: 't20_29',  label: '20–29 min' },
-  { key: 't30_44',  label: '30–44 min' },
-  { key: 't45_59',  label: '45–59 min' },
-  { key: 't60plus', label: '60+ min' },
-];
-
 function _renderTravelTime(acsEntry, appState) {
-  const el = document.getElementById('traveltime-body');
-  if (!el) return;
-
-  if (!acsEntry) {
-    el.innerHTML = `<div class="acs-na">ACS data not available for ${appState?.year < 2009 ? 'years before 2009' : 'this area'}.</div>`;
-    return;
-  }
-
-  const isInflow = appState?.direction === 'inflow';
-  const data  = isInflow ? (acsEntry.wrk?.time ?? null) : (acsEntry.res?.time ?? null);
-  const geoLabel = isInflow ? 'Workers at this location' : 'Residents of this area';
-
-  if (!data) {
-    el.innerHTML = `<div class="acs-na">Workplace geography data not available for this area.</div>
-      <div class="acs-source">ACS 5-Year Estimates · ${appState?.year ?? ''} · Census Bureau</div>`;
-    return;
-  }
-
-  const total = data.total || 1;
-  const rows = _TIME_ROWS.map(({ key, label }) => {
-    const val = data[key] ?? 0;
-    const pct = total > 0 ? (val / total) * 100 : 0;
-    return `<div class="acs-row">
-      <span class="acs-lbl">${label}</span>
-      <div class="acs-bar-track"><div class="acs-bar-fill" style="width:${pct.toFixed(1)}%"></div></div>
-      <span class="acs-pct">${pct.toFixed(0)}%</span>
-      <span class="acs-count">${val.toLocaleString()}</span>
-    </div>`;
-  }).join('');
-
-  el.innerHTML = `<div class="acs-geo-label">${geoLabel}</div>${rows}
-    <div class="acs-source">ACS 5-Year Estimates · ${appState?.year ?? ''} · Census Bureau</div>`;
+  _renderAcsChart('traveltime-body', 'time', _TIME_ROWS, acsEntry, appState);
 }
 
 // ── ACS exports ───────────────────────────────────────────────────────────────
 
-export function exportTransportPng() {
-  if (!_lastState || !_lastAcsEntry) return;
-  const dk       = _lastState.theme === 'dark';
+function _acsExportData(kind) {
+  if (!_lastState || !_lastAcsEntry) return null;
   const isInflow = _lastState.direction === 'inflow';
-  const data     = isInflow ? (_lastAcsEntry.wrk?.trans ?? null) : (_lastAcsEntry.res?.trans ?? null);
-  if (!data) return;
-  const total = data.total || 1;
-  const rows  = _TRANS_ROWS.map(({ keys, label }) => {
-    const val = keys.reduce((sum, k) => sum + (data[k] ?? 0), 0);
-    return { label, val, pct: val / total };
-  });
-  const geoLabel = isInflow ? 'Workers at this location' : 'Residents of this area';
-  _acsChartPng(rows, geoLabel, dk, isInflow,
-    `transport-${_lastState.selectedArea ?? 'chart'}-${_lastState.year ?? ''}`);
+  return (isInflow ? _lastAcsEntry.wrk?.[kind] : _lastAcsEntry.res?.[kind]) ?? null;
 }
 
-export function exportTravelTimePng() {
-  if (!_lastState || !_lastAcsEntry) return;
-  const dk       = _lastState.theme === 'dark';
-  const isInflow = _lastState.direction === 'inflow';
-  const data     = isInflow ? (_lastAcsEntry.wrk?.time ?? null) : (_lastAcsEntry.res?.time ?? null);
+function _acsPng(kind, rowDefs, filePrefix) {
+  const data = _acsExportData(kind);
   if (!data) return;
-  const total = data.total || 1;
-  const rows  = _TIME_ROWS.map(({ key, label }) => {
-    const val = data[key] ?? 0;
-    return { label, val, pct: val / total };
+  const isInflow = _lastState.direction === 'inflow';
+  const rows = rowDefs.map(({ keys, label }) => {
+    const r = _acsRowStats(data, keys);
+    return { label, val: r.val, pct: r.pct / 100, pctMoe: r.hasMoe ? r.pctMoe : null };
   });
   const geoLabel = isInflow ? 'Workers at this location' : 'Residents of this area';
-  _acsChartPng(rows, geoLabel, dk, isInflow,
-    `traveltime-${_lastState.selectedArea ?? 'chart'}-${_lastState.year ?? ''}`);
+  const foot = data.src === 'derived'
+    ? `Estimated from smaller Census areas · ACS 5-Year ${_lastState.year ?? ''} · ±90% margin`
+    : `ACS 5-Year Estimates · ${_lastState.year ?? ''} · Census Bureau${data.moe ? ' · ±90% margin' : ''}`;
+  _acsChartPng(rows, geoLabel, _lastState.theme === 'dark', isInflow, foot,
+    `${filePrefix}-${_lastState.selectedArea ?? 'chart'}-${_lastState.year ?? ''}`);
 }
 
-function _acsChartPng(rows, geoLabel, dk, isInflow, filename) {
+export function exportTransportPng()  { _acsPng('trans', _TRANS_ROWS, 'transport'); }
+export function exportTravelTimePng() { _acsPng('time',  _TIME_ROWS,  'traveltime'); }
+
+function _acsChartPng(rows, geoLabel, dk, isInflow, footText, filename) {
   const W      = 480, PAD = 24;
   const LBL_W  = 100;
-  const PCT_W  = 40, CNT_W = 64;
+  const PCT_W  = 62, CNT_W = 64;
   const BAR_X  = PAD + LBL_W + 8;
   const BAR_W  = W - BAR_X - PCT_W - CNT_W - PAD;
   const ROW_H  = 26, BAR_H = 13;
@@ -1823,7 +1845,7 @@ function _acsChartPng(rows, geoLabel, dk, isInflow, filename) {
   ctx.fillText(geoLabel.toUpperCase(), PAD, y + HDR_H / 2);
   y += HDR_H;
 
-  rows.forEach(({ label, val, pct }) => {
+  rows.forEach(({ label, val, pct, pctMoe }) => {
     const barFillW = pct * BAR_W;
     const rowMidY  = y + ROW_H / 2;
     const barY     = y + (ROW_H - BAR_H) / 2;
@@ -1843,10 +1865,19 @@ function _acsChartPng(rows, geoLabel, dk, isInflow, filename) {
       ctx.globalAlpha = 1;
     }
 
+    if (pctMoe != null) {
+      const lo = Math.max(0, pct - pctMoe / 100), hi = Math.min(1, pct + pctMoe / 100);
+      ctx.fillStyle = ink;
+      ctx.globalAlpha = 0.45;
+      ctx.fillRect(BAR_X + lo * BAR_W, barY + BAR_H / 2 - 1, (hi - lo) * BAR_W, 2);
+      ctx.globalAlpha = 1;
+    }
+
     ctx.fillStyle = ink3;
     ctx.font = '600 11px Inter, system-ui, sans-serif';
     ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
-    ctx.fillText(`${Math.round(pct * 100)}%`, BAR_X + BAR_W + PCT_W - 4, rowMidY);
+    ctx.fillText(`${Math.round(pct * 100)}%${pctMoe != null ? ` ±${_fmtMoePts(pctMoe)}` : ''}`,
+      BAR_X + BAR_W + PCT_W - 4, rowMidY);
 
     ctx.fillStyle = ink4;
     ctx.font = '400 10px Inter, system-ui, sans-serif';
@@ -1859,48 +1890,32 @@ function _acsChartPng(rows, geoLabel, dk, isInflow, filename) {
   ctx.fillStyle = ink4;
   ctx.font = '400 9.5px Inter, system-ui, sans-serif';
   ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-  ctx.fillText(`ACS 5-Year Estimates · ${_lastState.year ?? ''} · Census Bureau`, PAD, y + FOOT_H / 2);
+  ctx.fillText(footText, PAD, y + FOOT_H / 2);
 
   _dlUrl(canvas.toDataURL('image/png'), `${filename}.png`);
 }
 
-export function exportTransportCsv() {
+function _acsCsv(kind, rowDefs, colName, filePrefix) {
   if (!_lastState || !_lastAcsEntry) return;
   const area = _lastState.selectedArea;
   const year = _lastState.year;
-  const header = ['Area', 'Year', 'Geography', 'Mode', 'Count', 'Pct'];
-  const rows   = [header];
+  const rows = [['Area', 'Year', 'Geography', colName, 'Count', 'Count MOE (90%)', 'Pct', 'Pct MOE (90%)', 'Source', 'Reliability']];
 
   for (const [geoKey, geoLabel] of [['res', 'Residence'], ['wrk', 'Workplace']]) {
-    const data = _lastAcsEntry[geoKey]?.trans;
+    const data = _lastAcsEntry[geoKey]?.[kind];
     if (!data) continue;
-    const total = data.total || 1;
-    for (const { keys, label } of _TRANS_ROWS) {
-      const val = keys.reduce((sum, k) => sum + (data[k] ?? 0), 0);
-      rows.push([area, year, geoLabel, label, val, ((val / total) * 100).toFixed(1)]);
+    for (const { keys, label } of rowDefs) {
+      const r = _acsRowStats(data, keys);
+      rows.push([area, year, geoLabel, label, r.val,
+        r.hasMoe ? Math.round(r.moe) : '', r.pct.toFixed(1), r.hasMoe ? r.pctMoe.toFixed(1) : '',
+        data.src ?? 'native', data.q ?? '']);
     }
   }
-  _csvDownload(rows, `transport_${area}_${year}`);
+  _csvDownload(rows, `${filePrefix}_${area}_${year}`);
 }
 
-export function exportTravelTimeCsv() {
-  if (!_lastState || !_lastAcsEntry) return;
-  const area = _lastState.selectedArea;
-  const year = _lastState.year;
-  const header = ['Area', 'Year', 'Geography', 'TravelTime', 'Count', 'Pct'];
-  const rows   = [header];
-
-  for (const [geoKey, geoLabel] of [['res', 'Residence'], ['wrk', 'Workplace']]) {
-    const data = _lastAcsEntry[geoKey]?.time;
-    if (!data) continue;
-    const total = data.total || 1;
-    for (const { key, label } of _TIME_ROWS) {
-      const val = data[key] ?? 0;
-      rows.push([area, year, geoLabel, label, val, ((val / total) * 100).toFixed(1)]);
-    }
-  }
-  _csvDownload(rows, `traveltime_${area}_${year}`);
-}
+export function exportTransportCsv()  { _acsCsv('trans', _TRANS_ROWS, 'Mode',       'transport'); }
+export function exportTravelTimeCsv() { _acsCsv('time',  _TIME_ROWS,  'TravelTime', 'traveltime'); }
 
 // ── Download helpers ──────────────────────────────────────────────────────────
 
