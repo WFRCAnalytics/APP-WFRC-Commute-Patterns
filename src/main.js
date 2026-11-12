@@ -46,6 +46,12 @@ const DISPLAY_TYPES_BY_MODE = {
 const WS_UNLOCK_KEY     = 'wfrc_ws_unlocked';
 const WS_UNLOCK_TTL_MS  = 24 * 60 * 60 * 1000;
 
+const MIN_FLOW_STEPS = [
+  ...Array.from({ length: 21 }, (_, i) => i * 5),        // 0-100 by 5
+  ...Array.from({ length: 16 }, (_, i) => 125 + i * 25), // 125-500 by 25
+  600, 700, 800, 900, 1000,
+];
+
 function _refreshWsUnlock() {
   try { localStorage.setItem(WS_UNLOCK_KEY, String(Date.now())); } catch {}
 }
@@ -508,9 +514,12 @@ function _initLayerToolbar() {
   });
 
   if (minFlowInput) {
+    // Slider position -> value. The slider is only ~100px wide, so a linear
+    // 0-1000 range made each pixel ~10+ commuters and skipped values like 50.
+    // Fine steps at the low end where it matters, coarser further out.
     minFlowInput.addEventListener('input', () => {
-      const val = parseInt(minFlowInput.value);
-      if (!isNaN(val) && val >= 0) {
+      const val = MIN_FLOW_STEPS[parseInt(minFlowInput.value)];
+      if (val !== undefined) {
         state.minFlow = val;
         if (mfVal) mfVal.textContent = val;
         _applyFilter();
