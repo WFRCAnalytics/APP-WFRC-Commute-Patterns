@@ -303,8 +303,8 @@ export function setPolygonsVisible(v) {
       if (map?.getLayer(id)) map.setLayoutProperty(id, 'visibility', 'none');
     });
   } else if (_pendingChoropleth) {
-    const { flows, selectedArea, aggregation, theme, direction } = _pendingChoropleth;
-    updateChoropleth(flows, selectedArea, aggregation, theme, direction);
+    const { flows, selectedArea, aggregation, theme, direction, selectedAreaType } = _pendingChoropleth;
+    updateChoropleth(flows, selectedArea, aggregation, theme, direction, selectedAreaType);
   }
 }
 
@@ -1016,8 +1016,8 @@ function _addBoundaryLayers() {
   }
 
   if (_pendingChoropleth) {
-    const { flows, selectedArea, aggregation, direction } = _pendingChoropleth;
-    updateChoropleth(flows, selectedArea, aggregation, _theme, direction);
+    const { flows, selectedArea, aggregation, direction, selectedAreaType } = _pendingChoropleth;
+    updateChoropleth(flows, selectedArea, aggregation, _theme, direction, selectedAreaType);
   }
 
   _ensureLabelsOnTop();
