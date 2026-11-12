@@ -1,0 +1,176 @@
+[
+  {
+    "name": "Beaver County",
+    "county_fips": "49001",
+    "lat": 38.357535,
+    "lon": -113.2389481
+  },
+  {
+    "name": "Box Elder County",
+    "county_fips": "49003",
+    "lat": 41.6226233,
+    "lon": -113.060252
+  },
+  {
+    "name": "Cache County",
+    "county_fips": "49005",
+    "lat": 41.7341225,
+    "lon": -111.7453993
+  },
+  {
+    "name": "Carbon County",
+    "county_fips": "49007",
+    "lat": 39.673284,
+    "lon": -110.5884845
+  },
+  {
+    "name": "Daggett County",
+    "county_fips": "49009",
+    "lat": 40.890099,
+    "lon": -109.5057855
+  },
+  {
+    "name": "Davis County",
+    "county_fips": "49011",
+    "lat": 41.0377478,
+    "lon": -112.2019434
+  },
+  {
+    "name": "Duchesne County",
+    "county_fips": "49013",
+    "lat": 40.2893927,
+    "lon": -110.4295838
+  },
+  {
+    "name": "Emery County",
+    "county_fips": "49015",
+    "lat": 39.0090246,
+    "lon": -110.7210999
+  },
+  {
+    "name": "Garfield County",
+    "county_fips": "49017",
+    "lat": 37.8316634,
+    "lon": -111.4509074
+  },
+  {
+    "name": "Grand County",
+    "county_fips": "49019",
+    "lat": 38.9743261,
+    "lon": -109.5734502
+  },
+  {
+    "name": "Iron County",
+    "county_fips": "49021",
+    "lat": 37.9093044,
+    "lon": -113.3067405
+  },
+  {
+    "name": "Juab County",
+    "county_fips": "49023",
+    "lat": 39.71412,
+    "lon": -112.790471
+  },
+  {
+    "name": "Kane County",
+    "county_fips": "49025",
+    "lat": 37.2750892,
+    "lon": -111.815329
+  },
+  {
+    "name": "Millard County",
+    "county_fips": "49027",
+    "lat": 38.9356113,
+    "lon": -113.1550145
+  },
+  {
+    "name": "Morgan County",
+    "county_fips": "49029",
+    "lat": 41.0910273,
+    "lon": -111.5778846
+  },
+  {
+    "name": "Piute County",
+    "county_fips": "49031",
+    "lat": 38.3358805,
+    "lon": -112.1293755
+  },
+  {
+    "name": "Rich County",
+    "county_fips": "49033",
+    "lat": 41.6275976,
+    "lon": -111.2402269
+  },
+  {
+    "name": "Salt Lake County",
+    "county_fips": "49035",
+    "lat": 40.6672051,
+    "lon": -111.921602
+  },
+  {
+    "name": "San Juan County",
+    "county_fips": "49037",
+    "lat": 37.6026329,
+    "lon": -109.7915741
+  },
+  {
+    "name": "Sanpete County",
+    "county_fips": "49039",
+    "lat": 39.3734262,
+    "lon": -111.5769332
+  },
+  {
+    "name": "Sevier County",
+    "county_fips": "49041",
+    "lat": 38.7468245,
+    "lon": -111.8119299
+  },
+  {
+    "name": "Summit County",
+    "county_fips": "49043",
+    "lat": 40.8720603,
+    "lon": -110.9684862
+  },
+  {
+    "name": "Tooele County",
+    "county_fips": "49045",
+    "lat": 40.4677525,
+    "lon": -113.1239786
+  },
+  {
+    "name": "Uintah County",
+    "county_fips": "49047",
+    "lat": 40.1258872,
+    "lon": -109.5177482
+  },
+  {
+    "name": "Utah County",
+    "county_fips": "49049",
+    "lat": 40.1204177,
+    "lon": -111.6685633
+  },
+  {
+    "name": "Wasatch County",
+    "county_fips": "49051",
+    "lat": 40.3348838,
+    "lon": -111.1615683
+  },
+  {
+    "name": "Washington County",
+    "county_fips": "49053",
+    "lat": 37.2625308,
+    "lon": -113.4878003
+  },
+  {
+    "name": "Wayne County",
+    "county_fips": "49055",
+    "lat": 38.2598556,
+    "lon": -110.9908718
+  },
+  {
+    "name": "Weber County",
+    "county_fips": "49057",
+    "lat": 41.2703252,
+    "lon": -111.8768815
+  }
+]

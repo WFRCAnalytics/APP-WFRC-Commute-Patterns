@@ -1,0 +1,437 @@
+[
+  {
+    "name": "Beaver County",
+    "lat": 38.360771976412494,
+    "lon": -113.20649707894717
+  },
+  {
+    "name": "Box Elder - WFRC",
+    "lat": 41.47174308337975,
+    "lon": -112.06271392605476
+  },
+  {
+    "name": "Cedar Valley",
+    "lat": 40.21978414194885,
+    "lon": -112.04319625930106
+  },
+  {
+    "name": "Central Box Elder County",
+    "lat": 41.50469348094515,
+    "lon": -112.6398022789507
+  },
+  {
+    "name": "Central DMPO",
+    "lat": 37.1252945409674,
+    "lon": -113.51578230034741
+  },
+  {
+    "name": "Central Rich County",
+    "lat": 41.62067128930825,
+    "lon": -111.31632912223333
+  },
+  {
+    "name": "DA - East Mountains",
+    "lat": 40.985389940636296,
+    "lon": -111.83654053380262
+  },
+  {
+    "name": "DA - GSL",
+    "lat": 40.96045469861285,
+    "lon": -112.16886835120332
+  },
+  {
+    "name": "Daggett County",
+    "lat": 40.8324007527234,
+    "lon": -109.69674883641126
+  },
+  {
+    "name": "Davis North",
+    "lat": 41.07547696897255,
+    "lon": -112.00795794809356
+  },
+  {
+    "name": "Davis South",
+    "lat": 40.91807150015655,
+    "lon": -111.89213954812172
+  },
+  {
+    "name": "East Box Elder County not WFRC (1)",
+    "lat": 41.7355265581252,
+    "lon": -112.17111830467712
+  },
+  {
+    "name": "East Box Elder County not WFRC (2)",
+    "lat": 41.45864388664915,
+    "lon": -111.97122019087519
+  },
+  {
+    "name": "East Garfield County",
+    "lat": 37.846727641114896,
+    "lon": -111.14725052618016
+  },
+  {
+    "name": "East Iron County",
+    "lat": 37.811279464701855,
+    "lon": -112.8736633593641
+  },
+  {
+    "name": "East Juab County",
+    "lat": 39.6309258542384,
+    "lon": -111.91574571678547
+  },
+  {
+    "name": "East Kane County",
+    "lat": 37.272005059327,
+    "lon": -111.63234573355136
+  },
+  {
+    "name": "East Millard County",
+    "lat": 39.06300491545305,
+    "lon": -112.38826604744845
+  },
+  {
+    "name": "East Mountains",
+    "lat": 41.68415616061385,
+    "lon": -111.6110030505449
+  },
+  {
+    "name": "East Piute County",
+    "lat": 38.3294685912219,
+    "lon": -112.01667294774357
+  },
+  {
+    "name": "East Rich County",
+    "lat": 41.50261896039865,
+    "lon": -111.10631594148961
+  },
+  {
+    "name": "East Sevier County",
+    "lat": 38.767562115030856,
+    "lon": -111.63287642223372
+  },
+  {
+    "name": "East Wayne County",
+    "lat": 38.33096732140995,
+    "lon": -110.67020552743281
+  },
+  {
+    "name": "Eastern DMPO",
+    "lat": 37.147972140951495,
+    "lon": -113.3362955270253
+  },
+  {
+    "name": "Eastern Summit",
+    "lat": 40.899987224131195,
+    "lon": -110.7548644720944
+  },
+  {
+    "name": "Eastern Tooele County",
+    "lat": 40.4903661428597,
+    "lon": -112.33679489599027
+  },
+  {
+    "name": "Eastern Washington County",
+    "lat": 37.2499530441631,
+    "lon": -113.05587628304585
+  },
+  {
+    "name": "Goshen Valley",
+    "lat": 40.03780624002535,
+    "lon": -111.96654309689006
+  },
+  {
+    "name": "Heber Valley",
+    "lat": 40.444116500848,
+    "lon": -111.44703263659719
+  },
+  {
+    "name": "Logan Area",
+    "lat": 41.73601811846615,
+    "lon": -111.82927246364834
+  },
+  {
+    "name": "Morgan County",
+    "lat": 41.07696035583945,
+    "lon": -111.65086871137149
+  },
+  {
+    "name": "Mountains",
+    "lat": 40.29097569904715,
+    "lon": -111.1308742992591
+  },
+  {
+    "name": "North Cache County",
+    "lat": 41.9251125629181,
+    "lon": -111.88635649300485
+  },
+  {
+    "name": "North Carbon County",
+    "lat": 39.64174233585855,
+    "lon": -110.25080184375696
+  },
+  {
+    "name": "North Grand County",
+    "lat": 39.178303210676745,
+    "lon": -109.57823838919026
+  },
+  {
+    "name": "North San Juan County",
+    "lat": 37.94198313695395,
+    "lon": -109.62359164063096
+  },
+  {
+    "name": "North Sanpete County",
+    "lat": 39.5888911387632,
+    "lon": -111.48137537970854
+  },
+  {
+    "name": "North of Logan Area",
+    "lat": 41.81990311202115,
+    "lon": -111.79961357808844
+  },
+  {
+    "name": "Northeast Duschene County",
+    "lat": 40.513461077427095,
+    "lon": -110.24039326452039
+  },
+  {
+    "name": "Northeast Uintah County",
+    "lat": 40.565908187491246,
+    "lon": -109.27463363035719
+  },
+  {
+    "name": "Northwest Duchesne County",
+    "lat": 40.4423395682867,
+    "lon": -110.71800927293647
+  },
+  {
+    "name": "Northwest Emery County",
+    "lat": 39.27448300006775,
+    "lon": -111.08724725511325
+  },
+  {
+    "name": "Northwest Rich County",
+    "lat": 41.8642706421751,
+    "lon": -111.39853471953688
+  },
+  {
+    "name": "Northwest Uintah County",
+    "lat": 40.504687660532696,
+    "lon": -109.77683603930953
+  },
+  {
+    "name": "Northwest Washington County",
+    "lat": 37.30920388427095,
+    "lon": -113.67405037511674
+  },
+  {
+    "name": "Ogden Valley",
+    "lat": 41.3069912687599,
+    "lon": -111.6680529365168
+  },
+  {
+    "name": "Resorts",
+    "lat": 40.5995910838768,
+    "lon": -111.38891879801997
+  },
+  {
+    "name": "SL CBD",
+    "lat": 40.761514003144995,
+    "lon": -111.89689001903619
+  },
+  {
+    "name": "SL North Central",
+    "lat": 40.739265156933556,
+    "lon": -111.96720240581143
+  },
+  {
+    "name": "SL Northeast",
+    "lat": 40.74588180353565,
+    "lon": -111.81599485721947
+  },
+  {
+    "name": "SL Northwest",
+    "lat": 40.78771441707485,
+    "lon": -112.11713416704757
+  },
+  {
+    "name": "SL South Central",
+    "lat": 40.536308847441504,
+    "lon": -111.95417243726207
+  },
+  {
+    "name": "SL Southeast",
+    "lat": 40.54504042365045,
+    "lon": -111.84899336934888
+  },
+  {
+    "name": "SL Southwest",
+    "lat": 40.560736952023746,
+    "lon": -112.10722149136066
+  },
+  {
+    "name": "SL Wasatch Canyons",
+    "lat": 40.6260078091091,
+    "lon": -111.72829523511962
+  },
+  {
+    "name": "Snyderville Basin",
+    "lat": 40.70527248649155,
+    "lon": -111.51579516541364
+  },
+  {
+    "name": "South Cache County",
+    "lat": 41.56088058467715,
+    "lon": -111.90007534784473
+  },
+  {
+    "name": "South Carbon County",
+    "lat": 39.597430755497,
+    "lon": -110.75651480813491
+  },
+  {
+    "name": "South Grand County",
+    "lat": 38.809566213289756,
+    "lon": -109.58139731439137
+  },
+  {
+    "name": "South San Juan County",
+    "lat": 37.444192243207,
+    "lon": -110.13372921450753
+  },
+  {
+    "name": "South Sanpete County",
+    "lat": 39.25112216425225,
+    "lon": -111.65782733888156
+  },
+  {
+    "name": "South Uintah County",
+    "lat": 39.915626896515946,
+    "lon": -109.51363580045353
+  },
+  {
+    "name": "South of Logan - Wellsville Area",
+    "lat": 41.633161164941654,
+    "lon": -111.90094715571539
+  },
+  {
+    "name": "Southeast Duschene County",
+    "lat": 40.04802841859375,
+    "lon": -110.43428714603336
+  },
+  {
+    "name": "Southeast Emery County",
+    "lat": 38.984989266445496,
+    "lon": -110.57751925023877
+  },
+  {
+    "name": "Utah County Central Mountains and Lake",
+    "lat": 40.153691101781504,
+    "lon": -111.83459238442433
+  },
+  {
+    "name": "Utah County East Mountains",
+    "lat": 40.1942713408557,
+    "lon": -111.4302691071654
+  },
+  {
+    "name": "Utah County West Mountains",
+    "lat": 40.12327586560015,
+    "lon": -112.15368053933503
+  },
+  {
+    "name": "Utah Valley - Central",
+    "lat": 40.2656049565484,
+    "lon": -111.68146116658394
+  },
+  {
+    "name": "Utah Valley - North",
+    "lat": 40.3679499844113,
+    "lon": -111.84181842067089
+  },
+  {
+    "name": "Utah Valley - South",
+    "lat": 40.06810343077555,
+    "lon": -111.66999383246682
+  },
+  {
+    "name": "WE - East Mountains",
+    "lat": 41.250433030906,
+    "lon": -111.9221450566869
+  },
+  {
+    "name": "WE - GSL",
+    "lat": 41.2072814530307,
+    "lon": -112.2720072069429
+  },
+  {
+    "name": "Weber North and West",
+    "lat": 41.25319859278715,
+    "lon": -112.09519503284552
+  },
+  {
+    "name": "Weber Ogden Area",
+    "lat": 41.189303508421304,
+    "lon": -111.9689226777334
+  },
+  {
+    "name": "West Box Elder County",
+    "lat": 41.497619030805254,
+    "lon": -113.5637822636526
+  },
+  {
+    "name": "West Cache County",
+    "lat": 41.7731051859555,
+    "lon": -111.95924338897767
+  },
+  {
+    "name": "West Garfield County",
+    "lat": 37.8436481553436,
+    "lon": -112.22878478098644
+  },
+  {
+    "name": "West Iron County",
+    "lat": 37.8403629102366,
+    "lon": -113.57059740130464
+  },
+  {
+    "name": "West Juab County",
+    "lat": 39.77717174976185,
+    "lon": -113.05152284486536
+  },
+  {
+    "name": "West Kane County",
+    "lat": 37.272005059327,
+    "lon": -112.64725648510702
+  },
+  {
+    "name": "West Millard County",
+    "lat": 39.063510623872304,
+    "lon": -113.40557203372536
+  },
+  {
+    "name": "West Piute County",
+    "lat": 38.33096540413315,
+    "lon": -112.26303743258289
+  },
+  {
+    "name": "West Sevier County",
+    "lat": 38.77373826866685,
+    "lon": -112.09310271302002
+  },
+  {
+    "name": "West Wayne County",
+    "lat": 38.33006575703725,
+    "lon": -111.61016022997003
+  },
+  {
+    "name": "Western DMPO",
+    "lat": 37.11541135385285,
+    "lon": -113.65808879362197
+  },
+  {
+    "name": "Western Tooele County",
+    "lat": 40.4517244182846,
+    "lon": -113.26072166931054
+  }
+]
