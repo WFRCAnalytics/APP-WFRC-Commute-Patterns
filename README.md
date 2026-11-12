@@ -18,7 +18,7 @@ An interactive WebAssembly-powered map for exploring commute flow patterns acros
 - **Four subject area types** — select any city, county, Utah House district, or Utah Senate district as the subject of analysis
 - **Two map zone levels** — display destination choropleth and flow arcs aggregated at city or county level
 - **Both flow directions** — "where residents work" and "where workers live"
-- **22 years of data** — LEHD LODES data from 2002–2023; switch years from the header
+- **23 years of data** — LEHD LODES data from 2002–2024; switch years from the header
 - **Six chart panels** (right sidebar, collapsible and resizable):
   - *Commute Balance* — diverging bar showing top destinations and origins simultaneously
   - *Flow Diagram* — bilateral alluvial diagram (top 5 + Others per side) with a flow summary strip showing total inflow, live-and-work, and total outflow proportionally
@@ -36,7 +36,7 @@ An interactive WebAssembly-powered map for exploring commute flow patterns acros
 
 ## Data
 
-**Source:** [US Census LEHD LODES 8](https://lehd.ces.census.gov/data/lodes/LODES8/), Origin-Destination Employment Statistics for Utah, 2002–2023.
+**Source:** [US Census LEHD LODES 8](https://lehd.ces.census.gov/data/lodes/LODES8/), Origin-Destination Employment Statistics for Utah, 2002–2024.
 
 **Coverage:** Statewide Utah — all cities (Census-designated places), all 29 counties, all 75 Utah House districts, and all 29 Utah Senate districts.
 
@@ -172,7 +172,7 @@ To enable GitHub Pages on a new repository fork:
 │   │       ├── acs_senate.json
 │   │       └── acs_area.json
 │   └── lehd/                       # LEHD LODES flow data (one directory per year)
-│       └── <year>/                 # 2002–2023
+│       └── <year>/                 # 2002–2024
 │           ├── city_flows.parquet
 │           ├── county_flows.parquet
 │           ├── district_flows.parquet

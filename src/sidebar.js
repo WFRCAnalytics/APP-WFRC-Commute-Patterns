@@ -769,11 +769,11 @@ function _initCreditsModal() {
         <ul class="credits-list">
           <li>
             <a href="https://lehd.ces.census.gov/data/lodes/" target="_blank" rel="noopener">US Census LEHD LODES 8</a>
-            &mdash; Origin-destination employment data for Utah (2002&ndash;2023)
+            &mdash; Origin-destination employment data for Utah (2002&ndash;2024)
           </li>
           <li>
             <a href="https://www.census.gov/programs-surveys/acs/data.html" target="_blank" rel="noopener">US Census American Community Survey (ACS) 5-Year Estimates</a>
-            &mdash; Means of transportation and travel time to work (2009&ndash;2023), shown with 90% margins of error. Published by the Census for places and counties; for districts, planning areas, unincorporated areas and Ogden Valley City, estimated from block-group and tract data and labeled as estimates
+            &mdash; Means of transportation and travel time to work (2009&ndash;2024), shown with 90% margins of error. Published by the Census for places and counties; for districts, planning areas, unincorporated areas and Ogden Valley City, estimated from block-group and tract data and labeled as estimates
           </li>
           <li>
             <a href="https://www.census.gov/geographies/mapping-files/time-series/geo/tiger-line-file.html" target="_blank" rel="noopener">US Census TIGER/Line 2026</a>

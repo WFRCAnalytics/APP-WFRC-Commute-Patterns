@@ -1,0 +1,1222 @@
+[
+  {
+    "name": "Airport-Rose Park",
+    "lat": 40.8032712997948,
+    "lon": -111.96373622807091
+  },
+  {
+    "name": "Altamont Area",
+    "lat": 40.3610820616942,
+    "lon": -110.35156631569227
+  },
+  {
+    "name": "Amalga Area",
+    "lat": 41.844040115625646,
+    "lon": -111.92157699047942
+  },
+  {
+    "name": "American Fork Canyon",
+    "lat": 40.47076411138565,
+    "lon": -111.66972295863651
+  },
+  {
+    "name": "Antelope Island",
+    "lat": 40.95179001270935,
+    "lon": -112.20519647315196
+  },
+  {
+    "name": "Bear Lake Area",
+    "lat": 41.92360766429575,
+    "lon": -111.33699812905468
+  },
+  {
+    "name": "Big Cottonwood Canyon",
+    "lat": 40.64705890270335,
+    "lon": -111.69299294576257
+  },
+  {
+    "name": "Big Water Area",
+    "lat": 37.0860955855872,
+    "lon": -111.77166586023588
+  },
+  {
+    "name": "Brigham City Area - W of I-15",
+    "lat": 41.4420860645781,
+    "lon": -112.06399052487603
+  },
+  {
+    "name": "Brigham City, North Perry",
+    "lat": 41.487489164139305,
+    "lon": -112.02868008637878
+  },
+  {
+    "name": "CV - Central",
+    "lat": 40.2840718902991,
+    "lon": -112.04383250904667
+  },
+  {
+    "name": "CV - North",
+    "lat": 40.361272929333055,
+    "lon": -112.05128445915929
+  },
+  {
+    "name": "CV - South",
+    "lat": 40.14809464356195,
+    "lon": -112.07118840353297
+  },
+  {
+    "name": "Cedar City Area",
+    "lat": 37.67877896519145,
+    "lon": -113.07433468767422
+  },
+  {
+    "name": "Cenral Uintah County",
+    "lat": 40.21227962870155,
+    "lon": -109.57185933995555
+  },
+  {
+    "name": "Central & South St George",
+    "lat": 37.043438674731306,
+    "lon": -113.54311548204065
+  },
+  {
+    "name": "Central Beaver County",
+    "lat": 38.3091592092834,
+    "lon": -113.02454039224116
+  },
+  {
+    "name": "Central Daggett County",
+    "lat": 40.8697971831853,
+    "lon": -109.54638298069324
+  },
+  {
+    "name": "Central Juab County",
+    "lat": 39.7542683767373,
+    "lon": -112.3037552296863
+  },
+  {
+    "name": "Central Kane County",
+    "lat": 37.27185610620605,
+    "lon": -112.04741262266401
+  },
+  {
+    "name": "Central Mountains",
+    "lat": 41.3071425767935,
+    "lon": -111.71146598383694
+  },
+  {
+    "name": "Central Tooele County",
+    "lat": 40.4517244182846,
+    "lon": -112.74403970294992
+  },
+  {
+    "name": "Central Washington County",
+    "lat": 37.29924886677355,
+    "lon": -113.54166672191803
+  },
+  {
+    "name": "Central Wayne County (3)",
+    "lat": 38.33117978090175,
+    "lon": -111.02804080544394
+  },
+  {
+    "name": "Central Wayne County (4)",
+    "lat": 38.38774431172015,
+    "lon": -110.69380413277435
+  },
+  {
+    "name": "Central-East Uintah County",
+    "lat": 40.11635411428985,
+    "lon": -109.23514205874497
+  },
+  {
+    "name": "Clarkston Area",
+    "lat": 41.92473752311585,
+    "lon": -112.04567349623599
+  },
+  {
+    "name": "Clinton-W.Pt-Clearfield",
+    "lat": 41.1213435814742,
+    "lon": -112.07253331985072
+  },
+  {
+    "name": "County Area West of Logan",
+    "lat": 41.7311840987868,
+    "lon": -111.91186843374939
+  },
+  {
+    "name": "Currant Creek",
+    "lat": 40.432067015206,
+    "lon": -111.05153987917063
+  },
+  {
+    "name": "DA - East Mountains",
+    "lat": 40.985389940636296,
+    "lon": -111.83654053380262
+  },
+  {
+    "name": "DA - GSL",
+    "lat": 40.9610030448885,
+    "lon": -112.05316239985859
+  },
+  {
+    "name": "Daniel",
+    "lat": 40.4421764998045,
+    "lon": -111.44015202054479
+  },
+  {
+    "name": "Daniels Summit",
+    "lat": 40.3382124958536,
+    "lon": -111.32066638938478
+  },
+  {
+    "name": "Deer Creek, State Parks",
+    "lat": 40.4911212390068,
+    "lon": -111.53981003537231
+  },
+  {
+    "name": "Deer Valley East",
+    "lat": 40.5937155153624,
+    "lon": -111.46323363325038
+  },
+  {
+    "name": "Draper",
+    "lat": 40.48979026266255,
+    "lon": -111.84986984775641
+  },
+  {
+    "name": "Duchesne Area",
+    "lat": 40.1979515414545,
+    "lon": -110.39147153882521
+  },
+  {
+    "name": "East Central Juab County",
+    "lat": 39.6877303791262,
+    "lon": -111.87368184785525
+  },
+  {
+    "name": "East Garfield County",
+    "lat": 37.846601575431606,
+    "lon": -110.70665130472938
+  },
+  {
+    "name": "East Mountains (17)",
+    "lat": 41.68415616061385,
+    "lon": -111.6110030505449
+  },
+  {
+    "name": "East Mountains (5)",
+    "lat": 41.3279170750954,
+    "lon": -111.54464815567972
+  },
+  {
+    "name": "East Sevier County",
+    "lat": 38.767562115030856,
+    "lon": -111.63287642223372
+  },
+  {
+    "name": "East-Central Garfield County",
+    "lat": 37.84664116331855,
+    "lon": -111.44105774952129
+  },
+  {
+    "name": "Eastern Beaver County",
+    "lat": 38.360213786871455,
+    "lon": -112.66692852428116
+  },
+  {
+    "name": "Eastern Daggett County",
+    "lat": 40.8324007527234,
+    "lon": -109.12509322586389
+  },
+  {
+    "name": "Eastern Hurricne Area",
+    "lat": 37.142518348637154,
+    "lon": -113.29734097737506
+  },
+  {
+    "name": "Eastern Iron County",
+    "lat": 37.8245464927382,
+    "lon": -112.69133993939502
+  },
+  {
+    "name": "Eastern Kane County",
+    "lat": 37.271098605810195,
+    "lon": -111.28405299763618
+  },
+  {
+    "name": "Eastern Mountains",
+    "lat": 41.1845275335167,
+    "lon": -111.45297957829511
+  },
+  {
+    "name": "Eastern Wayne County",
+    "lat": 38.32579521904165,
+    "lon": -110.32114780614972
+  },
+  {
+    "name": "Emigration Canyon, Northeast Mountains",
+    "lat": 40.7863473868976,
+    "lon": -111.74604486691916
+  },
+  {
+    "name": "Enterprise Area & Northwest Washington County",
+    "lat": 37.471514886661296,
+    "lon": -113.68878133369691
+  },
+  {
+    "name": "Ex-West Weber",
+    "lat": 41.2516693072714,
+    "lon": -112.19956154420794
+  },
+  {
+    "name": "Farmington-Centerville",
+    "lat": 40.9607293813849,
+    "lon": -111.90667166289856
+  },
+  {
+    "name": "GV - Central",
+    "lat": 40.06141987838405,
+    "lon": -111.95860451130493
+  },
+  {
+    "name": "GV - Mosida",
+    "lat": 40.18658699205915,
+    "lon": -111.91043436964509
+  },
+  {
+    "name": "GV - South",
+    "lat": 39.9113378949179,
+    "lon": -111.96318071824611
+  },
+  {
+    "name": "Garden City Area",
+    "lat": 41.9268207488586,
+    "lon": -111.4340830454612
+  },
+  {
+    "name": "Grantsville Area",
+    "lat": 40.63696394976925,
+    "lon": -112.44487968509108
+  },
+  {
+    "name": "Great Salt Lake - Box Elder",
+    "lat": 41.3816445839227,
+    "lon": -112.57302695370049
+  },
+  {
+    "name": "Great Salt Lake - Tooele",
+    "lat": 40.87268194872145,
+    "lon": -112.5007058381971
+  },
+  {
+    "name": "Green River Area",
+    "lat": 39.012471233484746,
+    "lon": -110.22733386885395
+  },
+  {
+    "name": "HAFB area",
+    "lat": 41.1271952502969,
+    "lon": -111.96193546543049
+  },
+  {
+    "name": "Heber East",
+    "lat": 40.4963454514145,
+    "lon": -111.35581252645218
+  },
+  {
+    "name": "Heber West",
+    "lat": 40.50656750602645,
+    "lon": -111.43186259238956
+  },
+  {
+    "name": "Hideout",
+    "lat": 40.6463080233718,
+    "lon": -111.39782366823559
+  },
+  {
+    "name": "Highland Promontory",
+    "lat": 40.7109555232645,
+    "lon": -111.47382146819217
+  },
+  {
+    "name": "Hobble Creek Canyon",
+    "lat": 40.2044433406791,
+    "lon": -111.43875603041184
+  },
+  {
+    "name": "Hooper-Roy-W.Haven",
+    "lat": 41.1997309886694,
+    "lon": -112.0651450203709
+  },
+  {
+    "name": "Huntsville Area",
+    "lat": 41.26682900946485,
+    "lon": -111.76342521369043
+  },
+  {
+    "name": "Huntsville Area (North)",
+    "lat": 41.3403700662995,
+    "lon": -111.85627950458239
+  },
+  {
+    "name": "Hyde Park Area",
+    "lat": 41.78425178834295,
+    "lon": -111.86967298310748
+  },
+  {
+    "name": "Hyrum Area",
+    "lat": 41.6379865996128,
+    "lon": -111.85695185592316
+  },
+  {
+    "name": "I-15 to MVC, I-80 to 20",
+    "lat": 40.7475990979594,
+    "lon": -111.96920787976164
+  },
+  {
+    "name": "Ivins, Santa Clara, NW St George Area",
+    "lat": 37.1535664564341,
+    "lon": -113.65707023724329
+  },
+  {
+    "name": "Jordanelle West",
+    "lat": 40.62848852164845,
+    "lon": -111.42756641168751
+  },
+  {
+    "name": "Kaysville-Syracuse",
+    "lat": 41.04496261463295,
+    "lon": -111.99751513663016
+  },
+  {
+    "name": "Kimball Snyder",
+    "lat": 40.6777121084991,
+    "lon": -111.568506851519
+  },
+  {
+    "name": "Laketown Area",
+    "lat": 41.79903102972165,
+    "lon": -111.38627007619259
+  },
+  {
+    "name": "Layton-Ft.Heights",
+    "lat": 41.0552366332939,
+    "lon": -111.93009480294778
+  },
+  {
+    "name": "Leeds, Toquerville, La Verkin Area",
+    "lat": 37.2257090899405,
+    "lon": -113.32561786317453
+  },
+  {
+    "name": "Little Cottonwood Canyon",
+    "lat": 40.56968804838815,
+    "lon": -111.67966914115438
+  },
+  {
+    "name": "Logan Area",
+    "lat": 41.7276801092865,
+    "lon": -111.84990119513553
+  },
+  {
+    "name": "MVC to Tailings",
+    "lat": 40.7432649240816,
+    "lon": -112.10822365514366
+  },
+  {
+    "name": "MVC-Magna-ATK",
+    "lat": 40.6907292080474,
+    "lon": -112.07811019370419
+  },
+  {
+    "name": "Mantua, East Mountains",
+    "lat": 41.4941694387118,
+    "lon": -111.93885363025987
+  },
+  {
+    "name": "Mapleton Canyon",
+    "lat": 40.11704698101085,
+    "lon": -111.51720973582778
+  },
+  {
+    "name": "Mendon Area",
+    "lat": 41.71348660278335,
+    "lon": -111.99244253144577
+  },
+  {
+    "name": "Midvale, Cot, N.Sandy",
+    "lat": 40.604817813256105,
+    "lon": -111.84739955415735
+  },
+  {
+    "name": "Midway",
+    "lat": 40.51725650561535,
+    "lon": -111.47972377815825
+  },
+  {
+    "name": "Millcreek Canyon",
+    "lat": 40.7181811779921,
+    "lon": -111.69744819152717
+  },
+  {
+    "name": "Millcreek-Holladay",
+    "lat": 40.6754028289751,
+    "lon": -111.82392467487495
+  },
+  {
+    "name": "Morgan City",
+    "lat": 41.0467730480433,
+    "lon": -111.69171626307214
+  },
+  {
+    "name": "Myton Area",
+    "lat": 40.183360559522754,
+    "lon": -110.11140739969191
+  },
+  {
+    "name": "NW Quad-International",
+    "lat": 40.79543319080115,
+    "lon": -112.06971920263305
+  },
+  {
+    "name": "NW Weber",
+    "lat": 41.28724445528455,
+    "lon": -112.08384612999227
+  },
+  {
+    "name": "New Harmony Area",
+    "lat": 37.4434736173778,
+    "lon": -113.31621268519444
+  },
+  {
+    "name": "Newton Area",
+    "lat": 41.846554814080605,
+    "lon": -112.00271602180501
+  },
+  {
+    "name": "North Central Box Elder County",
+    "lat": 41.80605658135,
+    "lon": -112.68756196116844
+  },
+  {
+    "name": "North Central Millard County",
+    "lat": 39.317493261245446,
+    "lon": -112.54902302247879
+  },
+  {
+    "name": "North Logan Area",
+    "lat": 41.7767041121096,
+    "lon": -111.80480838654606
+  },
+  {
+    "name": "North Ogden",
+    "lat": 41.295003104342854,
+    "lon": -111.98315200769409
+  },
+  {
+    "name": "North Summit",
+    "lat": 40.99904338183225,
+    "lon": -111.31728158846026
+  },
+  {
+    "name": "North of Brigham City",
+    "lat": 41.567591734100404,
+    "lon": -112.06049536520675
+  },
+  {
+    "name": "North-Central Rich County",
+    "lat": 41.83516618164015,
+    "lon": -111.18883603235122
+  },
+  {
+    "name": "North-Central San Juan County",
+    "lat": 37.74734368521335,
+    "lon": -109.40212583101834
+  },
+  {
+    "name": "Northeast Box Elder County",
+    "lat": 41.865387100892406,
+    "lon": -112.14770511018457
+  },
+  {
+    "name": "Northeast Emery County",
+    "lat": 39.1297046030204,
+    "lon": -110.5639770662981
+  },
+  {
+    "name": "Northeast Iron County",
+    "lat": 37.96289346472565,
+    "lon": -112.86031400987002
+  },
+  {
+    "name": "Northeast Juab County",
+    "lat": 39.8068338399103,
+    "lon": -111.80650011224992
+  },
+  {
+    "name": "Northeast Millard County",
+    "lat": 39.15765916720325,
+    "lon": -112.21255217794749
+  },
+  {
+    "name": "Northeast Mountains (3)",
+    "lat": 40.625939588956896,
+    "lon": -110.26032807414924
+  },
+  {
+    "name": "Northeast Mountains (5)",
+    "lat": 40.5658116683351,
+    "lon": -109.23813277750929
+  },
+  {
+    "name": "Northeast Piute County",
+    "lat": 38.4548337345945,
+    "lon": -111.90145140233861
+  },
+  {
+    "name": "Northeast Sanpete County",
+    "lat": 39.6009656364248,
+    "lon": -111.42511420400726
+  },
+  {
+    "name": "Northeast Tooele County",
+    "lat": 40.6512585524527,
+    "lon": -112.26314626824984
+  },
+  {
+    "name": "Northeast Washington County",
+    "lat": 37.33335107249175,
+    "lon": -113.09078119083709
+  },
+  {
+    "name": "Northeast-Central Juab County",
+    "lat": 39.91043411339485,
+    "lon": -112.10594961498788
+  },
+  {
+    "name": "Northeastern Carbon County",
+    "lat": 39.64146124406625,
+    "lon": -110.25059636629645
+  },
+  {
+    "name": "Northern Grand County",
+    "lat": 39.178303210676745,
+    "lon": -109.57823838919026
+  },
+  {
+    "name": "Northern San Juan County",
+    "lat": 38.24130085938209,
+    "lon": -109.40076564023161
+  },
+  {
+    "name": "Northern St George & Reserve",
+    "lat": 37.15998796528505,
+    "lon": -113.56551016935944
+  },
+  {
+    "name": "Northwest Carbon County",
+    "lat": 39.698859494729206,
+    "lon": -111.05084337662888
+  },
+  {
+    "name": "Northwest Central Iron County",
+    "lat": 37.94216196442585,
+    "lon": -113.23098441051356
+  },
+  {
+    "name": "Northwest Duschene County",
+    "lat": 40.4423395682867,
+    "lon": -110.71800927293647
+  },
+  {
+    "name": "Northwest Emery County",
+    "lat": 39.389268929243656,
+    "lon": -110.80329768668413
+  },
+  {
+    "name": "Northwest Garfield County",
+    "lat": 37.88799216916795,
+    "lon": -112.07241756088592
+  },
+  {
+    "name": "Northwest Kane County",
+    "lat": 37.3795190690905,
+    "lon": -112.67575642020432
+  },
+  {
+    "name": "Northwest Millard County",
+    "lat": 39.2878273570132,
+    "lon": -113.46417800454819
+  },
+  {
+    "name": "Northwest Morgan County",
+    "lat": 41.112211051687794,
+    "lon": -111.78549917552715
+  },
+  {
+    "name": "Northwest Mountains",
+    "lat": 39.2852250065826,
+    "lon": -111.14848753277963
+  },
+  {
+    "name": "Northwest Piute County",
+    "lat": 38.414672041548855,
+    "lon": -112.30201620904208
+  },
+  {
+    "name": "Northwest San Juan County",
+    "lat": 38.020269064020795,
+    "lon": -109.83319235863262
+  },
+  {
+    "name": "Northwest Sanpete County",
+    "lat": 39.530131387306696,
+    "lon": -111.62223554496484
+  },
+  {
+    "name": "Northwest Sevier County",
+    "lat": 38.9228337750975,
+    "lon": -111.97424570578868
+  },
+  {
+    "name": "Northwest Uintah County",
+    "lat": 40.65973197738505,
+    "lon": -109.73110654092068
+  },
+  {
+    "name": "Northwest Wayne County",
+    "lat": 38.3303117470677,
+    "lon": -111.67788955809063
+  },
+  {
+    "name": "Ogden Canyon, Northeast Mountains",
+    "lat": 41.299991833297796,
+    "lon": -111.9140797445891
+  },
+  {
+    "name": "Ogden Core",
+    "lat": 41.21299590496125,
+    "lon": -111.96392293772936
+  },
+  {
+    "name": "Paradise Area",
+    "lat": 41.5546500013768,
+    "lon": -111.81944660895599
+  },
+  {
+    "name": "Park City",
+    "lat": 40.6486824846811,
+    "lon": -111.49859927633133
+  },
+  {
+    "name": "Payson Canyon - Nebo Loop",
+    "lat": 39.9184150071201,
+    "lon": -111.70380354072759
+  },
+  {
+    "name": "Providence, Millville, Nibley Area",
+    "lat": 41.6785805989534,
+    "lon": -111.84496359968131
+  },
+  {
+    "name": "Provo Canyon",
+    "lat": 40.33795038250505,
+    "lon": -111.56436687258672
+  },
+  {
+    "name": "Randolph Area",
+    "lat": 41.69805315941225,
+    "lon": -111.10787889196165
+  },
+  {
+    "name": "Richmond Area",
+    "lat": 41.93022512793115,
+    "lon": -111.82246571590863
+  },
+  {
+    "name": "Riv, I-15 to MVC",
+    "lat": 40.48627006015745,
+    "lon": -111.94667211557277
+  },
+  {
+    "name": "Roosevelt Area",
+    "lat": 40.3440415844085,
+    "lon": -110.07875542762261
+  },
+  {
+    "name": "Round Valley",
+    "lat": 40.38585994356095,
+    "lon": -111.4640405432589
+  },
+  {
+    "name": "S.Flat, U-111@62nd",
+    "lat": 40.6490282335665,
+    "lon": -112.07235053138001
+  },
+  {
+    "name": "S.Og-Riverdale-Uintah",
+    "lat": 41.1674876511179,
+    "lon": -111.97162971106532
+  },
+  {
+    "name": "SJ, I-15 to MVC",
+    "lat": 40.5651067513692,
+    "lon": -111.96614780805832
+  },
+  {
+    "name": "SL - GSL",
+    "lat": 40.82230141146125,
+    "lon": -112.13155884281038
+  },
+  {
+    "name": "SL - West Mountains",
+    "lat": 40.572921987306,
+    "lon": -112.15010557477757
+  },
+  {
+    "name": "SL CBD",
+    "lat": 40.761514003144995,
+    "lon": -111.89689001903619
+  },
+  {
+    "name": "SLC east of I-15",
+    "lat": 40.7662353086146,
+    "lon": -111.85143992495216
+  },
+  {
+    "name": "SSL-Murray",
+    "lat": 40.6755889368062,
+    "lon": -111.8864534263254
+  },
+  {
+    "name": "Sand Hollow Area & Unincorporated Area",
+    "lat": 37.05799949228145,
+    "lon": -113.35411504855631
+  },
+  {
+    "name": "Sandy",
+    "lat": 40.55393473839095,
+    "lon": -111.84643216338202
+  },
+  {
+    "name": "Silver Creek",
+    "lat": 40.759710029188355,
+    "lon": -111.50197388847661
+  },
+  {
+    "name": "Smithfield Area",
+    "lat": 41.847807124845446,
+    "lon": -111.82853043990958
+  },
+  {
+    "name": "South Central Mountains",
+    "lat": 41.560820083876806,
+    "lon": -111.90438790073131
+  },
+  {
+    "name": "South Perry, Willard",
+    "lat": 41.39121839017835,
+    "lon": -112.03502007980094
+  },
+  {
+    "name": "South Summit (13)",
+    "lat": 40.60384772817915,
+    "lon": -111.29026982599339
+  },
+  {
+    "name": "South Summit (6)",
+    "lat": 40.66715840783655,
+    "lon": -111.33051194631193
+  },
+  {
+    "name": "South Washington City Area",
+    "lat": 37.0415460891005,
+    "lon": -113.46649166484332
+  },
+  {
+    "name": "South-Central Rich County",
+    "lat": 41.488413908998595,
+    "lon": -111.36934029165315
+  },
+  {
+    "name": "Southeast Box Elder County",
+    "lat": 41.628888120293354,
+    "lon": -112.16945159204752
+  },
+  {
+    "name": "Southeast Carbon County",
+    "lat": 39.5773232723188,
+    "lon": -110.51995734774908
+  },
+  {
+    "name": "Southeast Grand County",
+    "lat": 38.8095742632783,
+    "lon": -109.18501425933866
+  },
+  {
+    "name": "Southeast Juab County",
+    "lat": 39.516943116692445,
+    "lon": -111.96260459238955
+  },
+  {
+    "name": "Southeast Millard County",
+    "lat": 38.845162723940746,
+    "lon": -112.534351741113
+  },
+  {
+    "name": "Southeast Piute County",
+    "lat": 38.3294685912219,
+    "lon": -112.01667294774357
+  },
+  {
+    "name": "Southeast San Juan County",
+    "lat": 37.289029185061196,
+    "lon": -109.4921157017819
+  },
+  {
+    "name": "Southeast Sanpete County",
+    "lat": 39.2515208424019,
+    "lon": -111.49724166409743
+  },
+  {
+    "name": "Southeast Tooele County",
+    "lat": 40.2132663555848,
+    "lon": -112.35628504304584
+  },
+  {
+    "name": "Southeast Uintah County",
+    "lat": 39.7763125590599,
+    "lon": -109.33523574828851
+  },
+  {
+    "name": "Southeast Washington County",
+    "lat": 37.11378986485935,
+    "lon": -113.0771676339647
+  },
+  {
+    "name": "Southern Emery County",
+    "lat": 38.74598013500935,
+    "lon": -110.70060199799678
+  },
+  {
+    "name": "Southern Mountains",
+    "lat": 39.9901906895522,
+    "lon": -110.43434654242967
+  },
+  {
+    "name": "Southwest Carbon County",
+    "lat": 39.597633961382655,
+    "lon": -110.86388086885182
+  },
+  {
+    "name": "Southwest Central Iron County",
+    "lat": 37.66194246527505,
+    "lon": -113.37973274738621
+  },
+  {
+    "name": "Southwest Emery County",
+    "lat": 38.93341633879885,
+    "lon": -111.19376636686448
+  },
+  {
+    "name": "Southwest Grand County",
+    "lat": 38.741726521532,
+    "lon": -109.72710890480133
+  },
+  {
+    "name": "Southwest Kane County",
+    "lat": 37.161971545824755,
+    "lon": -112.64465815405771
+  },
+  {
+    "name": "Southwest Millard County",
+    "lat": 38.916292737621404,
+    "lon": -113.4315690636621
+  },
+  {
+    "name": "Southwest Morgan County",
+    "lat": 40.90950563757965,
+    "lon": -111.64510627560486
+  },
+  {
+    "name": "Southwest Piute County",
+    "lat": 38.25013481851215,
+    "lon": -112.28632177301697
+  },
+  {
+    "name": "Southwest San Juan County",
+    "lat": 37.444192243207,
+    "lon": -110.32913527680924
+  },
+  {
+    "name": "Southwest Sanpete County",
+    "lat": 39.23872984027555,
+    "lon": -111.8606779309203
+  },
+  {
+    "name": "Southwest Sevier County",
+    "lat": 38.7185812554658,
+    "lon": -112.14148407477666
+  },
+  {
+    "name": "Southwest Uintah County",
+    "lat": 39.86511256899405,
+    "lon": -109.8024257494699
+  },
+  {
+    "name": "Southwest Washington County",
+    "lat": 37.26580154738595,
+    "lon": -113.91083438735828
+  },
+  {
+    "name": "Southwest Wayne County",
+    "lat": 38.27483412758105,
+    "lon": -111.46723311871584
+  },
+  {
+    "name": "Southwest-Central Garfield County",
+    "lat": 37.67397264602535,
+    "lon": -112.07459777627511
+  },
+  {
+    "name": "Spanish Fork Canyon",
+    "lat": 39.99324944753245,
+    "lon": -111.39593938933793
+  },
+  {
+    "name": "Strawberry",
+    "lat": 40.0728398886829,
+    "lon": -111.06544768116669
+  },
+  {
+    "name": "Sum Jer Pine",
+    "lat": 40.75513706317665,
+    "lon": -111.5748968616341
+  },
+  {
+    "name": "Timberlakes",
+    "lat": 40.4179275032738,
+    "lon": -111.25571712999518
+  },
+  {
+    "name": "Tooele Area",
+    "lat": 40.528525570207606,
+    "lon": -112.33911718038102
+  },
+  {
+    "name": "Trenton, Cornish, Lewiston Area",
+    "lat": 41.943584129994505,
+    "lon": -111.90561862000939
+  },
+  {
+    "name": "UV - Deep South",
+    "lat": 40.02574892762355,
+    "lon": -111.77017724610386
+  },
+  {
+    "name": "UV - Downtown Provo",
+    "lat": 40.2285779681889,
+    "lon": -111.65152646636048
+  },
+  {
+    "name": "UV - Jordan River West",
+    "lat": 40.343820959169,
+    "lon": -111.93675037098873
+  },
+  {
+    "name": "UV - North Central",
+    "lat": 40.26992796002965,
+    "lon": -111.68383687766269
+  },
+  {
+    "name": "UV - Northeast",
+    "lat": 40.4401039667558,
+    "lon": -111.78856652422809
+  },
+  {
+    "name": "UV - SF River East",
+    "lat": 40.1355209615255,
+    "lon": -111.62832942926605
+  },
+  {
+    "name": "UV - SF River West",
+    "lat": 40.0730664338591,
+    "lon": -111.71001802660473
+  },
+  {
+    "name": "UV - Thanksgiving Point",
+    "lat": 40.43285694043465,
+    "lon": -111.86844997811176
+  },
+  {
+    "name": "UV - The Grove",
+    "lat": 40.37026247235035,
+    "lon": -111.74696835901511
+  },
+  {
+    "name": "UV - The Meadows",
+    "lat": 40.380872434593044,
+    "lon": -111.84945156228454
+  },
+  {
+    "name": "Uintas",
+    "lat": 40.777088005856854,
+    "lon": -110.9275987580065
+  },
+  {
+    "name": "Utah County Central Mountains and Lake",
+    "lat": 40.153691101781504,
+    "lon": -111.83459238442433
+  },
+  {
+    "name": "Utah County West Mountains",
+    "lat": 40.12327586560015,
+    "lon": -112.15368053933503
+  },
+  {
+    "name": "Vernal Area",
+    "lat": 40.44370265800595,
+    "lon": -109.47934759985884
+  },
+  {
+    "name": "Victory Ranch",
+    "lat": 40.558119512462,
+    "lon": -111.36874768876297
+  },
+  {
+    "name": "W.Daybreak, Herriman",
+    "lat": 40.5008266135459,
+    "lon": -112.05415880953878
+  },
+  {
+    "name": "WE - GSL",
+    "lat": 41.2072814530307,
+    "lon": -112.2720072069429
+  },
+  {
+    "name": "WE - Southeast Mountains (15)",
+    "lat": 41.1891811039651,
+    "lon": -111.90258113829898
+  },
+  {
+    "name": "WE - Southeast Mountains (6)",
+    "lat": 41.398860910359645,
+    "lon": -111.99709938152408
+  },
+  {
+    "name": "WJ, I-15 to MVC",
+    "lat": 40.616122599110156,
+    "lon": -111.97301027545623
+  },
+  {
+    "name": "WJ, WB, west of MVC",
+    "lat": 40.594921630228,
+    "lon": -112.0825327735648
+  },
+  {
+    "name": "WVC-Taylors",
+    "lat": 40.68090376827405,
+    "lon": -111.96675719453572
+  },
+  {
+    "name": "WX, Bountiful, NSL",
+    "lat": 40.86378934192845,
+    "lon": -111.9009773374633
+  },
+  {
+    "name": "Washington City Area",
+    "lat": 37.16225173234565,
+    "lon": -113.49059121501772
+  },
+  {
+    "name": "Wellsville Area",
+    "lat": 41.607434588256694,
+    "lon": -111.97239523701117
+  },
+  {
+    "name": "Wendover",
+    "lat": 40.724284783617904,
+    "lon": -114.02576087889717
+  },
+  {
+    "name": "West Garfield County",
+    "lat": 37.84351864166765,
+    "lon": -112.4290390956055
+  },
+  {
+    "name": "West Mountains",
+    "lat": 41.30713319480235,
+    "lon": -111.88284923272391
+  },
+  {
+    "name": "West Uintah County",
+    "lat": 40.34055511244375,
+    "lon": -109.89057628191134
+  },
+  {
+    "name": "West-Central Emery County",
+    "lat": 39.20423289442055,
+    "lon": -110.99787188948734
+  },
+  {
+    "name": "West-Central Uintah County",
+    "lat": 40.43676512456585,
+    "lon": -109.69299686635755
+  },
+  {
+    "name": "Western Beaver County",
+    "lat": 38.3607128784877,
+    "lon": -113.54309244437812
+  },
+  {
+    "name": "Western Box Elder County",
+    "lat": 41.497619030805254,
+    "lon": -113.5637822636526
+  },
+  {
+    "name": "Western Central Iron County",
+    "lat": 37.80611496405464,
+    "lon": -113.68064185552434
+  },
+  {
+    "name": "Western Daggett County",
+    "lat": 40.88121018477245,
+    "lon": -109.8457731858353
+  },
+  {
+    "name": "Western Hurricane Area",
+    "lat": 37.1424108525282,
+    "lon": -113.3783756223535
+  },
+  {
+    "name": "Western Iron County",
+    "lat": 37.8767624641241,
+    "lon": -113.88090309088855
+  },
+  {
+    "name": "Western Juab County",
+    "lat": 39.72461446196205,
+    "lon": -113.3226454922401
+  },
+  {
+    "name": "Western St George & Unincorporated County Area",
+    "lat": 37.0856554542824,
+    "lon": -113.67271439758684
+  },
+  {
+    "name": "Western Tooele County",
+    "lat": 40.45194045532925,
+    "lon": -113.52858210343533
+  },
+  {
+    "name": "Woodland",
+    "lat": 40.56260573460075,
+    "lon": -111.2517695640262
+  },
+  {
+    "name": "Woodruff Area",
+    "lat": 41.35237160214385,
+    "lon": -111.1246240526863
+  }
+]

@@ -1,0 +1,452 @@
+[
+  {
+    "name": "House District 1",
+    "house_fips": "49001",
+    "lat": 41.6226233,
+    "lon": -113.060252
+  },
+  {
+    "name": "House District 10",
+    "house_fips": "49010",
+    "lat": 41.1757042,
+    "lon": -111.9364781
+  },
+  {
+    "name": "House District 11",
+    "house_fips": "49011",
+    "lat": 41.1431659,
+    "lon": -111.9821341
+  },
+  {
+    "name": "House District 12",
+    "house_fips": "49012",
+    "lat": 41.1670531,
+    "lon": -112.2810519
+  },
+  {
+    "name": "House District 13",
+    "house_fips": "49013",
+    "lat": 41.1288746,
+    "lon": -112.0667006
+  },
+  {
+    "name": "House District 14",
+    "house_fips": "49014",
+    "lat": 41.0924865,
+    "lon": -112.0534226
+  },
+  {
+    "name": "House District 15",
+    "house_fips": "49015",
+    "lat": 40.9560707,
+    "lon": -112.2109378
+  },
+  {
+    "name": "House District 16",
+    "house_fips": "49016",
+    "lat": 41.103348,
+    "lon": -111.914154
+  },
+  {
+    "name": "House District 17",
+    "house_fips": "49017",
+    "lat": 41.0451912,
+    "lon": -111.8716386
+  },
+  {
+    "name": "House District 18",
+    "house_fips": "49018",
+    "lat": 40.9570023,
+    "lon": -111.8973341
+  },
+  {
+    "name": "House District 19",
+    "house_fips": "49019",
+    "lat": 40.87956,
+    "lon": -111.8343355
+  },
+  {
+    "name": "House District 2",
+    "house_fips": "49002",
+    "lat": 41.8650338,
+    "lon": -111.8808805
+  },
+  {
+    "name": "House District 20",
+    "house_fips": "49020",
+    "lat": 40.8496815,
+    "lon": -111.9137123
+  },
+  {
+    "name": "House District 21",
+    "house_fips": "49021",
+    "lat": 40.8122345,
+    "lon": -112.0695684
+  },
+  {
+    "name": "House District 22",
+    "house_fips": "49022",
+    "lat": 40.8127052,
+    "lon": -111.808914
+  },
+  {
+    "name": "House District 23",
+    "house_fips": "49023",
+    "lat": 40.7452604,
+    "lon": -111.7517797
+  },
+  {
+    "name": "House District 24",
+    "house_fips": "49024",
+    "lat": 40.7411186,
+    "lon": -111.8836917
+  },
+  {
+    "name": "House District 25",
+    "house_fips": "49025",
+    "lat": 40.7348775,
+    "lon": -111.980084
+  },
+  {
+    "name": "House District 26",
+    "house_fips": "49026",
+    "lat": 40.726085,
+    "lon": -112.0498531
+  },
+  {
+    "name": "House District 27",
+    "house_fips": "49027",
+    "lat": 40.67409,
+    "lon": -112.1553086
+  },
+  {
+    "name": "House District 28",
+    "house_fips": "49028",
+    "lat": 40.5665224,
+    "lon": -112.2439356
+  },
+  {
+    "name": "House District 29",
+    "house_fips": "49029",
+    "lat": 39.778177,
+    "lon": -113.1214952
+  },
+  {
+    "name": "House District 3",
+    "house_fips": "49003",
+    "lat": 41.8157569,
+    "lon": -111.6432162
+  },
+  {
+    "name": "House District 30",
+    "house_fips": "49030",
+    "lat": 40.6815464,
+    "lon": -111.9935665
+  },
+  {
+    "name": "House District 31",
+    "house_fips": "49031",
+    "lat": 40.6805248,
+    "lon": -111.936413
+  },
+  {
+    "name": "House District 32",
+    "house_fips": "49032",
+    "lat": 40.7041036,
+    "lon": -111.88627
+  },
+  {
+    "name": "House District 33",
+    "house_fips": "49033",
+    "lat": 40.6791627,
+    "lon": -111.7122678
+  },
+  {
+    "name": "House District 34",
+    "house_fips": "49034",
+    "lat": 40.6630623,
+    "lon": -111.8402568
+  },
+  {
+    "name": "House District 35",
+    "house_fips": "49035",
+    "lat": 40.6555317,
+    "lon": -111.8998949
+  },
+  {
+    "name": "House District 36",
+    "house_fips": "49036",
+    "lat": 40.6382167,
+    "lon": -111.9593481
+  },
+  {
+    "name": "House District 37",
+    "house_fips": "49037",
+    "lat": 40.6489943,
+    "lon": -112.0019388
+  },
+  {
+    "name": "House District 38",
+    "house_fips": "49038",
+    "lat": 40.6008853,
+    "lon": -112.0253133
+  },
+  {
+    "name": "House District 39",
+    "house_fips": "49039",
+    "lat": 40.5990264,
+    "lon": -111.9518442
+  },
+  {
+    "name": "House District 4",
+    "house_fips": "49004",
+    "lat": 41.201752,
+    "lon": -111.2904984
+  },
+  {
+    "name": "House District 40",
+    "house_fips": "49040",
+    "lat": 40.6115735,
+    "lon": -111.8931145
+  },
+  {
+    "name": "House District 41",
+    "house_fips": "49041",
+    "lat": 40.6171169,
+    "lon": -111.6865582
+  },
+  {
+    "name": "House District 42",
+    "house_fips": "49042",
+    "lat": 40.5667662,
+    "lon": -111.8224108
+  },
+  {
+    "name": "House District 43",
+    "house_fips": "49043",
+    "lat": 40.5845576,
+    "lon": -111.8764926
+  },
+  {
+    "name": "House District 44",
+    "house_fips": "49044",
+    "lat": 40.5678629,
+    "lon": -111.9900305
+  },
+  {
+    "name": "House District 45",
+    "house_fips": "49045",
+    "lat": 40.5513189,
+    "lon": -111.9198457
+  },
+  {
+    "name": "House District 46",
+    "house_fips": "49046",
+    "lat": 40.4909355,
+    "lon": -111.839927
+  },
+  {
+    "name": "House District 47",
+    "house_fips": "49047",
+    "lat": 40.50875,
+    "lon": -111.9331916
+  },
+  {
+    "name": "House District 48",
+    "house_fips": "49048",
+    "lat": 40.5333994,
+    "lon": -112.0119002
+  },
+  {
+    "name": "House District 49",
+    "house_fips": "49049",
+    "lat": 40.4754488,
+    "lon": -112.0432729
+  },
+  {
+    "name": "House District 5",
+    "house_fips": "49005",
+    "lat": 41.5635284,
+    "lon": -111.7586448
+  },
+  {
+    "name": "House District 50",
+    "house_fips": "49050",
+    "lat": 40.2158965,
+    "lon": -112.0046006
+  },
+  {
+    "name": "House District 51",
+    "house_fips": "49051",
+    "lat": 40.3562496,
+    "lon": -111.917014
+  },
+  {
+    "name": "House District 52",
+    "house_fips": "49052",
+    "lat": 40.3839736,
+    "lon": -111.8586266
+  },
+  {
+    "name": "House District 53",
+    "house_fips": "49053",
+    "lat": 40.42707,
+    "lon": -111.8527663
+  },
+  {
+    "name": "House District 54",
+    "house_fips": "49054",
+    "lat": 40.4856051,
+    "lon": -111.7023069
+  },
+  {
+    "name": "House District 55",
+    "house_fips": "49055",
+    "lat": 40.3858658,
+    "lon": -111.7281979
+  },
+  {
+    "name": "House District 56",
+    "house_fips": "49056",
+    "lat": 40.3417736,
+    "lon": -111.7482045
+  },
+  {
+    "name": "House District 57",
+    "house_fips": "49057",
+    "lat": 40.2865918,
+    "lon": -111.7272204
+  },
+  {
+    "name": "House District 58",
+    "house_fips": "49058",
+    "lat": 40.3848274,
+    "lon": -111.6392785
+  },
+  {
+    "name": "House District 59",
+    "house_fips": "49059",
+    "lat": 40.2957262,
+    "lon": -111.1912816
+  },
+  {
+    "name": "House District 6",
+    "house_fips": "49006",
+    "lat": 41.3437984,
+    "lon": -112.0780829
+  },
+  {
+    "name": "House District 60",
+    "house_fips": "49060",
+    "lat": 40.2583674,
+    "lon": -111.5989358
+  },
+  {
+    "name": "House District 61",
+    "house_fips": "49061",
+    "lat": 40.2370796,
+    "lon": -111.7452261
+  },
+  {
+    "name": "House District 62",
+    "house_fips": "49062",
+    "lat": 40.1963948,
+    "lon": -111.6421942
+  },
+  {
+    "name": "House District 63",
+    "house_fips": "49063",
+    "lat": 40.1016065,
+    "lon": -111.4106173
+  },
+  {
+    "name": "House District 64",
+    "house_fips": "49064",
+    "lat": 40.090824,
+    "lon": -111.6770987
+  },
+  {
+    "name": "House District 65",
+    "house_fips": "49065",
+    "lat": 39.9926786,
+    "lon": -111.7466119
+  },
+  {
+    "name": "House District 66",
+    "house_fips": "49066",
+    "lat": 39.5632712,
+    "lon": -111.6972705
+  },
+  {
+    "name": "House District 67",
+    "house_fips": "49067",
+    "lat": 39.7763345,
+    "lon": -110.622884
+  },
+  {
+    "name": "House District 68",
+    "house_fips": "49068",
+    "lat": 40.3489342,
+    "lon": -109.7901205
+  },
+  {
+    "name": "House District 69",
+    "house_fips": "49069",
+    "lat": 38.0426785,
+    "lon": -110.6008287
+  },
+  {
+    "name": "House District 7",
+    "house_fips": "49007",
+    "lat": 41.2908476,
+    "lon": -111.9678322
+  },
+  {
+    "name": "House District 70",
+    "house_fips": "49070",
+    "lat": 38.3652509,
+    "lon": -112.8115836
+  },
+  {
+    "name": "House District 71",
+    "house_fips": "49071",
+    "lat": 37.7321975,
+    "lon": -112.8817671
+  },
+  {
+    "name": "House District 72",
+    "house_fips": "49072",
+    "lat": 37.2595294,
+    "lon": -113.1735146
+  },
+  {
+    "name": "House District 73",
+    "house_fips": "49073",
+    "lat": 37.2499477,
+    "lon": -113.4201095
+  },
+  {
+    "name": "House District 74",
+    "house_fips": "49074",
+    "lat": 37.1199243,
+    "lon": -113.8284793
+  },
+  {
+    "name": "House District 75",
+    "house_fips": "49075",
+    "lat": 37.4122361,
+    "lon": -113.7146724
+  },
+  {
+    "name": "House District 8",
+    "house_fips": "49008",
+    "lat": 41.2879833,
+    "lon": -111.7031621
+  },
+  {
+    "name": "House District 9",
+    "house_fips": "49009",
+    "lat": 41.2125911,
+    "lon": -112.0336313
+  }
+]

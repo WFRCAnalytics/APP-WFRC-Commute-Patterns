@@ -300,6 +300,6 @@ if __name__ == "__main__":
     import sys
     data_dir = Path(__file__).parent.parent / "data"
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    years = [int(a) for a in args] if args else list(range(ACS_START_YEAR, 2024))
+    years = [int(a) for a in args] if args else list(range(ACS_START_YEAR, 2025))
     for y in years:
         fetch_acs_year(y, data_dir, force="--force" in sys.argv)

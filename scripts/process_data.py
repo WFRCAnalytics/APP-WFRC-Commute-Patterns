@@ -77,8 +77,8 @@ def download_cached(url, filename):
 
 # ── LEHD LODES8 URLs ──────────────────────────────────────────────────────────
 LODES_BASE = "https://lehd.ces.census.gov/data/lodes/LODES8/ut"
-# LODES8 covers 2002-2023; try from newest downward when no --year given
-LODES_YEARS_DEFAULT = [str(y) for y in range(2023, 2001, -1)]
+# LODES8 covers 2002-2024; try from newest downward when no --year given
+LODES_YEARS_DEFAULT = [str(y) for y in range(2024, 2001, -1)]
 OD_TEMPLATE  = LODES_BASE + "/od/ut_od_main_JT00_{year}.csv.gz"
 AUX_TEMPLATE = LODES_BASE + "/od/ut_od_aux_JT00_{year}.csv.gz"
 XWALK_URL = LODES_BASE + "/ut_xwalk.csv.gz"
@@ -921,7 +921,7 @@ def main():
     parser = argparse.ArgumentParser(description="Utah Commute Patterns Data Pipeline")
     parser.add_argument(
         "--year", type=int, metavar="YYYY",
-        help="LODES year to process (default: auto-detect latest available, 2002-2023)"
+        help="LODES year to process (default: auto-detect latest available, 2002-2024)"
     )
     parser.add_argument(
         "--boundaries", action="store_true",

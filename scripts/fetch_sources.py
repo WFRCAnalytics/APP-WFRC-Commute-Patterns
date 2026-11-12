@@ -102,7 +102,7 @@ def latest_data_year() -> int:
     """Newest year the pipeline has produced (data/lehd/<year>/), so a new LODES
     year is picked up without editing this file."""
     years = [int(p.name) for p in (CACHE_DIR.parent / "lehd").glob("[0-9][0-9][0-9][0-9]") if p.is_dir()]
-    return max(years, default=2023)
+    return max(years, default=2024)
 
 
 def rac_sources(last_year: int | None = None) -> list[tuple[str, str]]:

@@ -39,7 +39,7 @@ CUSTOM_FILE = DATA_DIR / "custom_places.gpkg"
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--year", type=int, default=2023)
+    parser.add_argument("--year", type=int, default=2024)
     args = parser.parse_args()
 
     print(f"=== Custom Place LEHD Coverage Verification (year={args.year}) ===\n")
